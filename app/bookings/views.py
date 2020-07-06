@@ -32,7 +32,7 @@ def new():
     # print('Keys of data from zapier not processed from:')
     # print(f'{json.loads(data).keys() - d.keys()}')
     
-    send_success_email("{current_app.config['SUPPORT_EMAIL']}+new")
+    send_success_email("{current_app.config['SUPPORT_EMAIL']}+new", "new")
     
     return 'OK'
 
@@ -73,7 +73,7 @@ def completed():
     # Load the database table
     db.session.commit()
     
-    send_success_email("{current_app.config['SUPPORT_EMAIL']}+completed")
+    send_success_email("{current_app.config['SUPPORT_EMAIL']}+completed", "completed")
     
     return 'OK'
 
@@ -114,7 +114,7 @@ def cancellation():
     # Load the database table
     db.session.commit()
     
-    send_success_email("{current_app.config['SUPPORT_EMAIL']}+cancellation")
+    send_success_email("{current_app.config['SUPPORT_EMAIL']}+cancellation", "cancellation")
     
     return 'OK'
 
@@ -144,7 +144,7 @@ def updated():
     # Load the database table
     db.session.commit()
    
-    send_success_email("{current_app.config['SUPPORT_EMAIL']}+updated")
+    send_success_email("{current_app.config['SUPPORT_EMAIL']}+updated", "updated")
     
     return 'OK'
 
@@ -185,7 +185,7 @@ def team_changed():
     # Load the database table
     db.session.commit()
     
-    send_success_email("{current_app.config['SUPPORT_EMAIL']}+teamchanged")
+    send_success_email("{current_app.config['SUPPORT_EMAIL']}+teamchanged", "team_changed")
     
     return 'OK'
 
