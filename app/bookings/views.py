@@ -174,6 +174,7 @@ def team_changed():
     data = json.loads(request.data)
     
     booking_id = data['id'] if 'id' in data.keys() else None
+    team_name = data['team_details']
     
     if not booking_id:
         # Haven't seen the original booking - add it now
@@ -193,6 +194,8 @@ def team_changed():
     else:
     
         import_dict(b, data)
+    
+    current_app.logger.info(f'team changed from "{team_name}" to {b.teams_assigned }')
     
     current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
     
