@@ -13,9 +13,9 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     
     # Company and app data - change with every app
-    COMPANY_NAME = 'Template Company'
-    COMPANY_URL = 'template.com.au'
-    APP_NAME = 'Template'
+    COMPANY_NAME = 'Maid2Match'
+    COMPANY_URL = 'maid2match.com.au'
+    APP_NAME = 'm2m-booking-system'
     
     # Base level testing/debugging
     DEBUG = False
@@ -78,4 +78,5 @@ class TestingConfig(Config):
     TESTING = True  # This suppresses email sending :-(
     RATING_SERVER = "http://127.0.0.1:5000"
     LOG_TO_STDOUT = True
+    DEBUG = True
     

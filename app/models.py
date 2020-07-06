@@ -52,7 +52,7 @@ class Booking(db.Model):
     service = db.Column(db.String(64), index=False, unique=False)
     customer_notes = db.Column(db.Text(), index=False, unique=False)
     staff_notes = db.Column(db.Text(), index=False, unique=False)
-    _customer_id =db.Column(db.Integer, index=False, unique=True)
+    _customer_id =db.Column(db.Integer, index=False, unique=False)
     ### Points to the unique customer for this booking
     ### customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'))
     cancellation_type = db.Column(db.String(64), index=False, unique=False)
@@ -261,7 +261,8 @@ class Booking(db.Model):
     def team_share(self, val):
         #  "team_share_amount": "Team Euclid - $67.64"
         if val is not None:
-            self._team_share =  val.replace('$','').replace('.','')
+            amt = val.split(' - ')[1]
+            self._team_share =  amt.replace('$','').replace('.','')
     
     @property
     def team_share_total(self):
@@ -271,7 +272,8 @@ class Booking(db.Model):
     def team_share_total(self, val):
         # "Team Euclid - $67.64", 
         if val is not None:
-            self._team_share_total = val.replace('$','').replace('.','')
+            amt = val.split(' - ')[1]
+            self._team_share_total = amt.replace('$','').replace('.','')
     
     @property
     def team_has_key(self):
@@ -315,11 +317,11 @@ class Booking(db.Model):
     @cancellation_date.setter
     def cancellation_date(self, val):
         # "2018-10-25T11:06:33+10:00"
-        if val is not None:
+        if val:
             try:
                 self._cancellation_date = datetime.strptime(val, "%d/%m/%Y").date()
             except ValueError as e:
-                current_app.log.error('next_booking_date error: {e}')
+                current_app.logger.error(f'next_booking_date error: "{val}" leads to error: {e}')
     
     @property
     def price_adjustment(self):
@@ -482,3 +484,5 @@ def import_dict(d, b):
         #NDIS Number (301)
         d.NDIS_reference = b["custom_fields"]['single_line:2b738d28-6c2c-4850-ae47-2c4902da9d8d'] if 'single_line:2b738d28-6c2c-4850-ae47-2c4902da9d8d' in custom_field_keys else None
 
+    return d
+    

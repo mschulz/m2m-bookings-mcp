@@ -3,6 +3,6 @@ UNUSED
 __pycache__
 .env
 logs
-all_db.sql.gz
 test.db
 .gitignore
+client_secret.json

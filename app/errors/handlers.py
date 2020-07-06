@@ -4,13 +4,18 @@ from app.errors import bp
 from app.email import send_error_email
 
 @bp.app_errorhandler(401)
-def not_found_error(error):
+def unauthorized(error):
     return render_template('errors/401.html'), 401
 
 
 @bp.app_errorhandler(404)
 def not_found_error(error):
     return render_template('errors/404.html'), 404
+
+
+@bp.app_errorhandler(422)
+def unprocessable_entity(error):
+    return render_template('errors/422.html'), 422
 
 
 @bp.app_errorhandler(500)

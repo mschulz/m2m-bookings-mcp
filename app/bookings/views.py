@@ -2,28 +2,35 @@
 
 import json
 from flask import request, current_app, abort
+from app import db
 from app.bookings import bookings_api
 from app.decorators import APIkey_required
 from app.email import send_success_email
-from models import import_dict
+from app.models import Booking, import_dict
 
 
 @bookings_api.route('/booking/new', methods=['POST'])
 @APIkey_required
-def booking():
+def new():
     ''' 
         return 'Hello World!' to check link.
     '''
     print('Processing a new booking ...')
     
-    data = request.data
-    d =  import_dict(data)
+    data = json.loads(request.data)
     
-    current_app.logger.info(f'Data received: {d}')
+    b = Booking()
+    import_dict(b, data)
+    
+    current_app.logger.info(f'Data received: {b.to_dict()}')
+    
+    # Load the database table
+    db.session.add(b)
+    db.session.commit()
     
     # Check which keys were sent and not processed by 'import_dict'
-    print('Keys of data from zapier not processed from:')
-    print(f'{data.keys() - d.keys()}')
+    # print('Keys of data from zapier not processed from:')
+    # print(f'{json.loads(data).keys() - d.keys()}')
     
     send_success_email(current_app.config['SUPPORT_EMAIL'])
     
@@ -32,16 +39,39 @@ def booking():
 
 @bookings_api.route('/booking/completed', methods=['POST'])
 @APIkey_required
-def booking():
+def completed():
     '''
         return 'Hello World!' to check link.
     '''
     print('Processing a completed booking')
     
-    data = request.data
-    d =  import_dict(data)
+    data = json.loads(request.data)
     
-    current_app.logger.info(f'Data received: {d}')
+    booking_id = data['id'] if 'id' in data.keys() else None
+    
+    if not booking_id:
+        # Haven't seen the original booking - add it now
+        current_app.logger.error("booking has no booking - ignore this data")
+        abort(422)
+    
+    b = db.session.query(Booking).filter(Booking.booking_id == booking_id).first()
+    
+    if b is None:
+        # Haven't seen the original booking - add it now
+        current_app.logger.error("haven't seen this booking - adding to database")
+    
+        # Load the database table
+        b = Booking()
+        import_dict(b, data)
+        db.session.add(b)
+    else:
+    
+        import_dict(b, data)
+    
+    current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
+    
+    # Load the database table
+    db.session.commit()
     
     send_success_email(current_app.config['SUPPORT_EMAIL'])
     
@@ -50,16 +80,39 @@ def booking():
 
 @bookings_api.route('/booking/cancellation', methods=['POST'])
 @APIkey_required
-def booking():
+def cancellation():
     '''
         return 'Hello World!' to check link.
     '''
     print('Processing a cancelled booking')
     
-    data = request.data
-    d =  import_dict(data)
+    data = json.loads(request.data)
     
-    current_app.logger.info(f'Data received: {d}')
+    booking_id = data['id'] if 'id' in data.keys() else None
+    
+    if not booking_id:
+        # Haven't seen the original booking - add it now
+        current_app.logger.error("booking has no booking - ignore this data")
+        abort(422)
+    
+    b = db.session.query(Booking).filter(Booking.booking_id == booking_id).first()
+    
+    if b is None:
+        # Haven't seen the original booking - add it now
+        current_app.logger.error("haven't seen this booking - adding to database")
+    
+        # Load the database table
+        b = Booking()
+        import_dict(b, data)
+        db.session.add(b)
+    else:
+    
+        import_dict(b, data)
+    
+    current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
+    
+    # Load the database table
+    db.session.commit()
     
     send_success_email(current_app.config['SUPPORT_EMAIL'])
     
@@ -68,17 +121,29 @@ def booking():
 
 @bookings_api.route('/booking/updated', methods=['POST'])
 @APIkey_required
-def booking():
+def updated():
     '''
         return 'Hello World!' to check link.
     '''
     print('Processing an updated booking')
     
-    data = request.data
-    d =  import_dict(data)
+    data = json.loads(request.data)
     
-    current_app.logger.info(f'Data received: {d}')
+    booking_id = data['id'] if 'id' in data.keys() else None
     
+    if not booking_id:
+        current_app.logger.error("booking has no booking - ignore this data")
+        abort(422)
+    
+    b = db.session.query(Booking).filter(Booking.booking_id == booking_id).first()
+    
+    import_dict(b, data)
+    
+    current_app.logger.info(f'Data received: {b.to_dict()}')
+    
+    # Load the database table
+    db.session.commit()
+   
     send_success_email(current_app.config['SUPPORT_EMAIL'])
     
     return 'OK'
@@ -86,16 +151,39 @@ def booking():
 
 @bookings_api.route('/booking/team_changed', methods=['POST'])
 @APIkey_required
-def booking():
+def team_changed():
     '''
         return 'Hello World!' to check link.
     '''
     print('Processing an team assignment changed')
     
-    data = request.data
-    d =  import_dict(data)
+    data = json.loads(request.data)
     
-    current_app.logger.info(f'Data received: {d}')
+    booking_id = data['id'] if 'id' in data.keys() else None
+    
+    if not booking_id:
+        # Haven't seen the original booking - add it now
+        current_app.logger.error("booking has no booking - ignore this data")
+        abort(422)
+    
+    b = db.session.query(Booking).filter(Booking.booking_id == booking_id).first()
+    
+    if b is None:
+        # Haven't seen the original booking - add it now
+        current_app.logger.error("haven't seen this booking - adding to database")
+    
+        # Load the database table
+        b = Booking()
+        import_dict(b, data)
+        db.session.add(b)
+    else:
+    
+        import_dict(b, data)
+    
+    current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
+    
+    # Load the database table
+    db.session.commit()
     
     send_success_email(current_app.config['SUPPORT_EMAIL'])
     
