@@ -263,7 +263,7 @@ class Booking(db.Model):
     @team_share.setter
     def team_share(self, val):
         #  "team_share_amount": "Team Euclid - $67.64"
-        if val is not None:
+        if val:
             try:
                 amt = val.split(' - ')[1]
                 self._team_share =  amt.replace('$','').replace('.','')
@@ -277,7 +277,7 @@ class Booking(db.Model):
     @team_share_total.setter
     def team_share_total(self, val):
         # "Team Euclid - $67.64", 
-        if val is not None:
+        if val:
             try:
                 amt = val.split(' - ')[1]
                 self._team_share_total = amt.replace('$','').replace('.','')
