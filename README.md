@@ -1,6 +1,6 @@
-# Template
+# m2m-booking-system
 
-This is the base template for all AlphabetServices Heroku servers.
+This server is to collect all the data on bookings from Launch27 via Zapier.
 
 To start using the template, first generate a new API_KEY:
 ```
