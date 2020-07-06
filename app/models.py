@@ -321,7 +321,7 @@ class Booking(db.Model):
             try:
                 self._cancellation_date = datetime.strptime(val, "%d/%m/%Y").date()
             except ValueError as e:
-                current_app.logger.error(ff'next_booking_date error: "{val}" leads to error: {e}')
+                current_app.logger.error(f'next_booking_date error: "{val}" leads to error: {e}')
     
     @property
     def price_adjustment(self):
