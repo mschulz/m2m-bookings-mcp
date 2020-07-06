@@ -33,7 +33,7 @@ def new():
     # print(f'{json.loads(data).keys() - d.keys()}')
     
     m = current_app.config['SUPPORT_EMAIL'].split('@')
-    send_success_email(f"{m[0]}+new@[{m[1]}", "new")
+    send_success_email(f"{m[0]}+new@{m[1]}", "new")
     
     return 'OK'
 
@@ -75,7 +75,7 @@ def completed():
     db.session.commit()
     
     m = current_app.config['SUPPORT_EMAIL'].split('@')
-    send_success_email(f"{m[0]}+completed@[{m[1]}", "completed")
+    send_success_email(f"{m[0]}+completed@{m[1]}", "completed")
      
     return 'OK'
 
@@ -117,7 +117,7 @@ def cancellation():
     db.session.commit()
     
     m = current_app.config['SUPPORT_EMAIL'].split('@')
-    send_success_email(f"{m[0]}+cancellation@[{m[1]}", "cancellation")
+    send_success_email(f"{m[0]}+cancellation@{m[1]}", "cancellation")
     
     return 'OK'
 
@@ -148,7 +148,7 @@ def updated():
     db.session.commit()
    
     m = current_app.config['SUPPORT_EMAIL'].split('@')
-    send_success_email(f"{m[0]}+updated@[{m[1]}", "updated")
+    send_success_email(f"{m[0]}+updated@{m[1]}", "updated")
     
     return 'OK'
 
@@ -190,7 +190,7 @@ def team_changed():
     db.session.commit()
     
     m = current_app.config['SUPPORT_EMAIL'].split('@')
-    send_success_email(f"{m[0]}+team_changed@[{m[1]}", "team_changed")
+    send_success_email(f"{m[0]}+team_changed@{m[1]}", "team_changed")
     
     return 'OK'
 
