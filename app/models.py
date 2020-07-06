@@ -264,8 +264,11 @@ class Booking(db.Model):
     def team_share(self, val):
         #  "team_share_amount": "Team Euclid - $67.64"
         if val is not None:
-            amt = val.split(' - ')[1]
-            self._team_share =  amt.replace('$','').replace('.','')
+            try:
+                amt = val.split(' - ')[1]
+                self._team_share =  amt.replace('$','').replace('.','')
+            except IndexError as e:
+                current_app.logger.error(f'team share error ({val}): {e}')
     
     @property
     def team_share_total(self):
@@ -275,8 +278,12 @@ class Booking(db.Model):
     def team_share_total(self, val):
         # "Team Euclid - $67.64", 
         if val is not None:
-            amt = val.split(' - ')[1]
-            self._team_share_total = amt.replace('$','').replace('.','')
+            try:
+                amt = val.split(' - ')[1]
+                self._team_share_total = amt.replace('$','').replace('.','')
+            except IndexError as e:
+                current_app.logger.error(f'team share total error ({val}): {e}')
+                
     
     @property
     def team_has_key(self):

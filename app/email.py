@@ -33,9 +33,6 @@ def send_error_email(toaddr, error_msg):
         )
  
 def send_success_email(toaddr, route):
-    
-    print(f'Sending to: {toaddr}')
-    
     body = f"<h1>Success</h1><p>Route { route } successfully accessed.</p>"
 
     send_email(
