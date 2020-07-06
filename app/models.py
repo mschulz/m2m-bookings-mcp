@@ -122,7 +122,7 @@ class Booking(db.Model):
             try:
                 self._created_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
             except ValueError as e:
-                current_app.logger.error(f'created_at error: {e}')
+                current_app.logger.error(f'created_at error ({val}): {e}')
     
     @property
     def updated_at(self):
@@ -135,7 +135,7 @@ class Booking(db.Model):
             try:
                 self._updated_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
             except ValueError as e:
-                current_app.logger.error(f'updated_at error: {e}')
+                current_app.logger.error(f'updated_at error ({val}): {e}')
 
     @property
     def service_date(self):
@@ -151,7 +151,10 @@ class Booking(db.Model):
         """
         # "2018-10-26" 
         if val is not None:
-            self._service_date = datetime.strptime(val, "%Y-%m-%d")
+            try:
+                self._service_date = datetime.strptime(val, "%Y-%m-%d")
+            except ValueError as e:
+                current_app.logger.error(f'service_date error ({val}): {e}')
     
     @property
     def final_price(self):
@@ -295,7 +298,7 @@ class Booking(db.Model):
             try:
                 self._next_booking_date = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
             except ValueError as e:
-                current_app.logger.error(f'next_booking_date error: {e}')
+                current_app.logger.error(f'next_booking_date error ({val}): {e}')
    
     @property
     def customer_id(self):
@@ -321,7 +324,7 @@ class Booking(db.Model):
             try:
                 self._cancellation_date = datetime.strptime(val, "%d/%m/%Y").date()
             except ValueError as e:
-                current_app.logger.error(f'next_booking_date error: "{val}" leads to error: {e}')
+                current_app.logger.error(f'cancellation_date error: "{val}" leads to error: {e}')
     
     @property
     def price_adjustment(self):
@@ -334,7 +337,7 @@ class Booking(db.Model):
             try:
                 self._price_adjustment = dollar_string_to_int(val)
             except ValueError as e:
-                current_app.logger.error(f'price_adjustment error: {e}')
+                current_app.logger.error(f'price_adjustment error ({val}): {e}')
  
     @property
     def is_first_recurring(self):
@@ -383,7 +386,7 @@ class Booking(db.Model):
             try:
                 self._pricing_parameters_price = dollar_string_to_int(val)
             except ValueError as e:
-                current_app.logger.error(f'price_adjustment error: {e}')
+                current_app.logger.error(f'price_adjustment error ({val}): {e}')
 
 
 def string_to_boolean(val):
