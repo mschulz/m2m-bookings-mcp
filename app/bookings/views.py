@@ -140,7 +140,17 @@ def updated():
     
     b = db.session.query(Booking).filter(Booking.booking_id == booking_id).first()
     
-    import_dict(b, data)
+    if b is None:
+        # Haven't seen the original booking - add it now
+        current_app.logger.error("haven't seen this booking - adding to database")
+    
+        # Load the database table
+        b = Booking()
+        import_dict(b, data)
+        db.session.add(b)
+    else:
+    
+        import_dict(b, data)
     
     current_app.logger.info(f'Data received: {b.to_dict()}')
     
