@@ -32,11 +32,11 @@ def send_error_email(toaddr, error_msg):
         text_body = html2text.html2text(body)
         )
  
-def send_success_email(toaddr):
-    body = "<h1>Success</h1><p>Route successfully accessed.</p>"
+def send_success_email(toaddr, route):
+    body = f"<h1>Success</h1><p>Route { route } successfully accessed.</p>"
 
     send_email(
-        subject = f'{current_app.config["APP_NAME"]}: Success',
+        subject = f'{current_app.config["APP_NAME"]}: Success for {route}',
         sender=(current_app.config['FROM_NAME'], current_app.config["FROM_ADDRESS"]),
         recipients = toaddr if isinstance(toaddr, list) else [toaddr],
         html_body = body,
