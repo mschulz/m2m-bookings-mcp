@@ -1,0 +1,12 @@
+venv
+UNUSED
+__pycache__
+.env
+migrations
+logs
+all_db.sql.gz
+app.db
+chromedriver
+DESCRIPTION OF PROJECTS.txt
+client.crt
+client.key
