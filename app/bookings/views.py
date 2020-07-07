@@ -6,7 +6,7 @@ from app import db
 from app.bookings import bookings_api
 from app.decorators import APIkey_required
 from app.email import send_success_email
-from app.models import Booking, import_dict
+from app.models import Booking, import_dict, Customer, import_customer
 
 
 def process_booking_data(data):
