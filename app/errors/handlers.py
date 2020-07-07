@@ -19,8 +19,14 @@ def unprocessable_entity(error):
 
 
 @bp.app_errorhandler(500)
-def internal_error(error):
+def internal_error(e):
     db.session.rollback()
-    error_msg = 'Encountered an internal error in the server'
-    send_error_email(current_app.config['SUPPORT_EMAIL'], error_msg)
-    return render_template('errors/500.html'), 500
+    
+    original = getattr(e, "original_exception", None)
+    if original is None:
+        # direct 500 error, such as abort(500)
+        error_msg = f'Encountered an internal error in the server:\nReason: {e}'
+        send_error_email(current_app.config['SUPPORT_EMAIL'], error_msg)
+    else:
+        send_error_email(current_app.config['SUPPORT_EMAIL'], original)
+    return render_template("errors/500.html"), 500    
