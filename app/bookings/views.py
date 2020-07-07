@@ -8,6 +8,8 @@ from app.decorators import APIkey_required
 from app.email import send_success_email
 from app.models import Booking, import_dict, Customer, import_customer
 from sqlalchemy import exc
+from psycopg2.errors import UniqueViolation
+
 
 def process_booking_data(data):
     booking_id = data['id'] if 'id' in data else None
@@ -41,11 +43,25 @@ def process_booking_data(data):
     try:
         db.session.commit()
     except exc.DataError as e:
+        db.session.rollback()
         current_app.logger.info(f'({request.path}) Booking error in model data: {e}')
         m = current_app.config['SUPPORT_EMAIL'].split('@')
         send_error_email(f"{m[0]}+error@{m[1]}", e)
         abort(422)
-    
+    except exc.IntegrityError as e:
+        db.session.rollback()
+        if isinstance(e.orig, UniqueViolation):
+            current_app.logger.info(f'({request.path}) Possible timing error (retry via Zapier): {e}')
+            m = current_app.config['SUPPORT_EMAIL'].split('@')
+            send_error_email(f"{m[0]}+error@{m[1]}", e)
+            abort(500)
+        # Capture all other errors
+        db.session.rollback()
+        current_app.logger.info(f'({request.path}) psycopg2 error (retry via Zapier): {e}')
+        m = current_app.config['SUPPORT_EMAIL'].split('@')
+        send_error_email(f"{m[0]}+error@{m[1]}", e)
+        abort(500)
+
 
 def process_customer_data(data):
     # Update the customer information table, if it has been updated since the last time it was stored
