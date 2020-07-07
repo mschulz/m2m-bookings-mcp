@@ -7,7 +7,7 @@ from app.bookings import bookings_api
 from app.decorators import APIkey_required
 from app.email import send_success_email
 from app.models import Booking, import_dict, Customer, import_customer
-
+from sqlalchemy import exc
 
 def process_booking_data(data):
     booking_id = data['id'] if 'id' in data else None
@@ -40,7 +40,7 @@ def process_booking_data(data):
     db.session.add(b)
     try:
         db.session.commit()
-    except sqlalchemy.exc.DataError as e:
+    except exc.DataError as e:
         current_app.logger.info(f'({request.path}) Booking error in model data: {e}')
         m = current_app.config['SUPPORT_EMAIL'].split('@')
         send_error_email(f"{m[0]}+error@{m[1]}", e)
@@ -70,7 +70,7 @@ def process_customer_data(data):
             try:
                 db.session.commit()
                 current_app.logger.info(f'({request.path}) Updated Customer data')
-            except sqlalchemy.exc.DataError as e:
+            except exc.DataError as e:
                 current_app.logger.info(f'({request.path}) Customer error in model data: {e}')
                 m = current_app.config['SUPPORT_EMAIL'].split('@')
                 send_error_email(f"{m[0]}+error@{m[1]}", e)
@@ -98,7 +98,7 @@ def new():
     db.session.add(b)
     try:
         db.session.commit()
-    except sqlalchemy.exc.DataError as e:
+    except exc.DataError as e:
         current_app.logger.info(f'({request.path}) Booking error in model data: {e}')
         m = current_app.config['SUPPORT_EMAIL'].split('@')
         send_error_email(f"{m[0]}+error@{m[1]}", e)
