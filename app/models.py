@@ -42,14 +42,14 @@ class Booking(db.Model):
     ### teams = db.relationship("Team", secondary=booking_team_association, lazy='subquery',
     ###    backref=db.backref('team_bookings', lazy=True))
     _teams_assigned_ids = db.Column(db.String(80), index=False, unique=False)
-    _team_share = db.Column(db.String(80), index=False, unique=False)
+    _team_share = db.Column(db.Integer, index=False, unique=False)
     _team_share_total = db.Column(db.Integer, index=False, unique=False)
     team_has_key = db.Column(db.Boolean, index=False, unique=False)
     team_requested = db.Column(db.String(80), index=False, unique=False)
     created_by =  db.Column(db.String(64), index=False, unique=False)
     _next_booking_date = db.Column(db.DateTime(timezone=True), index=False, unique=False)
     service_category = db.Column(db.String(64), index=False, unique=False)
-    service = db.Column(db.String(64), index=False, unique=False)
+    service = db.Column(db.String(80), index=False, unique=False)
     customer_notes = db.Column(db.Text(), index=False, unique=False)
     staff_notes = db.Column(db.Text(), index=False, unique=False)
     _customer_id =db.Column(db.Integer, index=False, unique=False)
@@ -59,6 +59,7 @@ class Booking(db.Model):
     cancelled_by = db.Column(db.String(64), index=False, unique=False)
     _cancellation_date = db.Column(db.Date, index=False, unique=False, nullable=True)
     cancellation_reason = db.Column(db.Text(), index=False, unique=False)
+    _cancellation_fee = db.Column(db.Integer, index=False, unique=False)
     _price_adjustment = db.Column(db.Integer, index=False, unique=False)
     price_adjustment_comment =  db.Column(db.Text(), index=False, unique=False)
     booking_status = db.Column(db.String(64), index=False, unique=False)
@@ -96,13 +97,13 @@ class Booking(db.Model):
     #Email For Invoices (NDIS and Bank Transfer Only) (261)
     invoice_email = db.Column(db.String(64), index=False, unique=False)
     #Invoice Reference (e.g. NDIS #) (262)
-    invoice_reference = db.Column(db.String(16), index=False, unique=False)
+    invoice_reference = db.Column(db.String(80), index=False, unique=False)
     #Send customer email copy of invoice? (265)
     _invoice_tobe_emailed = db.Column(db.Boolean, index=False, unique=False)
     #If NDIS: Who Pays For Your Service? (263)
-    NDIS_who_pays = db.Column(db.String(16), index=False, unique=False)
+    NDIS_who_pays = db.Column(db.String(64), index=False, unique=False)
     #NDIS Number (301)
-    NDIS_reference = db.Column(db.String(16), index=False, unique=False)
+    NDIS_reference = db.Column(db.String(64), index=False, unique=False)
     
     
     def __repr__(self):
@@ -265,8 +266,7 @@ class Booking(db.Model):
         #  "team_share_amount": "Team Euclid - $67.64"
         if val:
             try:
-                amt = val.split(' - ')[1]
-                self._team_share =  amt.replace('$','').replace('.','')
+                self._team_share =  dollar_string_to_int(val.split(' - ')[1])
             except IndexError as e:
                 current_app.logger.error(f'team share error ({val}): {e}')
     
@@ -279,8 +279,7 @@ class Booking(db.Model):
         # "Team Euclid - $67.64", 
         if val:
             try:
-                amt = val.split(' - ')[1]
-                self._team_share_total = amt.replace('$','').replace('.','')
+                self._team_share_total =  dollar_string_to_int(val.split(' - ')[1])
             except IndexError as e:
                 current_app.logger.error(f'team share total error ({val}): {e}')
                 
@@ -332,6 +331,15 @@ class Booking(db.Model):
                 self._cancellation_date = datetime.strptime(val, "%d/%m/%Y").date()
             except ValueError as e:
                 current_app.logger.error(f'cancellation_date error: "{val}" leads to error: {e}')
+
+    @property
+    def cancellation_fee(self):
+        return self._cancellation_fee
+    
+    @cancellation_fee.setter
+    def cancellation_fee(self, val):
+        if val is not None:
+            self._cancellation_fee= dollar_string_to_int(val)
     
     @property
     def price_adjustment(self):
@@ -404,95 +412,184 @@ def dollar_string_to_int(val):
 
 
 def import_dict(d, b):
-    booking_keys = b.keys()
-    if 'custom_fields' in booking_keys:
+    if 'custom_fields' in b:
         custom_field_keys = b['custom_fields'].keys()
     
-    d.booking_id = b['id'] if 'id' in booking_keys else None
-    d.created_at = b['created_at'] if 'created_at' in booking_keys else None
-    d.updated_at = b['updated_at'] if 'updated_at' in booking_keys else None
-    d.service_time = b['service_time'] if 'service_time' in booking_keys else None
-    d.service_date = b['service_date'] if 'service_date' in booking_keys else None
-    d.final_price = b['final_price'] if 'final_price' in booking_keys else None
-    d.extras_price = b['extras_price'] if 'extras_price' in booking_keys else None
-    d.subtotal = b['subtotal'] if 'subtotal' in booking_keys else None
-    d.tip = b['tip'] if 'tip' in booking_keys else None
-    d.payment_method = b['payment_method'] if 'payment_method' in booking_keys else None
-    d.rating_value = b['rating_value'] if 'rating_value' in booking_keys else None
-    d.rating_text = b['rating_text'] if 'rating_text' in booking_keys else None
-    d.rating_comment = b['rating_comment'] if 'rating_comment' in booking_keys else None
-    d.rating_comment_presence = b['rating_comment_presence'] if 'rating_comment_presence' in booking_keys else None
-    d.frequency = b['frequency'] if 'frequency' in booking_keys else None
-    d.discount_code = b['discount_code'] if 'discount_code' in booking_keys else None
-    d.discount_from_code = b['discount_amount'] if 'discount_amount' in booking_keys else None
-    d.giftcard_amount = b['giftcard_amount'] if 'giftcard_amount' in booking_keys else None
-    d.teams_assigned = b['team_details'] if 'team_details' in booking_keys else None
+    d.booking_id = b['id'] if 'id' in b else None
+    d.created_at = b['created_at'] if 'created_at' in b else None
+    d.updated_at = b['updated_at'] if 'updated_at' in b else None
+    d.service_time = b['service_time'] if 'service_time' in b else None
+    d.service_date = b['service_date'] if 'service_date' in b else None
+    d.final_price = b['final_price'] if 'final_price' in b else None
+    d.extras_price = b['extras_price'] if 'extras_price' in b else None
+    d.subtotal = b['subtotal'] if 'subtotal' in b else None
+    d.tip = b['tip'] if 'tip' in b else None
+    d.payment_method = b['payment_method'] if 'payment_method' in b else None
+    d.rating_value = b['rating_value'] if 'rating_value' in b else None
+    d.rating_text = b['rating_text'] if 'rating_text' in b else None
+    d.rating_comment = b['rating_comment'] if 'rating_comment' in b else None
+    d.rating_comment_presence = b['rating_comment_presence'] if 'rating_comment_presence' in b else None
+    d.frequency = b['frequency'] if 'frequency' in b else None
+    d.discount_code = b['discount_code'] if 'discount_code' in b else None
+    d.discount_from_code = b['discount_amount'] if 'discount_amount' in b else None
+    d.giftcard_amount = b['giftcard_amount'] if 'giftcard_amount' in b else None
+    d.teams_assigned = b['team_details'] if 'team_details' in b else None
     ### Pointed to by assigned team or teams
     ### teams = db.relationship("Team", secondary=booking_team_association, lazy='subquery',
     ###    backref=db.backref('team_bookings', lazy=True))
-    d.teams_assigned_ids = b['team_details'] if 'team_details' in booking_keys else None
-    d.team_share = b['team_share_amount'] if 'team_share_amount' in booking_keys else None
-    d.team_share_total = b['team_share_total'] if 'team_share_total' in booking_keys else None
-    d.team_has_key = b['team_has_key'] if 'team_has_key' in booking_keys else None
-    d.team_requested = b['team_requested'] if 'team_requested' in booking_keys else None
-    d.created_by = b['created_by'] if 'created_by' in booking_keys else None
-    d.next_booking_date = b['next_booking_date'] if 'next_booking_date' in booking_keys else None
-    d.service_category = b['service_category'] if 'service_category' in booking_keys else 'House Clean'
-    d.service = b['service'] if 'service' in booking_keys else None
-    d.customer_notes = b['customer_notes'] if 'customer_notes' in booking_keys else None
-    d.staff_notes = b['staff_notes'] if 'staff_notes' in booking_keys else None
-    d.customer_id = b['customer'] if 'customer' in booking_keys else None
+    d.teams_assigned_ids = b['team_details'] if 'team_details' in b else None
+    d.team_share = b['team_share_amount'] if 'team_share_amount' in b else None
+    d.team_share_total = b['team_share_total'] if 'team_share_total' in b else None
+    d.team_has_key = b['team_has_key'] if 'team_has_key' in b else None
+    d.team_requested = b['team_requested'] if 'team_requested' in b else None
+    d.created_by = b['created_by'] if 'created_by' in b else None
+    d.next_booking_date = b['next_booking_date'] if 'next_booking_date' in b else None
+    d.service_category = b['service_category'] if 'service_category' in b else 'House Clean'
+    d.service = b['service'] if 'service' in b else None
+    d.customer_notes = b['customer_notes'] if 'customer_notes' in b else None
+    d.staff_notes = b['staff_notes'] if 'staff_notes' in b else None
+    d.customer_id = b['customer'] if 'customer' in b else None
     ### Points to the unique customer for this booking
     ### customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'))
-    d.cancellation_type = b['cancellation_type'] if 'cancellation_type' in booking_keys else None
-    d.cancelled_by = b['cancelled_by'] if 'cancelled_by' in booking_keys else None
-    d.cancellation_date = b['cancellation_date'] if 'cancellation_date' in booking_keys else None
-    d.cancellation_reason = b['cancellation_reason'] if 'cancellation_reason' in booking_keys else None
-    d.price_adjustment = b['price_adjustment'] if 'price_adjustment' in booking_keys else None
-    d.price_adjustment_comment = b['price_adjustment_comment'] if 'price_adjustment_comment' in booking_keys else None
-    d.booking_status = b['booking_status'] if 'booking_status' in booking_keys else None
-    d.is_first_recurring = b['is_first_recurring'] if 'is_first_recurring' in booking_keys else None
-    d.is_new_customer = b['is_new_customer'] if 'is_new_customer' in booking_keys else None
-    d.extras = b['extras'] if 'extras' in booking_keys else None
-    d.source = b['source'] if 'source' in booking_keys else None
-    d.state = b['state'] if 'state' in booking_keys else None
-    d.sms_notifications_enabled = b['sms_notifications_enabled'] if 'sms_notifications_enabled' in booking_keys else None
-    d.pricing_parameters = b['pricing_parameters'] if 'pricing_parameters' in booking_keys else None
-    d.pricing_parameters_price = b['pricing_parameters_price'] if 'pricing_parameters_price' in booking_keys else None
+    d.cancellation_type = b['cancellation_type'] if 'cancellation_type' in b else None
+    d.cancelled_by = b['cancelled_by'] if 'cancelled_by' in b else None
+    d.cancellation_date = b['cancellation_date'] if 'cancellation_date' in b else None
+    d.cancellation_reason = b['cancellation_reason'] if 'cancellation_reason' in b else None
+    d.cancellation_fee = b['cancellation_fee'] if 'cancellation_fee' in b else None
+    d.price_adjustment = b['price_adjustment'] if 'price_adjustment' in b else None
+    d.price_adjustment_comment = b['price_adjustment_comment'] if 'price_adjustment_comment' in b else None
+    d.booking_status = b['booking_status'] if 'booking_status' in b else None
+    d.is_first_recurring = b['is_first_recurring'] if 'is_first_recurring' in b else None
+    d.is_new_customer = b['is_new_customer'] if 'is_new_customer' in b else None
+    d.extras = b['extras'] if 'extras' in b else None
+    d.source = b['source'] if 'source' in b else None
+    d.state = b['state'] if 'state' in b else None
+    d.sms_notifications_enabled = b['sms_notifications_enabled'] if 'sms_notifications_enabled' in b else None
+    d.pricing_parameters = b['pricing_parameters'] if 'pricing_parameters' in b else None
+    d.pricing_parameters_price = b['pricing_parameters_price'] if 'pricing_parameters_price' in b else None
 
     # Customer data
-    d.address = b['address'] if 'address' in booking_keys else None
-    d.last_name = b['last_name'] if 'last_name' in booking_keys else None
-    d.city = b['city'] if 'city' in booking_keys else None
-    d.first_name = b['first_name'] if 'first_name' in booking_keys else None
-    d.company_name = b['company_name'] if 'company_name' in booking_keys else None
-    d.email = b['email'] if 'email' in booking_keys else None
-    d.name = b['name'] if 'name' in booking_keys else None
-    d.phone = b['phone'] if 'phone' in booking_keys else None
-    d.postcode = b['zip'] if 'zip' in booking_keys else None
-    d.location = b['location'] if 'location' in booking_keys else None
+    d.address = b['address'] if 'address' in b else None
+    d.last_name = b['last_name'] if 'last_name' in b else None
+    d.city = b['city'] if 'city' in b else None
+    d.first_name = b['first_name'] if 'first_name' in b else None
+    d.company_name = b['company_name'] if 'company_name' in b else None
+    d.email = b['email'] if 'email' in b else None
+    d.name = b['name'] if 'name' in b else None
+    d.phone = b['phone'] if 'phone' in b else None
+    d.postcode = b['zip'] if 'zip' in b else None
+    d.location = b['location'] if 'location' in b else None
     
     # Custom field data
     
-    if 'custom_fields' in booking_keys:
+    if 'custom_fields' in b:
+        b_cf = b["custom_fields"]
         ## How did you find Maid2Match
-        d.lead_source = b["custom_fields"]['drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24'] if 'drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24' in custom_field_keys else None
+        d.lead_source = b_cf['drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24'] if 'drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24' in b_cf else None
         # Which team member booked this clean in?
-        d.booked_by = b["custom_fields"]['single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9'] if 'single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9' in custom_field_keys else None
+        d.booked_by = b_cf['single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9'] if 'single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9' in b_cf else None
         #Is your date & time flexible? (266)
-        d.flexible_date_time = b["custom_fields"]['drop_down:f5c6492a-82cc-41cf-8e0b-5390bea7d71b'] if 'drop_down:f5c6492a-82cc-41cf-8e0b-5390bea7d71b' in custom_field_keys else None
+        d.flexible_date_time = b_cf['drop_down:f5c6492a-82cc-41cf-8e0b-5390bea7d71b'] if 'drop_down:f5c6492a-82cc-41cf-8e0b-5390bea7d71b' in b_cf else None
         #Name for Invoice (267)
-        d.invoice_name = b["custom_fields"]['single_line:b382b477-5ddd-498e-ba36-74d55c7f0146'] if 'single_line:b382b477-5ddd-498e-ba36-74d55c7f0146' in custom_field_keys else None
+        d.invoice_name = b_cf['single_line:b382b477-5ddd-498e-ba36-74d55c7f0146'] if 'single_line:b382b477-5ddd-498e-ba36-74d55c7f0146' in b_cf else None
         #Email For Invoices (NDIS and Bank Transfer Only) (261)
-        d.invoice_email = b["custom_fields"]['single_line:c131935b-e8cf-4ef9-b6ff-6068a674c49d'] if 'single_line:c131935b-e8cf-4ef9-b6ff-6068a674c49d' in custom_field_keys else None
+        d.invoice_email = b_cf['single_line:c131935b-e8cf-4ef9-b6ff-6068a674c49d'] if 'single_line:c131935b-e8cf-4ef9-b6ff-6068a674c49d' in b_cf else None
         #Invoice Reference (e.g. NDIS #) (262)
-        d.invoice_reference =b["custom_fields"]['single_line:73238370-80d8-4cbe-8577-74e3ade200a0'] if 'single_line:73238370-80d8-4cbe-8577-74e3ade200a0' in custom_field_keys else None
+        d.invoice_reference =b_cf['single_line:73238370-80d8-4cbe-8577-74e3ade200a0'] if 'single_line:73238370-80d8-4cbe-8577-74e3ade200a0' in b_cf else None
         #Send customer email copy of invoice? (265)
-        d.invoice_tobe_emailed = b["custom_fields"]['drop_down:a255d2c7-fb9a-4fa8-beb6-a91bc1ef6fed'] if 'drop_down:a255d2c7-fb9a-4fa8-beb6-a91bc1ef6fed' in custom_field_keys else None
+        d.invoice_tobe_emailed = b_cf['drop_down:a255d2c7-fb9a-4fa8-beb6-a91bc1ef6fed'] if 'drop_down:a255d2c7-fb9a-4fa8-beb6-a91bc1ef6fed' in b_cf else None
         #If NDIS: Who Pays For Your Service? (263)
-        d.NDIS_who_pays =b["custom_fields"]['drop_down:5842d47d-52c9-4cff-ba42-f5b90ada72e5'] if 'drop_down:5842d47d-52c9-4cff-ba42-f5b90ada72e5' in custom_field_keys else None
+        d.NDIS_who_pays =b_cf['drop_down:5842d47d-52c9-4cff-ba42-f5b90ada72e5'] if 'drop_down:5842d47d-52c9-4cff-ba42-f5b90ada72e5' in b_cf else None
         #NDIS Number (301)
-        d.NDIS_reference = b["custom_fields"]['single_line:2b738d28-6c2c-4850-ae47-2c4902da9d8d'] if 'single_line:2b738d28-6c2c-4850-ae47-2c4902da9d8d' in custom_field_keys else None
+        d.NDIS_reference = b_cf['single_line:2b738d28-6c2c-4850-ae47-2c4902da9d8d'] if 'single_line:2b738d28-6c2c-4850-ae47-2c4902da9d8d' in b_cf else None
 
     return d
+
+
+
+class Customer(db.Model):
+    '''
+        Booking class holds all the data for the current booking. 
+        Data could come from the database or from an incoming zap.
+    '''
+    __tablename__ = 'customer'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    customer_id = db.Column(db.Integer, index=True, unique=False)
+    _created_at = db.Column(db.DateTime(timezone=True), index=False, unique=False)
+    _updated_at = db.Column(db.DateTime(timezone=True), index=False, unique=False)
+
+    # Customer data
+    title = db.Column(db.String(16), index=False, unique=False)
+    first_name = db.Column(db.String(64), index=False, unique=False)
+    last_name = db.Column(db.String(64), index=False, unique=False)
+    name = db.Column(db.String(128), index=False, unique=False)
+    email = db.Column(db.String(64), index=False, unique=False)
+    phone = db.Column(db.String(64), index=False, unique=False)
+
+    address = db.Column(db.String(64), index=False, unique=False)
+    city = db.Column(db.String(64), index=False, unique=False)
+    state = db.Column(db.String(32), index=False, unique=False)
+    company_name = db.Column(db.String(64), index=False, unique=False)
+    postcode = db.Column(db.String(16), index=False, unique=False)
+    location = db.Column(db.String(64), index=False, unique=False)
+
+    tags = db.Column(db.String(64), index=False, unique=False)
+
+    notes = db.Column(db.Text(), index=False, unique=False)
+    
+    
+    def __repr__(self):
+        return f'<Customer {self.id}>'
+        
+    def to_dict(self):
+        return {col.name: getattr(self, col.name) for col in self.__table__.columns}
+    
+    @property
+    def created_at(self):
+            return self._created_at
+            
+    @created_at.setter
+    def created_at(self, val):
+        # "2018-10-24T13:10:19+10:00"
+        if val is not None:
+            try:
+                self._created_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+            except ValueError as e:
+                current_app.logger.error(f'created_at error ({val}): {e}')
+    
+    @property
+    def updated_at(self):
+        return self._updated_at
+    
+    @updated_at.setter
+    def updated_at(self, val):
+        # "2018-10-25T11:06:33+10:00"
+        if val is not None:
+            try:
+                self._updated_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+            except ValueError as e:
+                current_app.logger.error(f'updated_at error ({val}): {e}')
+
+def import_customer(c, d):
+    c.customer_id = d['id'] if 'id' in d else None
+    c.created_at = d['created_at'] if 'created_at' in d else None
+    c.updated_at = d['updated_at'] if 'updated_at' in d else None
+    c.title = d['title'] if 'title' in d else None
+    c.first_name = d['first_name'] if 'first_name' in d else None
+    c.last_name = d['last_name'] if 'last_name' in d else None
+    c.name = d['name'] if 'name' in d else None
+    c.email = d['email'] if 'email' in d else None
+    c.phone = d['phone'] if 'phone' in d else None
+    c.address = d['address'] if 'address' in d else None
+    c.city = d['city'] if 'city' in d else None
+    c.state = d['state'] if 'state' in d else None
+    c.company_name = d['company_name'] if 'company_name' in d else None
+    c.postcode = d['zip'] if 'zip' in d else None
+    c.location = d['location'] if 'location' in d else None
+    c.notes = d['notes'] if 'notes' in d else None
+    c.tags = d['tags'] if 'tags' in d else None
+    c.profile_url = d['profile_url'] if 'profile_url' in d else None
+    
     

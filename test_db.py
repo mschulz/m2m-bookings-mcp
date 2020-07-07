@@ -20,6 +20,14 @@ class TestQuery(unittest.TestCase):
         with self.app.app_context():
             db.session.remove()
             db.drop_all()
+
+    def get_result(self, data):
+        with self.app.app_context():
+            b = Booking()
+            import_dict(b, data)
+            db.session.add(b)
+            db.session.commit()
+            return db.session.query(Booking).filter(Booking.booking_id == data['id']).first()
         
     def test_booking_id(self):
         data = {
@@ -40,15 +48,9 @@ class TestQuery(unittest.TestCase):
             "id": "14450",
             "created_at": "2018-10-24T13:10:19+10:00"
         }
-        with self.app.app_context():
-            b = Booking()
-            import_dict(b, data)
-            db.session.add(b)
-            db.session.commit()
-        
-            expected = datetime.strptime("2018-10-24 13:10:19", "%Y-%m-%d %H:%M:%S")
-            result = db.session.query(Booking).filter(Booking.booking_id == data['id']).first()
-            assert result.created_at == expected
+        expected = datetime.strptime("2018-10-24 13:10:19", "%Y-%m-%d %H:%M:%S")
+        result = self.get_result(data)
+        assert result.created_at == expected
     
     def test_updated_at(self):
         data = {
@@ -310,15 +312,9 @@ class TestQuery(unittest.TestCase):
             "id": "14450",
             "team_share_amount": "Team Euclid - $67.64"
         }
-        with self.app.app_context():
-            b = Booking()
-            import_dict(b, data)
-            db.session.add(b)
-            db.session.commit()
-        
-            expected = data['team_share_amount'].replace('$','').replace('.','')
-            result = db.session.query(Booking).filter(Booking.booking_id == data['id']).first()
-            assert result.team_share == expected
+        expected = dollar_string_to_int(data['team_share_amount'].split(' - ')[1])
+        result = self.get_result(data)
+        assert result.team_share == expected
             
     def test_teams_share_total(self):
         data = {
@@ -331,7 +327,7 @@ class TestQuery(unittest.TestCase):
             db.session.add(b)
             db.session.commit()
         
-            expected = data['team_share_total'].replace('$','').replace('.','')
+            expected = dollar_string_to_int(data['team_share_total'].split(' - ')[1])
             result = db.session.query(Booking).filter(Booking.booking_id == data['id']).first()
             assert result.team_share_total == expected
             
@@ -514,6 +510,15 @@ class TestQuery(unittest.TestCase):
             expected = data['cancellation_reason']
             result = db.session.query(Booking).filter(Booking.booking_id == data['id']).first()
             assert result.cancellation_reason == expected
+            
+    def test_cancellation_fee(self):
+        data = {
+            "id": "14450",
+            "cancellation_fee": "$10.00"
+        }
+        expected = dollar_string_to_int(data['cancellation_fee'])
+        result = self.get_result(data)
+        assert result.cancellation_fee == expected
     
     def test_price_adjustment(self):
         data = {

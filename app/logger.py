@@ -20,9 +20,6 @@ def setup_logging(app):
 
     '''
     if app.config['LOG_TO_STDOUT'] or app.config['TESTING']:
-        
-        print('loogging to stdout')
-        
         stream_handler = logging.StreamHandler()
         stream_handler.setLevel(logging.INFO)
         app.logger.addHandler(stream_handler)
