@@ -66,17 +66,17 @@ def process_customer_data(data):
         new_update_time = c.updated_at
         
         # Check if the data has been updated since the last time it was stored in the table
-        if stored_update_time != new_update_time:
-            try:
-                db.session.commit()
-                current_app.logger.info(f'({request.path}) Updated Customer data')
-            except exc.DataError as e:
-                current_app.logger.info(f'({request.path}) Customer error in model data: {e}')
-                m = current_app.config['SUPPORT_EMAIL'].split('@')
-                send_error_email(f"{m[0]}+error@{m[1]}", e)
-                abort(422)
-        else:
+        if stored_update_time == new_update_time:
             current_app.logger.info(f'No change to customer data')
+            return
+    try:
+        db.session.commit()
+        current_app.logger.info(f'({request.path}) Updated Customer data')
+    except exc.DataError as e:
+        current_app.logger.info(f'({request.path}) Customer error in model data: {e}')
+        m = current_app.config['SUPPORT_EMAIL'].split('@')
+        send_error_email(f"{m[0]}+error@{m[1]}", e)
+        abort(422)
 
 
 @bookings_api.route('/booking/new', methods=['POST'])
