@@ -26,7 +26,7 @@ def process_booking_data(data):
     b = db.session.query(Booking).filter(Booking.booking_id == booking_id).first()
     
     if b is None:
-        # Haven't seen the original booking - add it now
+        # Haven't seen the original booking - ADD it now
         current_app.logger.error("haven't seen this booking - adding to database")
     
         # Load the database table
@@ -34,13 +34,13 @@ def process_booking_data(data):
         import_dict(b, data)
         db.session.add(b)
     else:
+        # Have seen the original booking - UPDATE it now
+        current_app.logger.error("haven't seen this booking - adding to database")
     
         import_dict(b, data)
     
     current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
     
-    # Load the database table
-    db.session.add(b)
     try:
         db.session.commit()
     except exc.DataError as e:
@@ -52,7 +52,7 @@ def process_booking_data(data):
     except exc.IntegrityError as e:
         db.session.rollback()
         if isinstance(e.orig, UniqueViolation):
-            current_app.logger.info(f'({request.path}) Possible timing error (retry via Zapier): {e}')
+            current_app.logger.info(f'({request.path}) Possible timing error (retry via Zapier): {e.orig}')
             m = current_app.config['SUPPORT_EMAIL'].split('@')
             send_error_email(f"{m[0]}+error@{m[1]}", e)
             abort(500)
