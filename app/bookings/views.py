@@ -9,6 +9,7 @@ from app.email import send_success_email
 from app.models import Booking, import_dict, Customer, import_customer
 from sqlalchemy import exc
 from psycopg2.errors import UniqueViolation
+from app.email import send_error_email
 
 
 def process_booking_data(data):
