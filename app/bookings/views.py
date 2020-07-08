@@ -27,7 +27,7 @@ def process_booking_data(data):
     
     if b is None:
         # Haven't seen the original booking - ADD it now
-        current_app.logger.error("haven't seen this booking - adding to database")
+        current_app.logger.info("haven't seen this booking - ADDING to database")
     
         # Load the database table
         b = Booking()
@@ -35,7 +35,7 @@ def process_booking_data(data):
         db.session.add(b)
     else:
         # Have seen the original booking - UPDATE it now
-        current_app.logger.error("haven't seen this booking - adding to database")
+        current_app.logger.info("have seen this booking - UPDATING database")
     
         import_dict(b, data)
     
