@@ -90,6 +90,7 @@ def process_customer_data(data):
         db.session.commit()
         current_app.logger.info(f'({request.path}) Updated Customer data')
     except exc.DataError as e:
+        db.session.rollback()
         current_app.logger.info(f'({request.path}) Customer error in model data: {e}')
         m = current_app.config['SUPPORT_EMAIL'].split('@')
         send_error_email(f"{m[0]}+error@{m[1]}", e)

@@ -42,7 +42,7 @@ class Booking(db.Model):
     ### teams = db.relationship("Team", secondary=booking_team_association, lazy='subquery',
     ###    backref=db.backref('team_bookings', lazy=True))
     _teams_assigned_ids = db.Column(db.String(80), index=False, unique=False)
-    _team_share = db.Column(db.Integer, index=False, unique=False)
+    _team_share = db.Column(db.Integer , index=False, unique=False)
     _team_share_total = db.Column(db.Integer, index=False, unique=False)
     team_has_key = db.Column(db.Boolean, index=False, unique=False)
     team_requested = db.Column(db.String(80), index=False, unique=False)
