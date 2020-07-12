@@ -8,6 +8,7 @@ from app import db
 #from sqlalchemy.dialects.postgresql import JSON
 
 from flask import request, current_app
+from app.email import send_error_email
 
 class Booking(db.Model):
     '''
@@ -42,7 +43,7 @@ class Booking(db.Model):
     ### teams = db.relationship("Team", secondary=booking_team_association, lazy='subquery',
     ###    backref=db.backref('team_bookings', lazy=True))
     _teams_assigned_ids = db.Column(db.String(80), index=False, unique=False)
-    _team_share = db.Column(db.Integer , index=False, unique=False)
+    _team_share = db.Column(db.Integer, index=False, unique=False)
     _team_share_total = db.Column(db.Integer, index=False, unique=False)
     team_has_key = db.Column(db.Boolean, index=False, unique=False)
     team_requested = db.Column(db.String(80), index=False, unique=False)
@@ -589,7 +590,16 @@ def import_customer(c, d):
     c.postcode = d['zip'] if 'zip' in d else None
     c.location = d['location'] if 'location' in d else None
     c.notes = d['notes'] if 'notes' in d else None
-    c.tags = d['tags'] if 'tags' in d else None
+    # Have struck and example of the tags field being filled with the full comments field (?????)
+    # I will truncated this to 64 characters, log an error message and send an email to the developer
+    #   warning of what I have done.
+    if len(d['tags']) > 64:
+        msg = f'tags data is way too long, exceeds 64 characters. Trnucating field.'
+        current_app.logger.error(msg)
+        m = current_app.config['SUPPORT_EMAIL'].split('@')
+        send_error_email(f"{m[0]}+error@{m[1]}", msg)
+    c.tags = d['tags'][:64] if 'tags' in d else None
+
     c.profile_url = d['profile_url'] if 'profile_url' in d else None
     
     

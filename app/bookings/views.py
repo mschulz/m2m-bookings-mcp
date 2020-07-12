@@ -39,7 +39,7 @@ def process_booking_data(data):
     
         import_dict(b, data)
     
-    current_app.logger.info(f'Loading ... Name: "{b.full_name}" team: "{b.team_assigned}" booking_id: d.booking_id')
+    current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: d.booking_id')
     
     try:
         db.session.commit()
@@ -53,36 +53,48 @@ def process_booking_data(data):
         abort(422)
     except exc.IntegrityError as e:
         db.session.rollback()
-        if isinstance(e.orig, UniqueViolation):
-            #this often occurs when a team is assigned.  This generates two messages:
-            #  One is the team assigment is changed; and
-            #  one is the booking updated
-            # if there is no prior booking, then both are 'new' rows in the table with the same 
-            # booking_id.
-            # We could try to fix this in the following way:
-            #  the second one to attempt creating the new record ends up here iwth this exception.
-            #  we have rolled back the attempt so noe we could try just ADDing the data
-            #   if that fails, then abort the attempt.
+        
+        # Check if this record is the same as the existing one.  `If so, ignore it
+        updated_at = b.updated_at.replace(tzinfo=None)
 
-            import_dict(b, data)
+        bb = db.session.query(Booking).filter(Booking.booking_id == b.booking_id).first()
+        orig_updated_at = bb.updated_at
     
-            try:
-                db.session.commit()
-                current_app.logger.info('Second attempt to load data loaded into database')
-                return
-            except exc.IntegrityError as e:
-                db.session.rollback()
+        if orig_updated_at == updated_at:
+            current_app.logger.info(f'Data is a duplicated of database record.  This copy ignored.')
+        else:
+            # this new data is NOT the same as that in the database
+            if isinstance(e.orig, UniqueViolation):
+                #this often occurs when a team is assigned.  This generates two messages:
+                #  One is the team assigment is changed; and
+                #  one is the booking updated
+                # if there is no prior booking, then both are 'new' rows in the table with the same 
+                # booking_id.
+                # We could try to fix this in the following way:
+                #  the second one to attempt creating the new record ends up here iwth this exception.
+                #  we have rolled back the attempt so noe we could try just ADDing the data
+                #   if that fails, then abort the attempt.
+
+                import_dict(b, data)
+    
+                try:
+                    db.session.commit()
+                    current_app.logger.info('Second attempt to load data loaded into database')
+                    return
+                except exc.IntegrityError as e:
+                    db.session.rollback()
             
-            current_app.logger.info(f'({request.path}) Possible timing error (retry via Zapier): {e.orig}')
+                current_app.logger.info(f'({request.path}) Possible timing error (retry via Zapier): {e.orig}')
+                m = current_app.config['SUPPORT_EMAIL'].split('@')
+                send_error_email(f"{m[0]}+error@{m[1]}", e)
+                abort(500)
+            # Capture all other errors
+            db.session.rollback()
+            current_app.logger.info(f'({request.path}) psycopg2 error (retry via Zapier): {e}')
             m = current_app.config['SUPPORT_EMAIL'].split('@')
             send_error_email(f"{m[0]}+error@{m[1]}", e)
             abort(500)
-        # Capture all other errors
-        db.session.rollback()
-        current_app.logger.info(f'({request.path}) psycopg2 error (retry via Zapier): {e}')
-        m = current_app.config['SUPPORT_EMAIL'].split('@')
-        send_error_email(f"{m[0]}+error@{m[1]}", e)
-        abort(500)
+    return
 
 
 def process_customer_data(data):
@@ -118,7 +130,7 @@ def process_customer_data(data):
         abort(422)
 
 
-@bookings_api.route('/booking/new', methods=['POST'])
+@bookings_api.route('/', methods=['GET'])
 @APIkey_required
 def hello():
     return '<h1>M2M Booking System</h1>'
@@ -130,7 +142,8 @@ def new():
     ''' 
         return 'Hello World!' to check link.
     '''
-    print('Processing a new booking ...')
+    if not current_app.testing:
+        print('Processing a new booking ...')
     
     data = json.loads(request.data)
     
@@ -144,10 +157,43 @@ def new():
     try:
         db.session.commit()
     except exc.DataError as e:
-        current_app.logger.info(f'({request.path}) Booking error in model data: {e}')
+        current_app.logger.error(f'({request.path}) Booking error in model data: {e}')
         m = current_app.config['SUPPORT_EMAIL'].split('@')
         send_error_email(f"{m[0]}+error@{m[1]}", e)
         abort(422)
+    except exc.IntegrityError as e:
+        db.session.rollback()
+        
+        # Check if this record is the same as the existing one.  `If so, ignore it
+        updated_at = b.updated_at.replace(tzinfo=None)
+
+        bb = db.session.query(Booking).filter(Booking.booking_id == b.booking_id).first()
+        orig_updated_at = bb.updated_at
+    
+        if orig_updated_at == updated_at:
+            current_app.logger.info(f'Data is a duplicated of database record.  This copy ignored.')
+        else:
+            # this new data is NOT the same as that in the database
+            if isinstance(e.orig, UniqueViolation):
+                # let's try just updating the database??
+           
+                import_dict(b, data)
+
+                try:
+                    db.session.commit()
+                    current_app.logger.error('Second attempt to load data loaded into database')
+                except exc.IntegrityError as e:
+                    db.session.rollback()
+                    current_app.logger.error(f'({request.path}) Possible timing error (retry via Zapier): {e.orig}')
+                    m = current_app.config['SUPPORT_EMAIL'].split('@')
+                    send_error_email(f"{m[0]}+error@{m[1]}", e)
+                    abort(500)
+            else:
+                db.session.rollback()
+                current_app.logger.error(f'({request.path}) Possible timing error (retry via Zapier): {e.orig}')
+                m = current_app.config['SUPPORT_EMAIL'].split('@')
+                send_error_email(f"{m[0]}+error@{m[1]}", e)
+                abort(500)
     
     # Update the customer information table, if it has been updated since the last time it was stored
     if 'customer' in data:
@@ -162,7 +208,8 @@ def completed():
     '''
         return 'Hello World!' to check link.
     '''
-    print('Processing a completed booking')
+    if not current_app.testing:
+        print('Processing a completed booking')
     
     data = json.loads(request.data)
     
@@ -182,7 +229,8 @@ def cancellation():
     '''
         return 'Hello World!' to check link.
     '''
-    print('Processing a cancelled booking')
+    if not current_app.testing:
+        print('Processing a cancelled booking')
     
     data = json.loads(request.data)
     
@@ -202,6 +250,9 @@ def updated():
     '''
         return 'Hello World!' to check link.
     '''
+    if not current_app.testing:
+        print('Processing an updated booking')
+
     data = json.loads(request.data)
     
     # Extract the booking data and update appropriate row in booking table
@@ -220,7 +271,8 @@ def team_changed():
     '''
         return 'Hello World!' to check link.
     '''
-    print('Processing an team assignment changed')
+    if not current_app.testing:
+        print('Processing an team assignment changed')
     
     data = json.loads(request.data)
     

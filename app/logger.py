@@ -34,6 +34,9 @@ def setup_logging(app):
         #file_handler.setLevel(logging.INFO)
         app.logger.addHandler(file_handler)
 
-    app.logger.setLevel(logging.INFO)
     if not app.config['TESTING']:
         app.logger.info('Logging to file initialized')
+        app.logger.setLevel(logging.INFO)
+    else:
+        app.logger.setLevel(logging.ERROR)
+        

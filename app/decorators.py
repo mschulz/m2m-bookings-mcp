@@ -20,7 +20,7 @@ def APIkey_required(f):
             APIkey = ''
             
         if APIkey != current_app.config['API_KEY']:
-            print(f"Received API_KEY = {APIkey} Actual key = {current_app.config['API_KEY']}")
+            #print(f"Received API_KEY = {APIkey} Actual key = {current_app.config['API_KEY']}")
             abort(401)
         return f(*args, **kwargs)
  
