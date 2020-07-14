@@ -279,9 +279,11 @@ def team_changed():
     # Extract the booking data and update appropriate row in booking table
     process_booking_data(data)
     
+    ##  I think we should IGNORE this as it as triggered by a team assignment change only (that's what
+    ##  one would assume by the name of the change)
     # Update the customer information table, if it has been updated since the last time it was stored
-    if 'customer' in data:
-        process_customer_data(data['customer'])
+    #if 'customer' in data:
+    #    process_customer_data(data['customer'])
     
     return 'OK'
 
