@@ -39,7 +39,7 @@ def process_booking_data(data):
     
         import_dict(b, data)
     
-    current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: d.booking_id')
+    current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {d.booking_id}')
     
     try:
         db.session.commit()
@@ -146,6 +146,7 @@ def new():
         print('Processing a new booking ...')
     
     data = json.loads(request.data)
+    data["booking_status"] = 'NOT_COMPLETE'
     
     b = Booking()
     import_dict(b, data)
@@ -212,6 +213,7 @@ def completed():
         print('Processing a completed booking')
     
     data = json.loads(request.data)
+    data["booking_status"] = 'COMPLETED'
     
     # Extract the booking data and update appropriate row in booking table
     process_booking_data(data)
@@ -233,6 +235,7 @@ def cancellation():
         print('Processing a cancelled booking')
     
     data = json.loads(request.data)
+    data["booking_status"] = 'CANCELLED'
     
     # Extract the booking data and update appropriate row in booking table
     process_booking_data(data)
