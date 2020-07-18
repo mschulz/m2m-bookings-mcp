@@ -39,7 +39,7 @@ def process_booking_data(data):
     
         import_dict(b, data)
     
-    current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {d.booking_id}')
+    current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {b.booking_id}')
     
     try:
         db.session.commit()
