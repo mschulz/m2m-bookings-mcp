@@ -73,7 +73,7 @@ class Booking(db.Model):
     _pricing_parameters_price = db.Column(db.Integer, index=False, unique=False)
 
     # Customer data
-    address = db.Column(db.String(64), index=False, unique=False)
+    address = db.Column(db.String(128), index=False, unique=False)
     last_name = db.Column(db.String(64), index=False, unique=False)
     city = db.Column(db.String(64), index=False, unique=False)
     state = db.Column(db.String(32), index=False, unique=False)
@@ -466,7 +466,7 @@ def import_dict(d, b):
     d.source = b['source'] if 'source' in b else None
     d.state = b['state'] if 'state' in b else None
     d.sms_notifications_enabled = b['sms_notifications_enabled'] if 'sms_notifications_enabled' in b else None
-    d.pricing_parameters = b['pricing_parameters'] if 'pricing_parameters' in b else None
+    d.pricing_parameters = b['pricing_parameters'].replace('<br/>', ', ') if 'pricing_parameters' in b else None
     d.pricing_parameters_price = b['pricing_parameters_price'] if 'pricing_parameters_price' in b else None
 
     # Customer data
@@ -486,7 +486,7 @@ def import_dict(d, b):
     if 'custom_fields' in b:
         b_cf = b["custom_fields"]
         ## How did you find Maid2Match
-        d.lead_source = b_cf['drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24'] if 'drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24' in b_cf else None
+        d.lead_source = b_cf['drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24'][:64] if 'drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24' in b_cf else None
         # Which team member booked this clean in?
         d.booked_by = b_cf['single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9'] if 'single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9' in b_cf else None
         #Is your date & time flexible? (266)
@@ -529,7 +529,7 @@ class Customer(db.Model):
     email = db.Column(db.String(64), index=False, unique=False)
     phone = db.Column(db.String(64), index=False, unique=False)
 
-    address = db.Column(db.String(64), index=False, unique=False)
+    address = db.Column(db.String(128), index=False, unique=False)
     city = db.Column(db.String(64), index=False, unique=False)
     state = db.Column(db.String(32), index=False, unique=False)
     company_name = db.Column(db.String(64), index=False, unique=False)
