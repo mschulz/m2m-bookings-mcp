@@ -1,5 +1,5 @@
 from threading import Thread
-from flask import current_app, render_template
+from flask import current_app, render_template, request
 from flask_mail import Message
 from app import mail
 import html2text
@@ -25,7 +25,19 @@ def send_error_email(toaddr, error_msg):
     body = render_template('errors/error.html', app_name=current_app.config['APP_NAME'], error_msg=error_msg)
 
     send_email(
-        subject = f'{current_app.config["APP_NAME"]}: Error has occurred',
+        subject = f'{current_app.config["APP_NAME"]}: Error has occurred in {request.path}',
+        sender=(current_app.config['FROM_NAME'], current_app.config["FROM_ADDRESS"]),
+        recipients = toaddr if isinstance(toaddr, list) else [toaddr],
+        html_body = body,
+        text_body = html2text.html2text(body)
+        )
+     
+def send_warning_email(toaddr, error_msg):
+    ''' Send developer email when a warning has occurred. '''
+    body = render_template('warning.html', app_name=current_app.config['APP_NAME'], error_msg=error_msg)
+
+    send_email(
+        subject = f'{current_app.config["APP_NAME"]}: Warning has occurred in {request.path}',
         sender=(current_app.config['FROM_NAME'], current_app.config["FROM_ADDRESS"]),
         recipients = toaddr if isinstance(toaddr, list) else [toaddr],
         html_body = body,

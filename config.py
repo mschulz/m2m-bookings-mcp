@@ -13,9 +13,10 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     
     # Company and app data - change with every app
-    COMPANY_NAME = 'Maid2Match'
-    COMPANY_URL = 'maid2match.com.au'
-    APP_NAME = 'm2m-booking-system'
+    COMPANY_NAME = os.environ.get('Maid2Match')
+    COMPANY_URL = os.environ.get('maid2match.com.au')
+    APP_NAME = os.environ.get('m2m-booking-system')
+    PHONE = os.environ.get('PHONE')
     
     # Base level testing/debugging
     DEBUG = False
@@ -54,7 +55,16 @@ class Config(object):
     # Custom fields
     CUSTOM_SOURCE = "drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24"
     CUSTOM_BOOKED_BY = "single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9"
-    CUSTOM_EMAIL_INVOICE = "drop_down:a255d2c7-fb9a-4fa8-beb6-a91bc1ef6fed"   
+    CUSTOM_EMAIL_INVOICE = "drop_down:a255d2c7-fb9a-4fa8-beb6-a91bc1ef6fed"
+    
+    # SendInBlue details
+    SENDINBLUE_API_KEY = os.environ.get('SENDINBLUE_API_KEY')
+    SENDINBLUE_URL = os.environ.get('SENDINBLUE_URL')
+    SENDINBLUE_FROM_NAME = os.environ.get('SENDINBLUE_FROM_NAME')
+    SENDINBLUE_FROM_EMAIL = os.environ.get('SENDINBLUE_FROM_EMAIL')
+    TEMPLATE_ID_CONFIRMATION = int(os.environ.get('TEMPLATE_ID_CONFIRMATION'))
+    TEMPLATE_ID_FIRST_HEADSUP = int(os.environ.get('TEMPLATE_ID_FIRST_HEADSUP'))
+    TEMPLATE_ID_SECOND_HEADSUP = os.environ.get('TEMPLATE_ID_SECOND_HEADSUP')
 
 class ProductionConfig(Config):
     DEBUG = False  

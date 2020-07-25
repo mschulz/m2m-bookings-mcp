@@ -6,9 +6,10 @@ from datetime import datetime
 from app import db
 #from sqlalchemy import and_
 #from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from flask import request, current_app
-from app.email import send_error_email
+from app.email import send_error_email, send_warning_email
 
 class Booking(db.Model):
     '''
@@ -113,7 +114,7 @@ class Booking(db.Model):
     def to_dict(self):
         return {col.name: getattr(self, col.name) for col in self.__table__.columns}
     
-    @property
+    @hybrid_property
     def created_at(self):
             return self._created_at
             
@@ -126,7 +127,7 @@ class Booking(db.Model):
             except ValueError as e:
                 current_app.logger.error(f'created_at error ({val}): {e}')
     
-    @property
+    @hybrid_property
     def updated_at(self):
         return self._updated_at
     
@@ -139,7 +140,7 @@ class Booking(db.Model):
             except ValueError as e:
                 current_app.logger.error(f'updated_at error ({val}): {e}')
 
-    @property
+    @hybrid_property
     def service_date(self):
         return self._service_date
     
@@ -158,7 +159,7 @@ class Booking(db.Model):
             except ValueError as e:
                 current_app.logger.error(f'service_date error ({val}): {e}')
     
-    @property
+    @hybrid_property
     def final_price(self):
         return self._final_price
     
@@ -167,7 +168,7 @@ class Booking(db.Model):
         if val is not None:
             self._final_price = dollar_string_to_int(val)
 
-    @property
+    @hybrid_property
     def extras_price(self):
         return self._extras_price
     
@@ -176,7 +177,7 @@ class Booking(db.Model):
         if val is not None:
             self._extras_price= dollar_string_to_int(val)
 
-    @property
+    @hybrid_property
     def subtotal(self):
         return self._subtotal
     
@@ -185,7 +186,7 @@ class Booking(db.Model):
         if val is not None:
             self._subtotal = dollar_string_to_int(val)
     
-    @property
+    @hybrid_property
     def final_amount(self):
         return self._final_amount
     
@@ -194,7 +195,7 @@ class Booking(db.Model):
         if val is not None:
             self._final_amount = dollar_string_to_int(val)
     
-    @property
+    @hybrid_property
     def tip(self):
         return self._tip
     
@@ -203,7 +204,7 @@ class Booking(db.Model):
         if val is not None:
             self._tip = dollar_string_to_int(val)
     
-    @property
+    @hybrid_property
     def rating_comment_presence(self):
         return self._rating_comment_presence
     
@@ -212,7 +213,7 @@ class Booking(db.Model):
         if val is not None:
             self._rating_comment_presence = string_to_boolean(val)
 
-    @property
+    @hybrid_property
     def discount_from_code(self):
         return self._discount_from_code
     
@@ -221,7 +222,7 @@ class Booking(db.Model):
         if val is not None:
             self._discount_from_code = dollar_string_to_int(val)
     
-    @property
+    @hybrid_property
     def giftcard_amount(self):
         return self._giftcard_amount
     
@@ -230,7 +231,7 @@ class Booking(db.Model):
         if val is not None:
             self._giftcard_amount = dollar_string_to_int(val)   
    
-    @property
+    @hybrid_property
     def teams_assigned(self):
         return self._teams_assigned
     
@@ -244,7 +245,7 @@ class Booking(db.Model):
             team_list = [item['title'] for item in team_list_dict]
             self._teams_assigned = ','.join(team_list)
    
-    @property
+    @hybrid_property
     def teams_assigned_ids(self):
         return self._teams_assigned_ids
     
@@ -258,7 +259,7 @@ class Booking(db.Model):
             team_list_ids = [item['id'] for item in team_list_dict]
             self._teams_assigned_ids = ','.join(team_list_ids)
 
-    @property
+    @hybrid_property
     def team_share(self):
         return self._team_share
     
@@ -271,7 +272,7 @@ class Booking(db.Model):
             except IndexError as e:
                 current_app.logger.error(f'team share error ({val}): {e}')
     
-    @property
+    @hybrid_property
     def team_share_total(self):
         return self._team_share_total
     
@@ -285,16 +286,15 @@ class Booking(db.Model):
                 current_app.logger.error(f'team share total error ({val}): {e}')
                 
     
-    @property
+    @hybrid_property
     def team_has_key(self):
         return self._team_has_key
     
     @team_has_key.setter
     def team_has_key(self, val):
-        if val is not None:
-            self._team_has_key = string_to_boolean(val)
+        self._team_has_key = string_to_boolean(val) if val is not None else False
     
-    @property
+    @hybrid_property
     def next_booking_date(self):
         return self._next_booking_date
     
@@ -307,7 +307,7 @@ class Booking(db.Model):
             except ValueError as e:
                 current_app.logger.error(f'next_booking_date error ({val}): {e}')
    
-    @property
+    @hybrid_property
     def customer_id(self):
         return self._customer_id
     
@@ -320,7 +320,7 @@ class Booking(db.Model):
         if val is not None:
             self._customer_id = int(val['id'])
     
-    @property
+    @hybrid_property
     def cancellation_date(self):
         return self._cancellation_date
     
@@ -333,7 +333,7 @@ class Booking(db.Model):
             except ValueError as e:
                 current_app.logger.error(f'cancellation_date error: "{val}" leads to error: {e}')
 
-    @property
+    @hybrid_property
     def cancellation_fee(self):
         return self._cancellation_fee
     
@@ -342,7 +342,7 @@ class Booking(db.Model):
         if val is not None:
             self._cancellation_fee= dollar_string_to_int(val)
     
-    @property
+    @hybrid_property
     def price_adjustment(self):
         return self._price_adjustment
     
@@ -355,43 +355,39 @@ class Booking(db.Model):
             except ValueError as e:
                 current_app.logger.error(f'price_adjustment error ({val}): {e}')
  
-    @property
+    @hybrid_property
     def is_first_recurring(self):
         return self._is_first_recurring
 
     @is_first_recurring.setter
     def is_first_recurring(self, val):
-        if val is not None:
-            self._is_first_recurring= string_to_boolean(val)
+        self._is_first_recurring = string_to_boolean(val) if val is not None else False
     
-    @property
+    @hybrid_property
     def is_new_customer(self):
         return self._is_new_customer
     
     @is_new_customer.setter
     def is_new_customer(self, val):
-        if val is not None:
-            self._is_new_customer = string_to_boolean(val)
+        self._is_new_customer = string_to_boolean(val) if val is not None else False
     
-    @property
+    @hybrid_property
     def invoice_tobe_emailed(self):
         return self._invoice_tobe_emailed
     
     @invoice_tobe_emailed.setter
     def invoice_tobe_emailed(self, val):
-        if val is not None:
-            self._invoice_tobe_emailed = string_to_boolean(val)
+        self._invoice_tobe_emailed = string_to_boolean(val)
     
-    @property
+    @hybrid_property
     def sms_notifications_enabled(self):
         return self._sms_notifications_enabled
     
     @sms_notifications_enabled.setter
     def sms_notifications_enabled(self, val):
-        if val is not None:
-            self._sms_notifications_enabled = string_to_boolean(val)
+        self._sms_notifications_enabled = string_to_boolean(val) if val is not None else False
     
-    @property
+    @hybrid_property
     def pricing_parameters_price(self):
         return self._pricing_parameters_price
     
@@ -406,7 +402,7 @@ class Booking(db.Model):
 
 
 def string_to_boolean(val):
-    return val.lower() in ['true', 'yes']
+    return val.lower() in ['true', 'yes', '1']
 
 def dollar_string_to_int(val):
     return  int(val.replace('$','').replace('.','')) 
@@ -547,7 +543,7 @@ class Customer(db.Model):
     def to_dict(self):
         return {col.name: getattr(self, col.name) for col in self.__table__.columns}
     
-    @property
+    @hybrid_property
     def created_at(self):
             return self._created_at
             
@@ -560,7 +556,7 @@ class Customer(db.Model):
             except ValueError as e:
                 current_app.logger.error(f'created_at error ({val}): {e}')
     
-    @property
+    @hybrid_property
     def updated_at(self):
         return self._updated_at
     
@@ -595,9 +591,9 @@ def import_customer(c, d):
     #   warning of what I have done.
     if len(d['tags']) > 64:
         msg = f'tags data is way too long, exceeds 64 characters. Trnucating field.name={c.name}'
-        current_app.logger.error(msg)
+        current_app.logger.warning(msg)
         m = current_app.config['SUPPORT_EMAIL'].split('@')
-        send_error_email(f"{m[0]}+error@{m[1]}", msg)
+        send_warning_email(f"{m[0]}+warning@{m[1]}", msg)
     c.tags = d['tags'][:64] if 'tags' in d else None
 
     c.profile_url = d['profile_url'] if 'profile_url' in d else None
