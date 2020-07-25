@@ -377,7 +377,8 @@ class Booking(db.Model):
     
     @invoice_tobe_emailed.setter
     def invoice_tobe_emailed(self, val):
-        self._invoice_tobe_emailed = string_to_boolean(val)
+        if val is not None:
+            self._invoice_tobe_emailed = string_to_boolean(val)
     
     @hybrid_property
     def sms_notifications_enabled(self):
@@ -385,7 +386,8 @@ class Booking(db.Model):
     
     @sms_notifications_enabled.setter
     def sms_notifications_enabled(self, val):
-        self._sms_notifications_enabled = string_to_boolean(val) if val is not None else False
+        if val is not None:
+            self._sms_notifications_enabled = string_to_boolean(val) if val is not None else False
     
     @hybrid_property
     def pricing_parameters_price(self):

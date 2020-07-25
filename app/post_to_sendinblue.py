@@ -9,14 +9,14 @@ from flask import current_app
 from app.email import send_error_email
 
 
-def int_to_dollars(val):
-    if val is None:
-        return '$0.00'
-    
-    s = f'${int(val//100)}.{val%100}'
-    return s
-
 def build_payload(email, name, template_id, payload):
+
+    def int_to_dollars(val):
+        if val is None:
+            return '$0.00'
+    
+        s = f'${int(val//100)}.{val%100}'
+        return s
 
     data = {
         "sender":{

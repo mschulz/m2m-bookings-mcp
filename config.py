@@ -13,9 +13,9 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     
     # Company and app data - change with every app
-    COMPANY_NAME = os.environ.get('Maid2Match')
-    COMPANY_URL = os.environ.get('maid2match.com.au')
-    APP_NAME = os.environ.get('m2m-booking-system')
+    COMPANY_NAME = os.environ.get('COMPANY_NAME')
+    COMPANY_URL = os.environ.get('COMPANY_URL')
+    APP_NAME = os.environ.get('APP_NAME')
     PHONE = os.environ.get('PHONE')
     
     # Base level testing/debugging
@@ -36,7 +36,6 @@ class Config(object):
     # Email settings
     FROM_NAME = os.environ.get('FROM_NAME')
     FROM_ADDRESS = os.environ.get('FROM_ADDRESS')
-    #FROM_PASSWORD = os.environ.get('FROM_PASSWORD')
     SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL')
     OVERRIDE_EMAIL = os.environ.get('OVERRIDE_EMAIL', 'True').lower() == 'true'
 

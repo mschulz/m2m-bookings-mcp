@@ -40,14 +40,13 @@ def booking_confirmation_email(db):
             print(f'Number booking confirmations:{res} template_id={template_id}')
         else:
             for idx, item in enumerate(find_row_first(db)):
-                email = 'mark.f.schulz@gmail.com' #item.email
+                email = current_app.config['SUPPORT_EMAIL'] if current_app.config['OVERRIDE_EMAIL'] else item.email
                 name = item.name
                 data = build_payload(email, name, template_id, item)
-                p = data['params']
-                print(f"{idx}:  email: {email} is_first_recurring: {item.is_first_recurring} service: {item.service}")
                 post_to_sendinblue(data)
                 
-                return
+                if current_app.config['OVERRIDE_EMAIL']:
+                    return
 
 def contact_n_days_out(db, n, template_id):
 

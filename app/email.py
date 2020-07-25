@@ -1,5 +1,5 @@
 from threading import Thread
-from flask import current_app, render_template, request
+from flask import current_app, render_template, request, has_request_context
 from flask_mail import Message
 from app import mail
 import html2text
@@ -22,10 +22,12 @@ def send_email(subject, sender, recipients, text_body, html_body):
      
 def send_error_email(toaddr, error_msg):
     ''' Send developer email when an error has occurred. '''
-    body = render_template('errors/error.html', app_name=current_app.config['APP_NAME'], error_msg=error_msg)
+    app_name = current_app.config["APP_NAME"]
+    body = render_template('errors/error.html', app_name=app_name, error_msg=error_msg)
+    where_str = f' in {request.path}' if has_request_context() else ''
 
     send_email(
-        subject = f'{current_app.config["APP_NAME"]}: Error has occurred in {request.path}',
+        subject = f'{app_name}: Error has occurred{where_str}',
         sender=(current_app.config['FROM_NAME'], current_app.config["FROM_ADDRESS"]),
         recipients = toaddr if isinstance(toaddr, list) else [toaddr],
         html_body = body,
@@ -34,10 +36,12 @@ def send_error_email(toaddr, error_msg):
      
 def send_warning_email(toaddr, error_msg):
     ''' Send developer email when a warning has occurred. '''
-    body = render_template('warning.html', app_name=current_app.config['APP_NAME'], error_msg=error_msg)
+    app_name = current_app.config["APP_NAME"]
+    body = render_template('warning.html', app_name=app_name, error_msg=error_msg)
+    where_str = f' in {request.path}' if has_request_context() else ''
 
     send_email(
-        subject = f'{current_app.config["APP_NAME"]}: Warning has occurred in {request.path}',
+        subject = f'{app_name}: Warning has occurred{where_str}',
         sender=(current_app.config['FROM_NAME'], current_app.config["FROM_ADDRESS"]),
         recipients = toaddr if isinstance(toaddr, list) else [toaddr],
         html_body = body,
