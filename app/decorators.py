@@ -3,7 +3,6 @@
 from functools import wraps
 
 from flask import request, current_app, abort
-from threading import Thread
 
 
 def APIkey_required(f):

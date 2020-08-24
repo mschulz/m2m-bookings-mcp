@@ -31,7 +31,7 @@ class Booking(db.Model):
     _subtotal =  db.Column(db.Integer, index=False, unique=False)
     _tip = db.Column(db.Integer, index=False, unique=False)
     payment_method = db.Column(db.String(64), index=False, unique=False)
-    rating_value = db.Column(db.Integer, index=False, unique=False)
+    _rating_value = db.Column(db.Integer, index=False, unique=False)
     rating_text = db.Column(db.Text(), index=False, unique=False)
     rating_comment = db.Column(db.Text(), index=False, unique=False)
     _rating_comment_presence = db.Column(db.Boolean, index=False, unique=False)
@@ -45,8 +45,10 @@ class Booking(db.Model):
     ###    backref=db.backref('team_bookings', lazy=True))
     _teams_assigned_ids = db.Column(db.String(80), index=False, unique=False)
     _team_share = db.Column(db.Integer, index=False, unique=False)
-    _team_share_total = db.Column(db.Integer, index=False, unique=False)
-    team_has_key = db.Column(db.Boolean, index=False, unique=False)
+    #_team_share_total = db.Column(db.Integer, index=False, unique=False)
+    team_share_summary = db.Column(db.String(128), index=False, unique=False)
+    #team_has_key = db.Column(db.Boolean, index=False, unique=False)
+    team_has_key = db.Column(db.String(64), index=False, unique=False)
     team_requested = db.Column(db.String(80), index=False, unique=False)
     created_by =  db.Column(db.String(64), index=False, unique=False)
     _next_booking_date = db.Column(db.DateTime(timezone=True), index=False, unique=False)
@@ -120,10 +122,14 @@ class Booking(db.Model):
             
     @created_at.setter
     def created_at(self, val):
-        # "2018-10-24T13:10:19+10:00"
         if val is not None:
             try:
-                self._created_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+                if ' ' in val:
+                    # '17/07/2020 21:01'
+                    self._created_at = datetime.strptime(val, "%d/%m/%Y %H:%M")
+                else:
+                    # "2018-10-24T13:10:19+10:00"
+                    self._created_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
             except ValueError as e:
                 current_app.logger.error(f'created_at error ({val}): {e}')
     
@@ -133,10 +139,14 @@ class Booking(db.Model):
     
     @updated_at.setter
     def updated_at(self, val):
-        # "2018-10-25T11:06:33+10:00"
         if val is not None:
             try:
-                self._updated_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+                if ' ' in val:
+                    # '17/07/2020 21:01'
+                    self._updated_at = datetime.strptime(val, "%d/%m/%Y %H:%M")
+                else:
+                    # "2018-10-25T11:06:33+10:00"
+                    self._updated_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
             except ValueError as e:
                 current_app.logger.error(f'updated_at error ({val}): {e}')
 
@@ -155,7 +165,10 @@ class Booking(db.Model):
         # "2018-10-26" 
         if val is not None:
             try:
-                self._service_date = datetime.strptime(val, "%Y-%m-%d")
+                if '/' in val:
+                    self._service_date = datetime.strptime(val, "%d/%m/%Y")
+                else:
+                    self._service_date = datetime.strptime(val, "%Y-%m-%d")
             except ValueError as e:
                 current_app.logger.error(f'service_date error ({val}): {e}')
     
@@ -205,6 +218,22 @@ class Booking(db.Model):
             self._tip = dollar_string_to_int(val)
     
     @hybrid_property
+    def rating_value(self):
+        return self._rating_value
+    
+    @rating_value.setter
+    def rating_value(self, val):
+        if val is not None:
+            if isinstance(val, str):
+                if len(val) == 0:
+                    self._rating_value = None
+                else:
+                    self._rating_value = int(val)
+            else:
+                self._rating_value = val
+                
+    
+    @hybrid_property
     def rating_comment_presence(self):
         return self._rating_comment_presence
     
@@ -241,8 +270,14 @@ class Booking(db.Model):
         # u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid',
         #  u'id': u'8447'}]", 
         if val is not None:
-            team_list_dict = json.loads(val.replace("'", '"').replace('u"', '"'))
-            team_list = [item['title'] for item in team_list_dict]
+            if isinstance(val, str):
+                if val and  (val[0] != '['):    # Hack for reading CSV file
+                    team_list = [ val ]
+                else:
+                    team_list = []
+            else:
+                team_list_dict = json.loads(val.replace("'", '"').replace('u"', '"'))
+                team_list = [item['title'] for item in team_list_dict]
             self._teams_assigned = ','.join(team_list)
    
     @hybrid_property
@@ -255,8 +290,14 @@ class Booking(db.Model):
         # u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid',
         #  u'id': u'8447'}]",
         if val is not None:
-            team_list_dict = json.loads(val.replace("'", '"').replace('u"', '"'))
-            team_list_ids = [item['id'] for item in team_list_dict]
+            if isinstance(val, str):
+                if val and  (val[0] != '['):    # Hack for reading CSV file
+                    team_list_ids = [ val ]
+                else:
+                    team_list_ids = []
+            else:
+                team_list_dict = json.loads(val.replace("'", '"').replace('u"', '"'))
+                team_list_ids = [item['id'] for item in team_list_dict]
             self._teams_assigned_ids = ','.join(team_list_ids)
 
     @hybrid_property
@@ -265,14 +306,18 @@ class Booking(db.Model):
     
     @team_share.setter
     def team_share(self, val):
-        #  "team_share_amount": "Team Euclid - $67.64"
         if val:
             try:
-                self._team_share =  dollar_string_to_int(val.split(' - ')[1])
+                if '-' in val:
+                    #  "team_share_amount": "Team Euclid - $67.64"
+                    self._team_share =  dollar_string_to_int(val.split(' - ')[1])
+                else:
+                    self._team_share =  dollar_string_to_int(val)
             except IndexError as e:
                 current_app.logger.error(f'team share error ({val}): {e}')
     
-    @hybrid_property
+    ##########  IGNORE THIS VALUE ALTOGETHER #####################
+    """@hybrid_property
     def team_share_total(self):
         return self._team_share_total
     
@@ -281,18 +326,11 @@ class Booking(db.Model):
         # "Team Euclid - $67.64", 
         if val:
             try:
-                self._team_share_total =  dollar_string_to_int(val.split(' - ')[1])
+                split_char = ':' if ':' in val else '-'
+                self._team_share_total =  dollar_string_to_int(val.split(split_char)[1])
             except IndexError as e:
-                current_app.logger.error(f'team share total error ({val}): {e}')
-                
-    
-    @hybrid_property
-    def team_has_key(self):
-        return self._team_has_key
-    
-    @team_has_key.setter
-    def team_has_key(self, val):
-        self._team_has_key = string_to_boolean(val) if val is not None else False
+                current_app.logger.error(f'team share total error ({val}): {e}')"""
+    ##############################################################
     
     @hybrid_property
     def next_booking_date(self):
@@ -301,9 +339,14 @@ class Booking(db.Model):
     @next_booking_date.setter
     def next_booking_date(self, val):
         # "2018-10-25T11:06:33+10:00"
-        if val is not None:
+        if val is not None and len(val)> 0:
             try:
-                self._next_booking_date = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+                if ' ' in val:
+                    # '17/07/2020 21:01'
+                    self._next_booking_date = datetime.strptime(val, "%d/%m/%Y %H:%M")
+                else:
+                    # "2018-10-25T11:06:33+10:00"
+                    self._next_booking_date = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
             except ValueError as e:
                 current_app.logger.error(f'next_booking_date error ({val}): {e}')
    
@@ -318,7 +361,7 @@ class Booking(db.Model):
         #       "updated_at": "2018-10-24T13:10:19+10:00", 
         #       "id": "8674", ...
         if val is not None:
-            self._customer_id = int(val['id'])
+            self._customer_id = int(val)
     
     @hybrid_property
     def cancellation_date(self):
@@ -329,7 +372,10 @@ class Booking(db.Model):
         # "2018-10-25T11:06:33+10:00"
         if val:
             try:
-                self._cancellation_date = datetime.strptime(val, "%d/%m/%Y").date()
+                if 'T' in val:
+                    self._cancellation_date = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z").date()
+                else:
+                    self._cancellation_date = datetime.strptime(val, "%d/%m/%Y %H:%M").date()
             except ValueError as e:
                 current_app.logger.error(f'cancellation_date error: "{val}" leads to error: {e}')
 
@@ -339,7 +385,7 @@ class Booking(db.Model):
     
     @cancellation_fee.setter
     def cancellation_fee(self, val):
-        if val is not None:
+        if val is not None and len(val) > 0:
             self._cancellation_fee= dollar_string_to_int(val)
     
     @hybrid_property
@@ -407,7 +453,7 @@ def string_to_boolean(val):
     return val.lower() in ['true', 'yes', '1']
 
 def dollar_string_to_int(val):
-    return  int(val.replace('$','').replace('.','')) 
+    return int(val.replace('$','').replace('.','')) 
 
 
 def import_dict(d, b):
@@ -438,7 +484,7 @@ def import_dict(d, b):
     ###    backref=db.backref('team_bookings', lazy=True))
     d.teams_assigned_ids = b['team_details'] if 'team_details' in b else None
     d.team_share = b['team_share_amount'] if 'team_share_amount' in b else None
-    d.team_share_total = b['team_share_total'] if 'team_share_total' in b else None
+    d.team_share_summary = b['team_share_total'] if 'team_share_total' in b else None
     d.team_has_key = b['team_has_key'] if 'team_has_key' in b else None
     d.team_requested = b['team_requested'] if 'team_requested' in b else None
     d.created_by = b['created_by'] if 'created_by' in b else None
@@ -551,12 +597,16 @@ class Customer(db.Model):
             
     @created_at.setter
     def created_at(self, val):
-        # "2018-10-24T13:10:19+10:00"
-        if val is not None:
+        if val is not None and len(val) > 0:
             try:
-                self._created_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+                if ' ' in val:
+                    # '17/07/2020 21:01'
+                     self._created_at = datetime.strptime(val, "%d/%m/%Y %H:%M")
+                else:
+                    # "2018-10-24T13:10:19+10:00"
+                    self._created_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
             except ValueError as e:
-                current_app.logger.error(f'created_at error ({val}): {e}')
+                current_app.logger.error(f'customer created_at error ({val}): {e}')
     
     @hybrid_property
     def updated_at(self):
@@ -564,12 +614,16 @@ class Customer(db.Model):
     
     @updated_at.setter
     def updated_at(self, val):
-        # "2018-10-25T11:06:33+10:00"
-        if val is not None:
+        if val is not None and len(val) > 0:
             try:
-                self._updated_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+                if ' ' in val:
+                    # '17/07/2020 21:01'
+                    self._updated_at = datetime.strptime(val, "%d/%m/%Y %H:%M")
+                else:
+                    # "2018-10-25T11:06:33+10:00"
+                    self._updated_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
             except ValueError as e:
-                current_app.logger.error(f'updated_at error ({val}): {e}')
+                current_app.logger.error(f'customer updated_at error ({val}): {e}')
 
 def import_customer(c, d):
     c.customer_id = d['id'] if 'id' in d else None

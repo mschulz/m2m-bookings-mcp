@@ -18,6 +18,8 @@ class Config(object):
     APP_NAME = os.environ.get('APP_NAME')
     PHONE = os.environ.get('PHONE')
     
+    RATING_SERVER = os.environ.get('RATING_SERVER')
+    
     # Base level testing/debugging
     DEBUG = False
     TESTING = False
@@ -63,7 +65,8 @@ class Config(object):
     SENDINBLUE_FROM_EMAIL = os.environ.get('SENDINBLUE_FROM_EMAIL')
     TEMPLATE_ID_CONFIRMATION = int(os.environ.get('TEMPLATE_ID_CONFIRMATION'))
     TEMPLATE_ID_FIRST_HEADSUP = int(os.environ.get('TEMPLATE_ID_FIRST_HEADSUP'))
-    TEMPLATE_ID_SECOND_HEADSUP = os.environ.get('TEMPLATE_ID_SECOND_HEADSUP')
+    TEMPLATE_ID_SECOND_HEADSUP = int(os.environ.get('TEMPLATE_ID_SECOND_HEADSUP'))
+    TEMPLATE_ID_RATING = int(os.environ.get('TEMPLATE_ID_RATING'))
 
 class ProductionConfig(Config):
     DEBUG = False  

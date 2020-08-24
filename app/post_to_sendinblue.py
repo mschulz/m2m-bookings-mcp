@@ -55,6 +55,34 @@ def build_payload(email, name, template_id, payload):
     return data
 
 
+def build_rating_payload(email, name, template_id, payload):
+
+    data = {
+        "sender":{
+            "name": current_app.config['SENDINBLUE_FROM_NAME'],
+            "email": current_app.config['SENDINBLUE_FROM_EMAIL']
+        },
+        "to":[
+            {
+                "name": name,
+                "email": email
+            }
+        ],
+        "templateId":template_id,
+
+        "params": {
+            "first_name": payload["first_name"],
+            "rating_server": current_app.config['RATING_SERVER'],
+            "id": payload["id"],
+            "m2m_phone": current_app.config['PHONE']
+        }
+    }
+    
+    #print(f'payload data: {data}')
+    
+    return data
+
+
 def post_to_sendinblue(payload):
 
     API_KEY = current_app.config['SENDINBLUE_API_KEY']

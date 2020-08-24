@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from app import create_app, db
 from flask import current_app
 from app.models import Booking
-from app.post_to_sendinblue import post_to_sendinblue, build_payload
+from app.post_to_sendinblue import post_to_sendinblue, build_payload, build_rating_payload
 from sqlalchemy import and_, or_
 
 
@@ -72,13 +72,30 @@ def contact_n_days_out(db, n, template_id):
             print(f'Number jobs {n} day{"s" if n != 1 else ""} out:{count_n_days_out(db, n)} template_id={template_id}')
         else:
             for idx, item in enumerate(find_n_days_out(db, n)):
-                email = 'mark.f.schulz@gmail.com' #item.email
+                email = current_app.config['SUPPORT_EMAIL'] if current_app.config['OVERRIDE_EMAIL'] else item.email
                 name = item.name
                 data = build_payload(email, name, template_id, item)
                 p = data['params']
                 print(f"{idx}:  email: {email} service_date: {item.service_date} service: {item.service}")
                 post_to_sendinblue(data)
-                return
+                
+                if current_app.config['OVERRIDE_EMAIL']:
+                    return
+
+def rating_email(email, name, first_name, id, template_id):
+    with app.app_context():
+        params = {
+            "first_name": first_name,
+            "id": id
+        }
+        
+        if app.testing:
+            print(f'Rating request email: to_addr={email} first_name={params["first_name"]} id={params["id"]} template_id={template_id}')
+        else:
+            data = build_rating_payload(email, name, template_id, params)
+            print(f'rating_email:: data:{data}')
+            post_to_sendinblue(data)
+            return
 
 if __name__ == '__main__':
     
@@ -88,4 +105,6 @@ if __name__ == '__main__':
         booking_confirmation_email(db)
         contact_n_days_out(db, 1, app.config['TEMPLATE_ID_FIRST_HEADSUP'])
         contact_n_days_out(db, 3, app.config['TEMPLATE_ID_SECOND_HEADSUP'])
+        
+        rating_email('mark.f.schulz@gmail.com', 'Mark Schulz', 'Mark', '1234567', current_app.config['TEMPLATE_ID_RATING'])
     

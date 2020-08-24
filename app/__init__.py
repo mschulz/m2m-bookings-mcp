@@ -44,7 +44,7 @@ def create_app():
     #initialise the logger
     setup_logging(app)
     if not app.config['TESTING']:
-        app.logger.info('m2m-booking_system: starting ...')
+        app.logger.info(f'{app.config["APP_NAME"]}: starting ...')
         app.logger.info(f'database: {app.config["SQLALCHEMY_DATABASE_URI"]}')
 
     # Set up mail
