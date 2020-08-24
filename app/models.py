@@ -356,7 +356,7 @@ class Booking(db.Model):
     
     @customer_id.setter
     def customer_id(self, val):
-        #  { 
+        #  "customer": { 
         #       "last_name": "Nall", 
         #       "updated_at": "2018-10-24T13:10:19+10:00", 
         #       "id": "8674", ...
@@ -493,7 +493,7 @@ def import_dict(d, b):
     d.service = b['service'] if 'service' in b else None
     d.customer_notes = b['customer_notes'] if 'customer_notes' in b else None
     d.staff_notes = b['staff_notes'] if 'staff_notes' in b else None
-    d.customer_id = b['customer'] if 'customer' in b else None
+    d.customer_id = b['customer']['id'] if 'customer' in b else None
     ### Points to the unique customer for this booking
     ### customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'))
     d.cancellation_type = b['cancellation_type'] if 'cancellation_type' in b else None
