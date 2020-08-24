@@ -83,7 +83,7 @@ class Booking(db.Model):
     first_name = db.Column(db.String(64), index=False, unique=False)
     company_name = db.Column(db.String(64), index=False, unique=False)
     email = db.Column(db.String(64), index=False, unique=False)
-    name = db.Column(db.String(64), index=False, unique=False)
+    name = db.Column(db.String(128), index=False, unique=False)
     phone = db.Column(db.String(64), index=False, unique=False)
     postcode = db.Column(db.String(16), index=False, unique=False)
     location = db.Column(db.String(64), index=False, unique=False)
@@ -374,8 +374,10 @@ class Booking(db.Model):
             try:
                 if 'T' in val:
                     self._cancellation_date = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z").date()
+                elif ' ' in val:
+                    self._cancellation_date = datetime.strptime(val, "%Y-%m-%d %H:%M:%S%z").date()
                 else:
-                    self._cancellation_date = datetime.strptime(val, "%d/%m/%Y %H:%M").date()
+                    self._cancellation_date = datetime.strptime(val, "%d/%m/%Y").date()
             except ValueError as e:
                 current_app.logger.error(f'cancellation_date error: "{val}" leads to error: {e}')
 
