@@ -375,7 +375,10 @@ class Booking(db.Model):
                 if 'T' in val:
                     self._cancellation_date = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z").date()
                 elif ' ' in val:
-                    self._cancellation_date = datetime.strptime(val, "%Y-%m-%d %H:%M:%S%z").date()
+                    if '/' in val:
+                        self._cancellation_date = datetime.strptime(val, "%d/%m/%Y %H:%M").date()
+                    else:
+                        self._cancellation_date = datetime.strptime(val, "%Y-%m-%d %H:%M:%S%z").date()
                 else:
                     self._cancellation_date = datetime.strptime(val, "%d/%m/%Y").date()
             except ValueError as e:
