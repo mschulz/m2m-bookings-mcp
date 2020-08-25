@@ -53,7 +53,7 @@ class Booking(db.Model):
     created_by =  db.Column(db.String(64), index=False, unique=False)
     _next_booking_date = db.Column(db.DateTime(timezone=True), index=False, unique=False)
     service_category = db.Column(db.String(64), index=False, unique=False)
-    service = db.Column(db.String(80), index=False, unique=False)
+    service = db.Column(db.String(128), index=False, unique=False)
     customer_notes = db.Column(db.Text(), index=False, unique=False)
     staff_notes = db.Column(db.Text(), index=False, unique=False)
     _customer_id =db.Column(db.Integer, index=False, unique=False)
@@ -495,7 +495,9 @@ def import_dict(d, b):
     d.created_by = b['created_by'] if 'created_by' in b else None
     d.next_booking_date = b['next_booking_date'] if 'next_booking_date' in b else None
     d.service_category = b['service_category'] if 'service_category' in b else 'House Clean'
-    d.service = b['service'] if 'service' in b else None
+    if len(b['service']) > 128:
+        current_app.logger.error(f"booking_id: {b['id']}:: truncating service field to 128 characters {b['service']}")
+    d.service = b['service'][:128] if 'service' in b else None
     d.customer_notes = b['customer_notes'] if 'customer_notes' in b else None
     d.staff_notes = b['staff_notes'] if 'staff_notes' in b else None
     d.customer_id = b['customer']['id'] if 'customer' in b else None
