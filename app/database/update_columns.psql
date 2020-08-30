@@ -1,0 +1,4 @@
+alter table bookings add column n_service varchar (128);
+update bookings set n_service = service;
+alter table bookings drop column service;
+alter table bookings rename column n_service to service;
