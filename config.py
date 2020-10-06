@@ -53,6 +53,14 @@ class Config(object):
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', None)
     MAIL_DEBUG = False
     
+    # SendinBlue configuration
+    SMTP_KEY = 'REDACTED_SMTP_KEY'
+    SMTP_SERVER = 'smtp-relay.sendinblue.com'
+    SMTP_LOGIN = 'mark.f.schulz@gmail.com'
+    SMTP_PORT = 587
+    SIB_API_KEY = 'REDACTED_SIB_KEY'
+    PLUGINS_KEY = 'REDACTED_SMTP_KEY'
+    
     # Custom fields
     CUSTOM_SOURCE = "drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24"
     CUSTOM_BOOKED_BY = "single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9"

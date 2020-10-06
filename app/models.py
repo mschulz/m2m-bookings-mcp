@@ -21,7 +21,7 @@ class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     # Uniquely identifies this booking
-    booking_id = db.Column(db.Integer, index=False, unique=True)
+    booking_id = db.Column(db.Integer, index=True, unique=True)
     _created_at = db.Column(db.DateTime(timezone=True), index=False, unique=False)
     _updated_at = db.Column(db.DateTime(timezone=True), index=False, unique=False)
     service_time = db.Column(db.String(64), index=False, unique=False)
@@ -97,7 +97,7 @@ class Booking(db.Model):
     #Is your date & time flexible? (266)
     flexible_date_time = db.Column(db.String(64), index=False, unique=False)
     #Name for Invoice (267)
-    invoice_name = db.Column(db.String(64), index=False, unique=False)
+    invoice_name = db.Column(db.String(128), index=False, unique=False)
     #Email For Invoices (NDIS and Bank Transfer Only) (261)
     invoice_email = db.Column(db.String(64), index=False, unique=False)
     #Invoice Reference (e.g. NDIS #) (262)
@@ -510,7 +510,8 @@ def import_dict(d, b):
     d.cancellation_fee = b['cancellation_fee'] if 'cancellation_fee' in b else None
     d.price_adjustment = b['price_adjustment'] if 'price_adjustment' in b else None
     d.price_adjustment_comment = b['price_adjustment_comment'] if 'price_adjustment_comment' in b else None
-    d.booking_status = b['booking_status'] if 'booking_status' in b else None
+    if 'booking_status' in b:
+        d.booking_status = b['booking_status']
     d.is_first_recurring = b['is_first_recurring'] if 'is_first_recurring' in b else None
     d.is_new_customer = b['is_new_customer'] if 'is_new_customer' in b else None
     d.extras = b['extras'] if 'extras' in b else None
