@@ -61,6 +61,10 @@ class Config(object):
     SIB_API_KEY = 'REDACTED_SIB_KEY'
     PLUGINS_KEY = 'REDACTED_SMTP_KEY'
     
+    # Launch27 details for bookings
+    L27_USERNAME = os.environ.get('L27_USERNAME')
+    L27_PASSWORD = os.environ.get('L27_PASSWORD')
+    
     # Custom fields
     CUSTOM_SOURCE = "drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24"
     CUSTOM_BOOKED_BY = "single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9"
