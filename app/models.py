@@ -588,7 +588,7 @@ class Customer(db.Model):
     postcode = db.Column(db.String(16), index=False, unique=False)
     location = db.Column(db.String(64), index=False, unique=False)
 
-    tags = db.Column(db.String(64), index=False, unique=False)
+    tags = db.Column(db.String(256), index=False, unique=False)
 
     notes = db.Column(db.Text(), index=False, unique=False)
     
@@ -653,12 +653,12 @@ def import_customer(c, d):
     # Have struck and example of the tags field being filled with the full comments field (?????)
     # I will truncated this to 64 characters, log an error message and send an email to the developer
     #   warning of what I have done.
-    if len(d['tags']) > 64:
-        msg = f'tags data is way too long, exceeds 64 characters. Trnucating field.name={c.name}'
+    if len(d['tags']) > 256:
+        msg = f'tags data is way too long, exceeds 256 characters. Truncating tag data for {c.name} data={d['tags']}'
         current_app.logger.warning(msg)
         m = current_app.config['SUPPORT_EMAIL'].split('@')
         send_warning_email(f"{m[0]}+warning@{m[1]}", msg)
-    c.tags = d['tags'][:64] if 'tags' in d else None
+    c.tags = d['tags'][:256] if 'tags' in d else None
 
     c.profile_url = d['profile_url'] if 'profile_url' in d else None
     
