@@ -654,7 +654,7 @@ def import_customer(c, d):
     # I will truncated this to 64 characters, log an error message and send an email to the developer
     #   warning of what I have done.
     if len(d['tags']) > 256:
-        msg = f'tags data is way too long, exceeds 256 characters. Truncating tag data for {c.name} data={d['tags']}'
+        msg = f'tags data is way too long, exceeds 256 characters. Truncating tag data for {c.name} data={d["tags"]}'
         current_app.logger.warning(msg)
         m = current_app.config['SUPPORT_EMAIL'].split('@')
         send_warning_email(f"{m[0]}+warning@{m[1]}", msg)
