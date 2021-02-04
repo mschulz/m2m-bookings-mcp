@@ -668,8 +668,6 @@ def import_customer(c, d):
     if c.email:
         if not validate_email(c.email, check_mx=True, debug=False, use_blacklist=False):
             current_app.logger.error(f'({request.path}) Invalid email ({c.email}) entered for customer "{c.first_name} {c.last_name}".')
-            m = current_app.config['SUPPORT_EMAIL'].split('@')
-            send_error_email(f"{m[0]}+error@{m[1]}", e)
             
     c.phone = d['phone'] if 'phone' in d else None
     c.address = d['address'] if 'address' in d else None
@@ -685,8 +683,6 @@ def import_customer(c, d):
             postcode_int = int(c.postcode)
     except Exception as e:
         current_app.logger.error(f'({request.path}) Invalid postcode {c.postcode} entered for customer "{c.first_name} {c.last_name}".')
-        m = current_app.config['SUPPORT_EMAIL'].split('@')
-        send_error_email(f"{m[0]}+error@{m[1]}", e)
 
     c.location = d['location'] if 'location' in d else None
     c.notes = d['notes'] if 'notes' in d else None
@@ -696,8 +692,6 @@ def import_customer(c, d):
     if len(d['tags']) > 256:
         msg = f'tags data is way too long, exceeds 256 characters. Truncating tag data for {c.name} data={d["tags"]}'
         current_app.logger.warning(msg)
-        m = current_app.config['SUPPORT_EMAIL'].split('@')
-        send_warning_email(f"{m[0]}+warning@{m[1]}", msg)
     c.tags = d['tags'][:256] if 'tags' in d else None
 
     c.profile_url = d['profile_url'] if 'profile_url' in d else None
