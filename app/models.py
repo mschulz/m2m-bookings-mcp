@@ -533,10 +533,10 @@ def import_dict(d, b):
     d.email = b['email'] if 'email' in b else None
     # We are starting to see invalid email addresses creeping into the system.  This check if they are valid and sends
     # an email alerting staff to the issue.
-    if d.email:
+    """if d.email:
         if not validate_email(d.email, check_mx=True, debug=False, use_blacklist=False):
             msg = f'({request.path}) Invalid email ({d.email}) entered for customer "{d.name}". Booking ID={d.booking_id}'
-            current_app.logger.error(msg)
+            current_app.logger.error(msg)"""
             
     
     d.phone = b['phone'] if 'phone' in b else None
@@ -665,9 +665,9 @@ def import_customer(c, d):
     c.email = d['email'] if 'email' in d else None
     # We are starting to see invalid email addresses creeping into the system.  This check if they are valid and sends
     # an email alerting staff to the issue.
-    if c.email:
+    """if c.email:
         if not validate_email(c.email, check_mx=True, debug=False, use_blacklist=False):
-            current_app.logger.error(f'({request.path}) Invalid email ({c.email}) entered for customer "{c.first_name} {c.last_name}".')
+            current_app.logger.error(f'({request.path}) Invalid email ({c.email}) entered for customer "{c.first_name} {c.last_name}".')"""
             
     c.phone = d['phone'] if 'phone' in d else None
     c.address = d['address'] if 'address' in d else None
