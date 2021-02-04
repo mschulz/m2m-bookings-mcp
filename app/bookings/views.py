@@ -195,7 +195,13 @@ def new():
                 m = current_app.config['SUPPORT_EMAIL'].split('@')
                 send_error_email(f"{m[0]}+error@{m[1]}", e)
                 abort(500)
-    
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'({request.path}) Unknown error: {e.orig}')
+        m = current_app.config['SUPPORT_EMAIL'].split('@')
+        send_error_email(f"{m[0]}+error@{m[1]}", e)
+        abort(500)
+        
     # Update the customer information table, if it has been updated since the last time it was stored
     if 'customer' in data:
         process_customer_data(data['customer'])

@@ -10,6 +10,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from flask import request, current_app
 from app.email import send_error_email, send_warning_email
+from validate_email import validate_email
 
 class Booking(db.Model):
     '''
@@ -526,11 +527,33 @@ def import_dict(d, b):
     d.last_name = b['last_name'] if 'last_name' in b else None
     d.city = b['city'] if 'city' in b else None
     d.first_name = b['first_name'] if 'first_name' in b else None
-    d.company_name = b['company_name'] if 'company_name' in b else None
-    d.email = b['email'] if 'email' in b else None
     d.name = b['name'] if 'name' in b else None
+    d.company_name = b['company_name'] if 'company_name' in b else None
+
+    d.email = b['email'] if 'email' in b else None
+    # We are starting to see invalid email addresses creeping into the system.  This check if they are valid and sends
+    # an email alerting staff to the issue.
+    if d.email:
+        if not validate_email(d.email, check_mx=True, debug=False, use_blacklist=False):
+            current_app.logger.error(f'({request.path}) Invalid email ({d.email}) entered for customer "{d.name}". Booking ID={d.booking_id}')
+            m = current_app.config['SUPPORT_EMAIL'].split('@')
+            send_error_email(f"{m[0]}+error@{m[1]}", e)
+            
+    
     d.phone = b['phone'] if 'phone' in b else None
     d.postcode = b['zip'] if 'zip' in b else None
+    
+    # Errors have started creeping in with invalid postcode being entered into the database.  We need to alert staff
+    # to these errors so that this can be corrected ASAP
+    try:
+        if d.postcode:
+            postcode_int = int(d.postcode)
+    except Exception as e:
+        current_app.logger.error(f'({request.path}) Invalid postcode {d.postcode} entered for customer "{d.name}"')
+        m = current_app.config['SUPPORT_EMAIL'].split('@')
+        send_error_email(f"{m[0]}+error@{m[1]}", e)
+        
+    
     d.location = b['location'] if 'location' in b else None
     
     # Custom field data
@@ -641,13 +664,33 @@ def import_customer(c, d):
     c.first_name = d['first_name'] if 'first_name' in d else None
     c.last_name = d['last_name'] if 'last_name' in d else None
     c.name = d['name'] if 'name' in d else None
+    
     c.email = d['email'] if 'email' in d else None
+    # We are starting to see invalid email addresses creeping into the system.  This check if they are valid and sends
+    # an email alerting staff to the issue.
+    if c.email:
+        if not validate_email(c.email, check_mx=True, debug=False, use_blacklist=False):
+            current_app.logger.error(f'({request.path}) Invalid email ({c.email}) entered for customer "{c.first_name} {c.last_name}".')
+            m = current_app.config['SUPPORT_EMAIL'].split('@')
+            send_error_email(f"{m[0]}+error@{m[1]}", e)
+            
     c.phone = d['phone'] if 'phone' in d else None
     c.address = d['address'] if 'address' in d else None
     c.city = d['city'] if 'city' in d else None
     c.state = d['state'] if 'state' in d else None
     c.company_name = d['company_name'] if 'company_name' in d else None
+
     c.postcode = d['zip'] if 'zip' in d else None
+    # Errors have started creeping in with invalid postcode being entered into the database.  We need to alert staff
+    # to these errors so that this can be corrected ASAP
+    try:
+        if c.postcode:
+            postcode_int = int(c.postcode)
+    except Exception as e:
+        current_app.logger.error(f'({request.path}) Invalid postcode {c.postcode} entered for customer "{c.first_name} {c.last_name}".')
+        m = current_app.config['SUPPORT_EMAIL'].split('@')
+        send_error_email(f"{m[0]}+error@{m[1]}", e)
+
     c.location = d['location'] if 'location' in d else None
     c.notes = d['notes'] if 'notes' in d else None
     # Have struck and example of the tags field being filled with the full comments field (?????)
