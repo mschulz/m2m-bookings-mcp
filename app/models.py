@@ -535,9 +535,8 @@ def import_dict(d, b):
     # an email alerting staff to the issue.
     if d.email:
         if not validate_email(d.email, check_mx=True, debug=False, use_blacklist=False):
-            current_app.logger.error(f'({request.path}) Invalid email ({d.email}) entered for customer "{d.name}". Booking ID={d.booking_id}')
-            m = current_app.config['SUPPORT_EMAIL'].split('@')
-            send_error_email(f"{m[0]}+error@{m[1]}", e)
+            msg = f'({request.path}) Invalid email ({d.email}) entered for customer "{d.name}". Booking ID={d.booking_id}'
+            current_app.logger.error(msg)
             
     
     d.phone = b['phone'] if 'phone' in b else None
@@ -550,8 +549,6 @@ def import_dict(d, b):
             postcode_int = int(d.postcode)
     except Exception as e:
         current_app.logger.error(f'({request.path}) Invalid postcode {d.postcode} entered for customer "{d.name}"')
-        m = current_app.config['SUPPORT_EMAIL'].split('@')
-        send_error_email(f"{m[0]}+error@{m[1]}", e)
         
     
     d.location = b['location'] if 'location' in b else None
