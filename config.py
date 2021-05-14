@@ -66,9 +66,9 @@ class Config(object):
     L27_PASSWORD = os.environ.get('L27_PASSWORD')
     
     # Custom fields
-    CUSTOM_SOURCE = "drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24"
-    CUSTOM_BOOKED_BY = "single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9"
-    CUSTOM_EMAIL_INVOICE = "drop_down:a255d2c7-fb9a-4fa8-beb6-a91bc1ef6fed"
+    CUSTOM_SOURCE = os.environ.get('CUSTOM_SOURCE')
+    CUSTOM_BOOKED_BY = os.environ.get('CUSTOM_BOOKED_BY')
+    CUSTOM_EMAIL_INVOICE = os.environ.get('CUSTOM_EMAIL_INVOICE')
     
     # SendInBlue details
     SENDINBLUE_API_KEY = os.environ.get('SENDINBLUE_API_KEY')
