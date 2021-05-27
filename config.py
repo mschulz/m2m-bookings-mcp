@@ -69,6 +69,14 @@ class Config(object):
     CUSTOM_SOURCE = os.environ.get('CUSTOM_SOURCE')
     CUSTOM_BOOKED_BY = os.environ.get('CUSTOM_BOOKED_BY')
     CUSTOM_EMAIL_INVOICE = os.environ.get('CUSTOM_EMAIL_INVOICE')
+    CUSTOM_INVOICE_NAME = os.environ.get('CUSTOM_INVOICE_NAME')
+    CUSTOM_WHO_PAYS = os.environ.get('CUSTOM_WHO_PAYS')
+    CUSTOM_INVOICE_EMAIL_ADDRESS = os.environ.get('CUSTOM_INVOICE_EMAIL_ADDRESS')
+    CUSTOM_LAST_SERVICE = os.environ.get('CUSTOM_LAST_SERVICE', None)
+    CUSTOM_INVOICE_REFERENCE = os.environ.get('CUSTOM_INVOICE_REFERENCE', None)
+    CUSTOM_INVOICE_REFERENCE_EXTRA = os.environ.get('CUSTOM_INVOICE_REFERENCE_EXTRA', None)
+    CUSTOM_NDIS_NUMBER = os.environ.get('CUSTOM_NDIS_NUMBER', None)
+    CUSTOM_FLEXIBLE = os.environ.get('CUSTOM_FLEXIBLE', None)
     
     # SendInBlue details
     SENDINBLUE_API_KEY = os.environ.get('SENDINBLUE_API_KEY')

@@ -95,20 +95,24 @@ class Booking(db.Model):
     lead_source =  db.Column(db.String(64), index=False, unique=False)
     # Which team member booked this clean in?
     booked_by =  db.Column(db.String(64), index=False, unique=False)
-    #Is your date & time flexible? (266)
-    flexible_date_time = db.Column(db.String(64), index=False, unique=False)
-    #Name for Invoice (267)
-    invoice_name = db.Column(db.String(128), index=False, unique=False)
-    #Email For Invoices (NDIS and Bank Transfer Only) (261)
-    invoice_email = db.Column(db.String(64), index=False, unique=False)
-    #Invoice Reference (e.g. NDIS #) (262)
-    invoice_reference = db.Column(db.String(80), index=False, unique=False)
     #Send customer email copy of invoice? (265)
     _invoice_tobe_emailed = db.Column(db.Boolean, index=False, unique=False)
+    #Name for Invoice (267)
+    invoice_name = db.Column(db.String(128), index=False, unique=False)
     #If NDIS: Who Pays For Your Service? (263)
     NDIS_who_pays = db.Column(db.String(64), index=False, unique=False)
+    #Email For Invoices (NDIS and Bank Transfer Only) (261)
+    invoice_email = db.Column(db.String(64), index=False, unique=False)
+    # How long since your last lawn service? 
+    last_service = db.Column(db.String(80), index=False, unique=False)
+    #Invoice Reference (e.g. NDIS #) (262)
+    invoice_reference = db.Column(db.String(80), index=False, unique=False)
+    #Invoice Reference (e.g. NDIS #) (262)
+    invoice_reference_extra = db.Column(db.String(80), index=False, unique=False)
     #NDIS Number (301)
     NDIS_reference = db.Column(db.String(64), index=False, unique=False)
+    #Is your date & time flexible? (266)
+    flexible_date_time = db.Column(db.String(64), index=False, unique=False)
     
     
     def __repr__(self):
@@ -560,25 +564,61 @@ def import_dict(d, b):
     
     if 'custom_fields' in b:
         b_cf = b["custom_fields"]
+        
         ## How did you find Maid2Match
-        d.lead_source = b_cf['drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24'][:64] if 'drop_down:65c938ba-a125-48ba-a21f-9fb34350ab24' in b_cf else None
+        CUSTOM_SOURCE = current_app.config['CUSTOM_SOURCE']
+        d.lead_source = b_cf[CUSTOM_SOURCE][:64] if CUSTOM_SOURCE in b_cf else None
+        
         # Which team member booked this clean in?
-        d.booked_by = b_cf['single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9'] if 'single_line:a3a07fee-eb4f-42ae-ab31-9977d4d1acf9' in b_cf else None
-        #Is your date & time flexible? (266)
-        d.flexible_date_time = b_cf['drop_down:f5c6492a-82cc-41cf-8e0b-5390bea7d71b'] if 'drop_down:f5c6492a-82cc-41cf-8e0b-5390bea7d71b' in b_cf else None
-        #Name for Invoice (267)
-        d.invoice_name = b_cf['single_line:b382b477-5ddd-498e-ba36-74d55c7f0146'] if 'single_line:b382b477-5ddd-498e-ba36-74d55c7f0146' in b_cf else None
-        #Email For Invoices (NDIS and Bank Transfer Only) (261)
-        d.invoice_email = b_cf['single_line:c131935b-e8cf-4ef9-b6ff-6068a674c49d'] if 'single_line:c131935b-e8cf-4ef9-b6ff-6068a674c49d' in b_cf else None
-        #Invoice Reference (e.g. NDIS #) (262)
-        d.invoice_reference =b_cf['single_line:73238370-80d8-4cbe-8577-74e3ade200a0'] if 'single_line:73238370-80d8-4cbe-8577-74e3ade200a0' in b_cf else None
+        CUSTOM_BOOKED_BY = current_app.config['CUSTOM_BOOKED_BY']
+        if CUSTOM_BOOKED_BY:
+            d.booked_by = b_cf.get(CUSTOM_BOOKED_BY)
+        
         #Send customer email copy of invoice? (265)
-        d.invoice_tobe_emailed = b_cf['drop_down:a255d2c7-fb9a-4fa8-beb6-a91bc1ef6fed'] if 'drop_down:a255d2c7-fb9a-4fa8-beb6-a91bc1ef6fed' in b_cf else None
+        CUSTOM_EMAIL_INVOICE = current_app.config['CUSTOM_EMAIL_INVOICE']
+        if CUSTOM_EMAIL_INVOICE:
+            d.invoice_tobe_emailed = b_cf.get(CUSTOM_EMAIL_INVOICE)
+        
+        #Name for Invoice (267)
+        CUSTOM_INVOICE_NAME = current_app.config['CUSTOM_INVOICE_NAME']
+        if CUSTOM_INVOICE_NAME:
+            d.invoice_name = b_cf.get(CUSTOM_INVOICE_NAME)
+        
         #If NDIS: Who Pays For Your Service? (263)
-        d.NDIS_who_pays =b_cf['drop_down:5842d47d-52c9-4cff-ba42-f5b90ada72e5'] if 'drop_down:5842d47d-52c9-4cff-ba42-f5b90ada72e5' in b_cf else None
+        CUSTOM_WHO_PAYS = current_app.config['CUSTOM_WHO_PAYS']
+        if CUSTOM_WHO_PAYS:
+            d.NDIS_who_pays =b_cf.get(CUSTOM_WHO_PAYS)
+        
+        #Email For Invoices (NDIS and Bank Transfer Only) (261)
+        CUSTOM_INVOICE_EMAIL_ADDRESS = current_app.config['CUSTOM_INVOICE_EMAIL_ADDRESS']
+        if CUSTOM_INVOICE_EMAIL_ADDRESS:
+            d.invoice_email = b_cf.get(CUSTOM_INVOICE_EMAIL_ADDRESS)
+        
+        #How long since your last lawn service?
+        CUSTOM_LAST_SERVICE = current_app.config['CUSTOM_LAST_SERVICE']
+        if CUSTOM_LAST_SERVICE:
+            d.last_service = b_cf.get(CUSTOM_LAST_SERVICE)
+        
+        #Invoice Reference (e.g. NDIS #) (262)
+        CUSTOM_INVOICE_REFERENCE = current_app.config['CUSTOM_INVOICE_REFERENCE']
+        if CUSTOM_INVOICE_REFERENCE:
+            d.invoice_reference = b_cf.get(CUSTOM_INVOICE_REFERENCE)
+        
+        #Invoice Reference (e.g. NDIS #) (262)
+        CUSTOM_INVOICE_REFERENCE_EXTRA = current_app.config['CUSTOM_INVOICE_REFERENCE_EXTRA']
+        if CUSTOM_INVOICE_REFERENCE_EXTRA:
+            d.invoice_reference_extra = b_cf.get(CUSTOM_INVOICE_REFERENCE_EXTRA)
+        
         #NDIS Number (301)
-        d.NDIS_reference = b_cf['single_line:2b738d28-6c2c-4850-ae47-2c4902da9d8d'] if 'single_line:2b738d28-6c2c-4850-ae47-2c4902da9d8d' in b_cf else None
-
+        CUSTOM_NDIS_NUMBER = current_app.config['CUSTOM_NDIS_NUMBER']
+        if CUSTOM_NDIS_NUMBER:
+            d.NDIS_reference = b_cf.get(CUSTOM_NDIS_NUMBER)
+        
+        #Is your date & time flexible? (266)
+        CUSTOM_FLEXIBLE =  current_app.config['CUSTOM_FLEXIBLE']
+        if CUSTOM_FLEXIBLE:
+            d.flexible_date_time = b_cf.get(CUSTOM_FLEXIBLE)
+        
     return d
 
 
