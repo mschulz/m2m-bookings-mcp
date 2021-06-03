@@ -499,7 +499,7 @@ def import_dict(d, b):
     d.team_requested = b['team_requested'] if 'team_requested' in b else None
     d.created_by = b['created_by'] if 'created_by' in b else None
     d.next_booking_date = b['next_booking_date'] if 'next_booking_date' in b else None
-    d.service_category = b['service_category'] if 'service_category' in b else 'House Clean'
+    d.service_category = b['service_category'] if 'service_category' in b else current_app.config['SERVICE_CATEGORY_DEFAULT']
     if 'service' in b:
         if len(b['service']) > 128:
             current_app.logger.error(f"booking_id: {b['id']}:: truncating service field to 128 characters {b['service']}")

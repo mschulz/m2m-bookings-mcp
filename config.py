@@ -87,6 +87,9 @@ class Config(object):
     TEMPLATE_ID_FIRST_HEADSUP = int(os.environ.get('TEMPLATE_ID_FIRST_HEADSUP'))
     TEMPLATE_ID_SECOND_HEADSUP = int(os.environ.get('TEMPLATE_ID_SECOND_HEADSUP'))
     TEMPLATE_ID_RATING = int(os.environ.get('TEMPLATE_ID_RATING'))
+    
+    # service_category default for each business
+    SERVICE_CATEGORY_DEFAULT = os.environ.get('SERVICE_CATEGORY_DEFAULT')
 
 class ProductionConfig(Config):
     DEBUG = False  
