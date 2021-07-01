@@ -1,7 +1,7 @@
 venv
 UNUSED
 __pycache__
-.env
+.env*
 logs
 test.db
 .gitignore

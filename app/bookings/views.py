@@ -10,7 +10,7 @@ from app.models import Booking, import_dict, Customer, import_customer
 from sqlalchemy import exc
 from psycopg2.errors import UniqueViolation
 from app.email import send_error_email
-
+from app.notify import is_completed, notify_cancelled_completed
 
 def process_booking_data(data):
     booking_id = data['id'] if 'id' in data else None
@@ -241,6 +241,11 @@ def cancellation():
         print('Processing a cancelled booking')
     
     data = json.loads(request.data)
+
+    # Generate a notification when we get a cancellation of a completed booking.
+    if is_completed(data):
+        notify_cancelled_completed(data)
+
     data["booking_status"] = 'CANCELLED'
     
     # Extract the booking data and update appropriate row in booking table

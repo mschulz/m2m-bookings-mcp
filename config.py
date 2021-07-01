@@ -90,6 +90,9 @@ class Config(object):
     
     # service_category default for each business
     SERVICE_CATEGORY_DEFAULT = os.environ.get('SERVICE_CATEGORY_DEFAULT')
+    
+    # Notification webhook
+    NOTIFICATION_URL = os.environ.get('NOTIFICATION_URL')
 
 class ProductionConfig(Config):
     DEBUG = False  
