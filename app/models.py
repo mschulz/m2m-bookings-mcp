@@ -518,8 +518,7 @@ def import_dict(d, b):
     d.cancellation_fee = b['cancellation_fee'] if 'cancellation_fee' in b else None
     d.price_adjustment = b['price_adjustment'] if 'price_adjustment' in b else None
     d.price_adjustment_comment = b['price_adjustment_comment'] if 'price_adjustment_comment' in b else None
-    if 'booking_status' in b:
-        d.booking_status = b['booking_status']
+    d.booking_status = b['booking_status'] if 'booking_status' in belse None
     d.is_first_recurring = b['is_first_recurring'] if 'is_first_recurring' in b else None
     d.is_new_customer = b['is_new_customer'] if 'is_new_customer' in b else None
     d.extras = b['extras'] if 'extras' in b else None

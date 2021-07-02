@@ -10,7 +10,7 @@ from app.models import Booking, import_dict, Customer, import_customer
 from sqlalchemy import exc
 from psycopg2.errors import UniqueViolation
 from app.email import send_error_email
-from app.notify import is_completed, notify_cancelled_completed
+from app.notify import is_completed, notify_cancelled_completed, is_missing_booking
 
 def process_booking_data(data):
     booking_id = data['id'] if 'id' in data else None
@@ -241,10 +241,14 @@ def cancellation():
         print('Processing a cancelled booking')
     
     data = json.loads(request.data)
-
-    # Generate a notification when we get a cancellation of a completed booking.
-    if is_completed(data):
-        notify_cancelled_completed(data)
+    
+    # In the rare case where Launch27 does not send out the booking via Zapier, this code has
+    # no row on which to work.  To fix this, we will accept the data here and create the entry.
+    # There is no way to generate a notification, so we can skip that step.
+    if not is_missing_booking(data):
+        # Generate a notification when we get a cancellation of a completed booking.
+        if is_completed(data):
+            notify_cancelled_completed(data)
 
     data["booking_status"] = 'CANCELLED'
     

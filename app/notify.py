@@ -8,7 +8,7 @@ from app.models import Booking
 from app.email import send_warning_email
 
 
-def is_completed(data):
+def is_missing_booking(data):
     """ Check if this about to be cancelled booking is already marked as completed. """
     booking_id = data['id'] if 'id' in data else None
     
@@ -18,6 +18,15 @@ def is_completed(data):
         abort(422)
     
     current_app.logger.info(f'Booking data received: {data}')
+    
+    # Check if we already have a booking under this id
+    b = db.session.query(Booking).filter(Booking.booking_id == booking_id).first()
+    
+    return b is None
+
+def is_completed(data):
+    """ Check if this about to be cancelled booking is already marked as completed. """
+    booking_id = data['id'] if 'id' in data else None
     
     # Check if we already have a booking under this id
     b = db.session.query(Booking).filter(Booking.booking_id == booking_id).first()
