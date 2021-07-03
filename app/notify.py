@@ -9,7 +9,7 @@ from app.email import send_warning_email
 
 
 def is_missing_booking(data):
-    """ Check if this about to be cancelled booking is already marked as completed. """
+    """ Check if this about to be cancelled booking is actually in the database. """
     booking_id = data['id'] if 'id' in data else None
     
     if not booking_id:
