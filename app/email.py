@@ -92,7 +92,7 @@ def send_updated_locations_email(toaddr, number_locations, updated, missing, pos
             )
 
     send_email(
-        subject = f'{company_name}: Updated booking locations information!!',
+        subject = f'{app_name}: Updated booking locations information!!',
         sender=(current_app.config['FROM_NAME'], current_app.config["FROM_ADDRESS"]),
         recipients = toaddr if isinstance(toaddr, list) else [toaddr],
         html_body = body,

@@ -31,8 +31,8 @@ def main():
                 location = get_location(postcode)
                 
                 if location is None:
+                    missing += 1
                     if postcode not in postcodes_missing:
-                        missing += 1
                         postcodes_missing.add(postcode)
                 else:
                     updated += 1
@@ -40,7 +40,7 @@ def main():
                     db.session.commit()
         print(f'Locations to update:{number_locations} Missing locations={missing} Updated={updated}')
         to_addr = current_app.config["MISSING_LOCATION_EMAIL"]
-        send_updated_locations_email(to_addr, number_locations, update, missing, len(postcodes_missing))
+        send_updated_locations_email(to_addr, number_locations, updated, missing, len(postcodes_missing))
  
 if __name__ == '__main__':
     main()
