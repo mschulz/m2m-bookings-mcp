@@ -12,6 +12,9 @@ def get_location(postcode):
     """
         Given the postcode, return the location name.
     """
+    if postcode is None:
+        return None
+    
     # First check the cache to see if we have a location_name already
     if not (isinstance(postcode, str)):
         postcode = str(postcode)

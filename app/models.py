@@ -556,7 +556,7 @@ def import_dict(d, b):
         current_app.logger.error(f'({request.path}) Invalid postcode {d.postcode} entered for customer "{d.name}"')
         
     
-    d.location = b['location'] if 'location' in b else get_location(postcode)
+    d.location = b['location'] if 'location' in b else get_location(d.postcode)
     
     # Custom field data
     

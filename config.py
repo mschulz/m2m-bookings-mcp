@@ -52,6 +52,7 @@ class Config(object):
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', None)
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', None)
     MAIL_DEBUG = False
+    MISSING_LOCATION_EMAIL=os.environ.get('MISSING_LOCATION_EMAIL')
     
     # SendinBlue configuration
     SMTP_KEY = 'REDACTED_SMTP_KEY'
