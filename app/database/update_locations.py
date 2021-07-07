@@ -40,7 +40,6 @@ def main():
                     db.session.commit()
         print(f'Locations to update:{number_locations} Missing locations={missing} Updated={updated}')
         to_addr = current_app.config["MISSING_LOCATION_EMAIL"]
-        to_addr = current_app.config["SUPPORT_EMAIL"]
         send_updated_locations_email(to_addr, number_locations, update, missing, len(postcodes_missing))
  
 if __name__ == '__main__':
