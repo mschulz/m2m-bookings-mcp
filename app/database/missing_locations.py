@@ -17,8 +17,9 @@ def main():
     with app.app_context():
         
         res = db.session.query(Booking).filter(Booking.location == None).all()
+        number_locations = len(res)
         
-        print(f'Locations missing = {len(res)}')
+        print(f'Locations missing = {number_locations}')
         
         if res:
 
@@ -26,12 +27,17 @@ def main():
                 postcode = item.postcode
                 
                 missing.add(postcode)
-        
-            print(f'Postcodes with no Locations for {current_app.config["COMPANY_NAME"]}\n{missing}')
+
+            missing_list = list(missing)
+            number_postcodes = len(missing_list)
             
-            to_addr = current_app.config["SUPPORT_EMAIL"]
-            msg = str(missing)
-            send_missing_location_email(to_addr, msg)
+            print(f'Postcodes missing = {number_postcodes}')
+            
+            missing_list.sort()
+
+            to_addr = current_app.config["MISSING_LOCATION_EMAIL"]
+            msg = str(missing_list)
+            send_missing_location_email(to_addr, msg, number_locations, number_postcodes)
 
 
 if __name__ == '__main__':
