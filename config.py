@@ -93,6 +93,9 @@ class Config(object):
     
     # Notification webhook
     NOTIFICATION_URL = os.environ.get('NOTIFICATION_URL')
+    
+    # zip2location URL
+    ZIP2LOCATION_URL = os.environ.get('ZIP2LOCATION_URL')
 
 class ProductionConfig(Config):
     DEBUG = False  

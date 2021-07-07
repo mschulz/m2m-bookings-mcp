@@ -11,7 +11,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from flask import request, current_app
 from app.email import send_error_email, send_warning_email
 from validate_email import validate_email
-
+from app.locations import get_location
 class Booking(db.Model):
     '''
         Booking class holds all the data for the current booking. 
@@ -458,7 +458,6 @@ class Booking(db.Model):
             except ValueError as e:
                 current_app.logger.error(f'price_adjustment error ({val}): {e}')
 
-
 def string_to_boolean(val):
     return val.lower() in ['true', 'yes', '1']
 
@@ -557,7 +556,7 @@ def import_dict(d, b):
         current_app.logger.error(f'({request.path}) Invalid postcode {d.postcode} entered for customer "{d.name}"')
         
     
-    d.location = b['location'] if 'location' in b else None
+    d.location = b['location'] if 'location' in b else get_location(postcode)
     
     # Custom field data
     
