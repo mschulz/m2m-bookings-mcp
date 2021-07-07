@@ -6,6 +6,7 @@ import json
 from app import create_app, db
 from flask import  current_app
 from app.models import Booking
+from app.email import send_missing_location_email
 
 missing = set()
 
@@ -27,7 +28,10 @@ def main():
                 missing.add(postcode)
         
             print(f'Postcodes with no Locations for {current_app.config["COMPANY_NAME"]}\n{missing}')
-        
+            
+            to_addr = current_app.config["SUPPORT_EMAIL"]
+            msg = str(missing)
+            send_missing_location_email(to_addr, msg)
 
 
 if __name__ == '__main__':

@@ -58,6 +58,19 @@ def send_success_email(toaddr, route):
         html_body = body,
         text_body = html2text.html2text(body)
         )
+     
+def send_missing_location_email(toaddr, error_msg):
+    ''' Send developer email when an error has occurred. '''
+    company_name = current_app.config["COMPANY_NAME"]
+    body = render_template('errors/missing_locations.html', app_name=company_name, error_msg=error_msg)
+
+    send_email(
+        subject = f'{company_name}: Missing Location information!!',
+        sender=(current_app.config['FROM_NAME'], current_app.config["FROM_ADDRESS"]),
+        recipients = toaddr if isinstance(toaddr, list) else [toaddr],
+        html_body = body,
+        text_body = html2text.html2text(body)
+        )
 
 if __name__ == '__main__':
 
