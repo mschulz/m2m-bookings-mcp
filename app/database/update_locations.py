@@ -7,7 +7,7 @@ from app import create_app, db
 from flask import  current_app
 from app.models import Booking
 from app.locations import get_location
-#from sqlalchemy import exc
+from app.email import send_updated_locations_email
 
 
 def main():
