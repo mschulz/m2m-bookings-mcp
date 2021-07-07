@@ -23,10 +23,7 @@ def main():
         
         if res:
 
-            for item in res:
-                postcode = item.postcode
-                
-                missing.add(postcode)
+            missing = {item.postcode for item in res}
 
             missing_list = list(missing)
             number_postcodes = len(missing_list)

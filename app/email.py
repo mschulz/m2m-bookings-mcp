@@ -79,12 +79,13 @@ def send_missing_location_email(toaddr, error_msg, locations, postcodes):
         )
      
 
-def send_updated_locations_email(toaddr, updated, missing, postcodes):
+def send_updated_locations_email(toaddr, number_locations, updated, missing, postcodes):
     ''' Send developer email when an error has occurred. '''
     app_name = current_app.config["APP_NAME"]
     body = render_template(
                     'updated_bookings.html', 
                     app_name=app_name, 
+                    number_locations=number_locations,
                     updated=updated,
                     missing=missing,
                     postcodes=postcodes
