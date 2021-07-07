@@ -28,8 +28,6 @@ def get_location(postcode):
     if res.status_code != 200:
         error_msg = f'postcode {postcode} not recognized'
         print(error_msg)
-        toaddr = current_app.config['SUPPORT_EMAIL']
-        send_error_email(toaddr, error_msg)
         # Don't update cache.  We want to catch the mapping whenever the location DB is updated
         # Heroku restarts the server after periods of rest, and once a day.
         return None

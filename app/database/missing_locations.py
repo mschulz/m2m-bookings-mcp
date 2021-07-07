@@ -1,4 +1,4 @@
-# app/database/missing_locations.py
+# templates/missing_locations.py
 
 import os
 import json

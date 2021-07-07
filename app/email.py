@@ -77,6 +77,26 @@ def send_missing_location_email(toaddr, error_msg, locations, postcodes):
         html_body = body,
         text_body = html2text.html2text(body)
         )
+     
+
+def send_updated_locations_email(toaddr, updated, missing, postcodes):
+    ''' Send developer email when an error has occurred. '''
+    app_name = current_app.config["APP_NAME"]
+    body = render_template(
+                    'updated_bookings.html', 
+                    app_name=app_name, 
+                    updated=updated,
+                    missing=missing,
+                    postcodes=postcodes
+            )
+
+    send_email(
+        subject = f'{company_name}: Updated booking locations information!!',
+        sender=(current_app.config['FROM_NAME'], current_app.config["FROM_ADDRESS"]),
+        recipients = toaddr if isinstance(toaddr, list) else [toaddr],
+        html_body = body,
+        text_body = html2text.html2text(body)
+        )
 
 if __name__ == '__main__':
 
