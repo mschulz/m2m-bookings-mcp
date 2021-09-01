@@ -4,14 +4,13 @@ import json
 from datetime import datetime
 
 from app import db
-#from sqlalchemy import and_
-#from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from flask import request, current_app
-from app.email import send_error_email, send_warning_email
-from validate_email import validate_email
+from app.email import send_error_email
 from app.locations import get_location
+
+
 class Booking(db.Model):
     '''
         Booking class holds all the data for the current booking. 
@@ -31,11 +30,17 @@ class Booking(db.Model):
     _extras_price = db.Column(db.Integer, index=False, unique=False)
     _subtotal =  db.Column(db.Integer, index=False, unique=False)
     _tip = db.Column(db.Integer, index=False, unique=False)
+
     payment_method = db.Column(db.String(64), index=False, unique=False)
     _rating_value = db.Column(db.Integer, index=False, unique=False)
     rating_text = db.Column(db.Text(), index=False, unique=False)
     rating_comment = db.Column(db.Text(), index=False, unique=False)
     _rating_comment_presence = db.Column(db.Boolean, index=False, unique=False)
+    rating_created_by = db.Column(db.String(64), index=False, unique=False)
+    rating_received = db.Column(db.DateTime(timezone=True), index=False, unique=False)
+    rating_modified = db.Column(db.DateTime(timezone=True), index=False, unique=False)
+    rating_modified_by = db.Column(db.String(64), index=False, unique=False)
+
     frequency = db.Column(db.String(64), index=False, unique=False)
     discount_code = db.Column(db.String(64), index=False, unique=False)
     _discount_from_code = db.Column(db.Integer, index=False, unique=False)
@@ -479,10 +484,14 @@ def import_dict(d, b):
     d.subtotal = b['subtotal'] if 'subtotal' in b else None
     d.tip = b['tip'] if 'tip' in b else None
     d.payment_method = b['payment_method'] if 'payment_method' in b else None
-    d.rating_value = b['rating_value'] if 'rating_value' in b else None
+    #
+    # Do not have the bookings from Launch27 overwrite the rating data
+    # Rating data is insert ONLY rom m2m-ratings
+    """d.rating_value = b['rating_value'] if 'rating_value' in b else None
     d.rating_text = b['rating_text'] if 'rating_text' in b else None
     d.rating_comment = b['rating_comment'] if 'rating_comment' in b else None
-    d.rating_comment_presence = b['rating_comment_presence'] if 'rating_comment_presence' in b else None
+    d.rating_comment_presence = b['rating_comment_presence'] if 'rating_comment_presence' in b else None"""
+    #
     d.frequency = b['frequency'] if 'frequency' in b else None
     d.discount_code = b['discount_code'] if 'discount_code' in b else None
     d.discount_from_code = b['discount_amount'] if 'discount_amount' in b else None
@@ -702,14 +711,7 @@ def import_customer(c, d):
     c.first_name = d['first_name'] if 'first_name' in d else None
     c.last_name = d['last_name'] if 'last_name' in d else None
     c.name = d['name'] if 'name' in d else None
-    
     c.email = d['email'] if 'email' in d else None
-    # We are starting to see invalid email addresses creeping into the system.  This check if they are valid and sends
-    # an email alerting staff to the issue.
-    """if c.email:
-        if not validate_email(c.email, check_mx=True, debug=False, use_blacklist=False):
-            current_app.logger.error(f'({request.path}) Invalid email ({c.email}) entered for customer "{c.first_name} {c.last_name}".')"""
-            
     c.phone = d['phone'] if 'phone' in d else None
     c.address = d['address'] if 'address' in d else None
     c.city = d['city'] if 'city' in d else None

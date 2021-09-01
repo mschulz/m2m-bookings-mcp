@@ -1,13 +1,16 @@
 # app/bookings/views.py
 
 import json
-from flask import request, current_app, abort
+from datetime import datetime
+import pytz
+
+from flask import request, current_app, abort, jsonify
 from app import db
 from app.bookings import bookings_api
 from app.decorators import APIkey_required
 from app.email import send_success_email
 from app.models import Booking, import_dict, Customer, import_customer
-from sqlalchemy import exc
+from sqlalchemy import exc, and_, func
 from psycopg2.errors import UniqueViolation
 from app.email import send_error_email
 from app.notify import is_completed, notify_cancelled_completed, is_missing_booking
@@ -306,3 +309,43 @@ def team_changed():
     return 'OK'
 
 
+@bookings_api.route('/booking', methods=['GET'])
+@APIkey_required
+def search():
+    '''
+        search throgh bookings.
+    '''
+    if not current_app.testing:
+        print('Search through bookings')
+
+    service_category = request.args.get('category')
+    created_at_str = request.args.get('date')
+    created_at = datetime.strptime(created_at_str, "%Y-%m-%d")
+    start_created = local_to_UTC(created_at.replace(hour=0, minute=0, second=0, microsecond=0))
+    end_created = local_to_UTC(created_at.replace(hour=23, minute=59, second=59, microsecond=0))
+    booking_status = request.args.get('booking_status').upper()
+    
+    print(f'params: category={service_category} date={start_created},{end_created} booking_status={booking_status}')
+    
+    res = db.session.query(Booking) \
+        .filter_by(service_category=service_category, booking_status=booking_status).filter(and_(Booking.created_at >= start_created, Booking.created_at <= end_created)) \
+        .all()
+    
+    print(res)
+    
+    found = []
+    for item in res:
+        data = {
+            "category": item.service_category,
+            "name": item.name,
+            "location": item.location
+        }
+        found.append(data.copy())
+    
+    return jsonify(found)
+
+def local_to_UTC(d):
+    local = pytz.timezone(current_app.config['TZ_LOCALTIME'])
+    local_dt = local.localize(d, is_dst=current_app.config['TZ_ISDST'])
+    utc_dt = local_dt.astimezone(pytz.utc)
+    return utc_dt
