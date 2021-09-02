@@ -99,7 +99,7 @@ class Booking(db.Model):
     ## How did you find Maid2Match
     lead_source =  db.Column(db.String(64), index=False, unique=False)
     # Which team member booked this clean in?
-    _booked_by =  db.Column(db.String(64), index=False, unique=False)
+    booked_by =  db.Column(db.String(64), index=False, unique=False)
     #Send customer email copy of invoice? (265)
     _invoice_tobe_emailed = db.Column(db.Boolean, index=False, unique=False)
     #Name for Invoice (267)
@@ -442,15 +442,6 @@ class Booking(db.Model):
             self._invoice_tobe_emailed = string_to_boolean(val)
     
     @hybrid_property
-    def booked_by(self):
-        return self._booked_by
-    
-    @booked_by.setter
-    def invoice_tobe_emailed(self, val):
-        if val is not None:
-            self._booked_by = val[:64]
-    
-    @hybrid_property
     def sms_notifications_enabled(self):
         return self._sms_notifications_enabled
     
@@ -587,8 +578,7 @@ def import_dict(d, b):
         
         # Which team member booked this clean in?
         CUSTOM_BOOKED_BY = current_app.config['CUSTOM_BOOKED_BY']
-        if CUSTOM_BOOKED_BY:
-            d.booked_by = b_cf.get(CUSTOM_BOOKED_BY)
+        d.booked_by = b_cf[CUSTOM_BOOKED_BY][:64] if CUSTOM_BOOKED_BY in b_cf else None
         
         #Send customer email copy of invoice? (265)
         CUSTOM_EMAIL_INVOICE = current_app.config['CUSTOM_EMAIL_INVOICE']
