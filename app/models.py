@@ -493,20 +493,22 @@ def import_dict(d, b):
     d.rating_comment_presence = b['rating_comment_presence'] if 'rating_comment_presence' in b else None"""
     #
     d.frequency = b['frequency'] if 'frequency' in b else None
-    d.discount_code = b['discount_code'] if 'discount_code' in b else None
+    if 'discount_code' in b:
+        d.discount_code = b['discount_code']
     d.discount_from_code = b['discount_amount'] if 'discount_amount' in b else None
     d.giftcard_amount = b['giftcard_amount'] if 'giftcard_amount' in b else None
-    d.teams_assigned = b['team_details'] if 'team_details' in b else None
-    ### Pointed to by assigned team or teams
-    ### teams = db.relationship("Team", secondary=booking_team_association, lazy='subquery',
-    ###    backref=db.backref('team_bookings', lazy=True))
-    d.teams_assigned_ids = b['team_details'] if 'team_details' in b else None
-    d.team_share = b['team_share_amount'] if 'team_share_amount' in b else None
-    d.team_share_summary = b['team_share_total'] if 'team_share_total' in b else None
+    if 'team_details' in b:
+        d.teams_assigned = b['team_details']
+        d.teams_assigned_ids = b['team_details']
+    if 'team_share_amount' in b:
+        d.team_share = b['team_share_amount']
+    if 'team_share_total' in b:
+        d.team_share_summary = b['team_share_total']
     d.team_has_key = b['team_has_key'] if 'team_has_key' in b else None
     d.team_requested = b['team_requested'] if 'team_requested' in b else None
     d.created_by = b['created_by'] if 'created_by' in b else None
-    d.next_booking_date = b['next_booking_date'] if 'next_booking_date' in b else None
+    if 'next_booking_date' in b:
+        d.next_booking_date = b['next_booking_date']
     d.service_category = b['service_category'] if 'service_category' in b else current_app.config['SERVICE_CATEGORY_DEFAULT']
     if 'service' in b:
         if len(b['service']) > 128:
@@ -521,12 +523,15 @@ def import_dict(d, b):
     ### customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'))
     d.cancellation_type = b['cancellation_type'] if 'cancellation_type' in b else None
     d.cancelled_by = b['cancelled_by'] if 'cancelled_by' in b else None
-    d.cancellation_date = b['cancellation_date'] if 'cancellation_date' in b else None
+    if 'cancellation_date' in b:
+        d.cancellation_date = b['cancellation_date']
     d.cancellation_reason = b['cancellation_reason'] if 'cancellation_reason' in b else None
-    d.cancellation_fee = b['cancellation_fee'] if 'cancellation_fee' in b else None
+    if 'cancellation_fee' in b:
+        d.cancellation_fee = b['cancellation_fee']
     d.price_adjustment = b['price_adjustment'] if 'price_adjustment' in b else None
     d.price_adjustment_comment = b['price_adjustment_comment'] if 'price_adjustment_comment' in b else None
-    d.booking_status = b['booking_status'] if 'booking_status' in b else None
+    if 'booking_status' in b:
+        d.booking_status = b['booking_status']
     d.is_first_recurring = b['is_first_recurring'] if 'is_first_recurring' in b else None
     d.is_new_customer = b['is_new_customer'] if 'is_new_customer' in b else None
     d.extras = b['extras'] if 'extras' in b else None
@@ -574,11 +579,13 @@ def import_dict(d, b):
         
         ## How did you find Maid2Match
         CUSTOM_SOURCE = current_app.config['CUSTOM_SOURCE']
-        d.lead_source = b_cf[CUSTOM_SOURCE][:64] if CUSTOM_SOURCE in b_cf else None
+        if CUSTOM_SOURCE in b_cf:
+            d.lead_source = b_cf[CUSTOM_SOURCE][:64]
         
         # Which team member booked this clean in?
         CUSTOM_BOOKED_BY = current_app.config['CUSTOM_BOOKED_BY']
-        d.booked_by = b_cf[CUSTOM_BOOKED_BY][:64] if CUSTOM_BOOKED_BY in b_cf else None
+        if CUSTOM_BOOKED_BY in b_cf:
+            d.booked_by = b_cf[CUSTOM_BOOKED_BY][:64]
         
         #Send customer email copy of invoice? (265)
         CUSTOM_EMAIL_INVOICE = current_app.config['CUSTOM_EMAIL_INVOICE']
