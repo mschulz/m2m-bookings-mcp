@@ -1,0 +1,34 @@
+pm2m() {
+    if [ -n "$1" ]
+    then
+        cd $HOME/Projects/maid2match/$1
+    else
+        echo "Missing destination"
+        exit(1)
+    fi
+    source venv/bin/activate
+    export export APP_SETTINGS=config.DevelopmentConfig
+}
+
+
+alias fld="FLASK_DEBUG=1 flask run"
+
+gitall() {
+	git status
+	RESULT=$?
+	if [ $RESULT -eq 0 ]; then
+		echo 'Update required!'
+		git add .
+		if [ -n "$1" ]
+		then
+			git commit -m "$1"
+		else
+			git commit -m update
+		fi
+		git push origin master
+	else
+		echo 'All up to date!'
+	fi
+}
+
+if git status
