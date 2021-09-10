@@ -604,7 +604,7 @@ def import_dict(d, b):
         
         #Email For Invoices (NDIS and Bank Transfer Only) (261)
         CUSTOM_INVOICE_EMAIL_ADDRESS = current_app.config['CUSTOM_INVOICE_EMAIL_ADDRESS']
-        if CUSTOM_INVOICE_EMAIL_ADDRESS:
+        if CUSTOM_INVOICE_EMAIL_ADDRESS in b_cf:
             d.invoice_email = b_cf[CUSTOM_INVOICE_EMAIL_ADDRESS][:64]
         
         #How long since your last lawn service?
