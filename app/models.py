@@ -474,7 +474,9 @@ def import_dict(d, b):
     if 'custom_fields' in b:
         custom_field_keys = b['custom_fields'].keys()
     
-    d.booking_id = b['id'] if 'id' in b else None
+    if 'id' in b:
+        d.booking_id = b['id']
+        b['id']
     d.created_at = b['created_at'] if 'created_at' in b else None
     d.updated_at = b['updated_at'] if 'updated_at' in b else None
     d.service_time = b['service_time'] if 'service_time' in b else None
@@ -514,15 +516,15 @@ def import_dict(d, b):
         if len(b['service']) > 128:
             current_app.logger.error(f"booking_id: {b['id']}:: truncating service field to 128 characters {b['service']}")
         d.service = b['service'][:128]
-    else:
-        d.service = None
     d.customer_notes = b['customer_notes'] if 'customer_notes' in b else None
     d.staff_notes = b['staff_notes'] if 'staff_notes' in b else None
     d.customer_id = b['customer']['id'] if 'customer' in b else None
     ### Points to the unique customer for this booking
     ### customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'))
-    d.cancellation_type = b['cancellation_type'] if 'cancellation_type' in b else None
-    d.cancelled_by = b['cancelled_by'] if 'cancelled_by' in b else None
+    if 'cancellation_type' in b:
+        d.cancellation_type = b['cancellation_type']
+    if 'cancelled_by' in b:
+        d.cancelled_by = b['cancelled_by']
     if 'cancellation_date' in b:
         d.cancellation_date = b['cancellation_date']
     d.cancellation_reason = b['cancellation_reason'] if 'cancellation_reason' in b else None
@@ -532,8 +534,10 @@ def import_dict(d, b):
     d.price_adjustment_comment = b['price_adjustment_comment'] if 'price_adjustment_comment' in b else None
     if 'booking_status' in b:
         d.booking_status = b['booking_status']
-    d.is_first_recurring = b['is_first_recurring'] if 'is_first_recurring' in b else None
-    d.is_new_customer = b['is_new_customer'] if 'is_new_customer' in b else None
+    if 'is_first_recurring' in b:
+        d.is_first_recurring = b['is_first_recurring']
+    if 'is_new_customer' in b:
+        d.is_new_customer = b['is_new_customer']
     d.extras = b['extras'] if 'extras' in b else None
     d.source = b['source'] if 'source' in b else None
     d.state = b['state'] if 'state' in b else None
@@ -579,57 +583,57 @@ def import_dict(d, b):
         
         ## How did you find Maid2Match
         CUSTOM_SOURCE = current_app.config['CUSTOM_SOURCE']
-        if CUSTOM_SOURCE in b_cf:
+        if CUSTOM_SOURCE and CUSTOM_SOURCE in b_cf:
             d.lead_source = b_cf[CUSTOM_SOURCE][:64]
         
         # Which team member booked this clean in?
         CUSTOM_BOOKED_BY = current_app.config['CUSTOM_BOOKED_BY']
-        if CUSTOM_BOOKED_BY in b_cf:
+        if CUSTOM_BOOKED_BY and CUSTOM_BOOKED_BY in b_cf:
             d.booked_by = b_cf[CUSTOM_BOOKED_BY][:64]
         
         #Send customer email copy of invoice? (265)
         CUSTOM_EMAIL_INVOICE = current_app.config['CUSTOM_EMAIL_INVOICE']
-        if CUSTOM_EMAIL_INVOICE:
+        if CUSTOM_EMAIL_INVOICE and CUSTOM_EMAIL_INVOICE in b_cf:
             d.invoice_tobe_emailed = b_cf.get(CUSTOM_EMAIL_INVOICE)
         
         #Name for Invoice (267)
         CUSTOM_INVOICE_NAME = current_app.config['CUSTOM_INVOICE_NAME']
-        if CUSTOM_INVOICE_NAME:
+        if CUSTOM_INVOICE_NAME and CUSTOM_INVOICE_NAME in b_cf:
             d.invoice_name = b_cf.get(CUSTOM_INVOICE_NAME)
         
         #If NDIS: Who Pays For Your Service? (263)
         CUSTOM_WHO_PAYS = current_app.config['CUSTOM_WHO_PAYS']
-        if CUSTOM_WHO_PAYS:
+        if CUSTOM_WHO_PAYS and CUSTOM_WHO_PAYS in b_cf:
             d.NDIS_who_pays =b_cf.get(CUSTOM_WHO_PAYS)
         
         #Email For Invoices (NDIS and Bank Transfer Only) (261)
         CUSTOM_INVOICE_EMAIL_ADDRESS = current_app.config['CUSTOM_INVOICE_EMAIL_ADDRESS']
-        if CUSTOM_INVOICE_EMAIL_ADDRESS in b_cf:
+        if CUSTOM_INVOICE_EMAIL_ADDRESS and CUSTOM_INVOICE_EMAIL_ADDRESS in b_cf:
             d.invoice_email = b_cf[CUSTOM_INVOICE_EMAIL_ADDRESS][:64]
         
         #How long since your last lawn service?
         CUSTOM_LAST_SERVICE = current_app.config['CUSTOM_LAST_SERVICE']
-        if CUSTOM_LAST_SERVICE:
+        if CUSTOM_LAST_SERVICE and CUSTOM_LAST_SERVICE in b_cf:
             d.last_service = b_cf.get(CUSTOM_LAST_SERVICE)
         
         #Invoice Reference (e.g. NDIS #) (262)
         CUSTOM_INVOICE_REFERENCE = current_app.config['CUSTOM_INVOICE_REFERENCE']
-        if CUSTOM_INVOICE_REFERENCE:
+        if CUSTOM_INVOICE_REFERENCE and CUSTOM_INVOICE_REFERENCE in b_cf:
             d.invoice_reference = b_cf.get(CUSTOM_INVOICE_REFERENCE)
         
         #Invoice Reference (e.g. NDIS #) (262)
         CUSTOM_INVOICE_REFERENCE_EXTRA = current_app.config['CUSTOM_INVOICE_REFERENCE_EXTRA']
-        if CUSTOM_INVOICE_REFERENCE_EXTRA:
+        if CUSTOM_INVOICE_REFERENCE_EXTRA and CUSTOM_INVOICE_REFERENCE_EXTRA in b_cf:
             d.invoice_reference_extra = b_cf.get(CUSTOM_INVOICE_REFERENCE_EXTRA)
         
         #NDIS Number (301)
         CUSTOM_NDIS_NUMBER = current_app.config['CUSTOM_NDIS_NUMBER']
-        if CUSTOM_NDIS_NUMBER:
+        if CUSTOM_NDIS_NUMBER and CUSTOM_NDIS_NUMBER in b_cf:
             d.NDIS_reference = b_cf.get(CUSTOM_NDIS_NUMBER)
         
         #Is your date & time flexible? (266)
         CUSTOM_FLEXIBLE =  current_app.config['CUSTOM_FLEXIBLE']
-        if CUSTOM_FLEXIBLE:
+        if CUSTOM_NDIS_NUMBER and CUSTOM_NDIS_NUMBER in b_cf:
             d.flexible_date_time = b_cf.get(CUSTOM_FLEXIBLE)
         
     return d

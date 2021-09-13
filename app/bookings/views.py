@@ -185,7 +185,7 @@ def new():
 
                 try:
                     db.session.commit()
-                    current_app.logger.error('Second attempt to load data loaded into database')
+                    current_app.logger.info('Second attempt to load data loaded into database')
                 except exc.IntegrityError as e:
                     db.session.rollback()
                     current_app.logger.error(f'({request.path}) Possible timing error (retry via Zapier): {e.orig}')
