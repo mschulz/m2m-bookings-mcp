@@ -62,7 +62,7 @@ class Booking(db.Model):
     service = db.Column(db.String(128), index=False, unique=False)
     customer_notes = db.Column(db.Text(), index=False, unique=False)
     staff_notes = db.Column(db.Text(), index=False, unique=False)
-    _customer_id =db.Column(db.Integer, index=False, unique=False)
+    _customer_id = db.Column(db.Integer, index=False, unique=False)
     ### Points to the unique customer for this booking
     ### customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'))
     cancellation_type = db.Column(db.String(64), index=False, unique=False)
@@ -75,6 +75,9 @@ class Booking(db.Model):
     booking_status = db.Column(db.String(64), index=False, unique=False)
     _is_first_recurring = db.Column(db.Boolean, index=False, unique=False)
     _is_new_customer = db.Column(db.Boolean, index=False, unique=False)
+    # Added these next two columns to keep a premanent record of is_first_recurring and is_new_customer
+    was_first_recurring = db.Column(db.Boolean, index=False, unique=False, default=False)
+    was_new_customer = db.Column(db.Boolean, index=False, unique=False, default=False)
     extras = db.Column(db.Text(), index=False, unique=False)
     source = db.Column(db.String(64), index=False, unique=False)
     _sms_notifications_enabled = db.Column(db.Boolean, index=False, unique=False)
@@ -423,7 +426,7 @@ class Booking(db.Model):
     @is_first_recurring.setter
     def is_first_recurring(self, val):
         self._is_first_recurring = string_to_boolean(val) if val is not None else False
-    
+            
     @hybrid_property
     def is_new_customer(self):
         return self._is_new_customer
@@ -536,8 +539,12 @@ def import_dict(d, b):
         d.booking_status = b['booking_status']
     if 'is_first_recurring' in b:
         d.is_first_recurring = b['is_first_recurring']
+        if string_to_boolean(b['is_first_recurring']):
+            d.was_first_recurring = True
     if 'is_new_customer' in b:
         d.is_new_customer = b['is_new_customer']
+        if string_to_boolean(b['is_new_customer']):
+            d.was_new_customer = True
     d.extras = b['extras'] if 'extras' in b else None
     d.source = b['source'] if 'source' in b else None
     d.state = b['state'] if 'state' in b else None
