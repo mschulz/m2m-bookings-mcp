@@ -8,3 +8,5 @@ test.db
 client_secret.json
 db_log*
 test_db
+*.csv
+

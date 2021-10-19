@@ -59,10 +59,17 @@ def create_app():
     # config.db_pc_idx_filename)
 
     # Register the blueprints
+    register_blueprints(app)
+
+    return app
+
+
+def register_blueprints(app):
     from app.errors import bp as errors_bp
     app.register_blueprint(errors_bp)
     
     from app.bookings import bookings_api as bookings_api_blueprint
     app.register_blueprint(bookings_api_blueprint)
-
-    return app
+    from app.customers import customers_api as customers_api_blueprint
+    app.register_blueprint(customers_api_blueprint)
+    

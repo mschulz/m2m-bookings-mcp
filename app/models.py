@@ -479,7 +479,6 @@ def import_dict(d, b):
     
     if 'id' in b:
         d.booking_id = b['id']
-        b['id']
     d.created_at = b['created_at'] if 'created_at' in b else None
     d.updated_at = b['updated_at'] if 'updated_at' in b else None
     d.service_time = b['service_time'] if 'service_time' in b else None
