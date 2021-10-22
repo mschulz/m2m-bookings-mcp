@@ -9,6 +9,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from flask import request, current_app
 from app.email import send_error_email
 from app.locations import get_location
+from app.local_date_time import utc_to_local
 
 
 class Booking(db.Model):
@@ -131,7 +132,7 @@ class Booking(db.Model):
     
     @hybrid_property
     def created_at(self):
-            return self._created_at
+            return utc_to_local(self._created_at)
             
     @created_at.setter
     def created_at(self, val):
@@ -148,7 +149,7 @@ class Booking(db.Model):
     
     @hybrid_property
     def updated_at(self):
-        return self._updated_at
+        return utc_to_local(self._updated_at)
     
     @updated_at.setter
     def updated_at(self, val):
@@ -347,7 +348,7 @@ class Booking(db.Model):
     
     @hybrid_property
     def next_booking_date(self):
-        return self._next_booking_date
+        return utc_to_local(self._next_booking_date)
     
     @next_booking_date.setter
     def next_booking_date(self, val):
@@ -538,11 +539,11 @@ def import_dict(d, b):
         d.booking_status = b['booking_status']
     if 'is_first_recurring' in b:
         d.is_first_recurring = b['is_first_recurring']
-        if string_to_boolean(b['is_first_recurring']):
+        if d.is_first_recurring:
             d.was_first_recurring = True
     if 'is_new_customer' in b:
         d.is_new_customer = b['is_new_customer']
-        if string_to_boolean(b['is_new_customer']):
+        if d.is_new_customer:
             d.was_new_customer = True
     d.extras = b['extras'] if 'extras' in b else None
     d.source = b['source'] if 'source' in b else None
@@ -687,7 +688,7 @@ class Customer(db.Model):
     
     @hybrid_property
     def created_at(self):
-            return self._created_at
+            return utc_to_local(self._created_at)
             
     @created_at.setter
     def created_at(self, val):
@@ -704,7 +705,7 @@ class Customer(db.Model):
     
     @hybrid_property
     def updated_at(self):
-        return self._updated_at
+        return utc_to_local(self._updated_at)
     
     @updated_at.setter
     def updated_at(self, val):

@@ -1,10 +1,20 @@
 # local_date_time.py
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pytz
 from flask import current_app
 
 
+def utc_to_local(utc_dt):
+    local_tz = pytz.timezone(current_app.config["TZ_LOCALTIME"])
+    return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=local_tz)
+
+def local_to_utc(local_dt):
+    local_tz = pytz.timezone(current_app.config["TZ_LOCALTIME"])
+    local_dt = local.localize(local_dt, is_dst=current_app.config["TZ_ISDST"])
+    utc_dt = local_dt.astimezone(pytz.utc)
+    return utc_dt
+        
 def local_time_now(localTZ, isDST):
     utc_time = datetime.utcnow()
     tz = pytz.timezone(localTZ)
@@ -56,7 +66,7 @@ def days_from_now(service_date, localTZ, isDST):
     return delta.days
 
 if __name__ == '__main__':
-    localTZ = 'Australia/Brisbane'
+    """localTZ = 'Australia/Brisbane'
     isDST = None
     
     ltn = local_time_now(localTZ, isDST)
@@ -79,5 +89,11 @@ if __name__ == '__main__':
     
     service_date = datetime.strptime('2019-05-30', '%Y-%m-%d')
     dfn = days_from_now(service_date, localTZ, isDST)
-    print(f'days_from_now: {dfn} of type {type(dfn)}')
+    print(f'days_from_now: {dfn} of type {type(dfn)}')"""
     
+    from app import create_app
+    
+    app = create_app()
+    
+    with app.app_context():
+        print(utc_to_local(UTC_now()))
