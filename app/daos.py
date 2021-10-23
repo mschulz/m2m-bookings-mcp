@@ -13,7 +13,6 @@
 import json
 from datetime import datetime, timedelta
 import pytz
-from dateutil import tz
 
 from app import db
 from app.local_date_time import local_time_now
@@ -48,7 +47,7 @@ class BookingDAO:
         else:
             date_end = date_start + timedelta(days=period_days)
         
-        print(f'_find_date_range: start_local_str={start_date_str} start_utc={date_start} end_utc={date_end}')
+        """print(f'_find_date_range: start_local_str={start_date_str} start_utc={date_start} end_utc={date_end}')"""
         
         return date_start, date_end
     
@@ -58,7 +57,7 @@ class BookingDAO:
         """
         date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
         
-        print(f'GAIN: start={date_start}  end={date_end}')
+        """print(f'GAIN: start={date_start}  end={date_end}')"""
         
         db.session.query(self.model).filter_by(booking_id = 9990).first()
     
@@ -68,15 +67,15 @@ class BookingDAO:
             .filter(self.model._created_at < date_end)\
             .distinct(self.model._customer_id)
         
-        for item in items:
-            print(f'item:: {item._customer_id }  {item._created_at}')
+        """for item in items:
+            print(f'item:: {item._customer_id }  {item._created_at}')"""
             
         return items.count()
     
     def get_loss(self, start_date_str, period_days, prior=True):
         date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
 
-        print(f'LOSS: start={date_start}  end={date_end}')
+        """print(f'LOSS: start={date_start}  end={date_end}')"""
         
         db.session.query(self.model).filter_by(booking_id = 9990).first()
     
@@ -86,8 +85,8 @@ class BookingDAO:
             .filter(self.model._updated_at < date_end)\
             .distinct(self.model._customer_id)
         
-        for item in items:
-            print(f'item:: {item._customer_id }  {item._updated_at}')
+        """for item in items:
+            print(f'item:: {item._customer_id }  {item._updated_at}')"""
             
         return items.count()
     
@@ -95,7 +94,7 @@ class BookingDAO:
         _, period = monthrange(year, month)
         start_date_str = f'{year}-{month:02}-01'
         
-        print(f'str={start_date_str} period={period}')
+        """print(f'str={start_date_str} period={period}')"""
         
         return (start_date_str, period)
         
@@ -131,25 +130,44 @@ customer_dao = CustomerDAO(Customer)
 if __name__ == '__main__':
     from app import create_app
     
+    def get_month_by_year(year):
+        for month in range(1, 13, 1):
+            gain = booking_dao.get_gain_by_month(month, year)
+            loss = booking_dao.get_loss_by_month(month, year)
+            print (f'{year}-{month}: gain={gain} loss={loss} nett={gain-loss}')
+    
+    def get_daily(init_total, start_date_str, end_date_str):
+        print("Reccuring customer totals")
+        
+        date_d = datetime.utcnow().astimezone(pytz.utc)
+        end_date_str = "2021-10-01"
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").astimezone(pytz.utc)
+        print(f'start at {date_d}')
+        while date_d > end_date:
+            date_str = date_d.strftime("%Y-%m-%d")
+            gain = booking_dao.get_gain(date_str, 1)
+            loss = booking_dao.get_loss(date_str, 1)
+            
+            date_d = date_d - timedelta(days=1)
+            
+            print(f'{date_str}: total = {total} gain={gain} loss={loss} nett={gain-loss}')
+            total -= gain - loss
+        return total
+
     app = create_app()
     
-    start_str = "2021-10-20"
-    period = 1
-    #start_str = datetime.now().strftime("%Y-%m-%d")
-    """print(f'today={datetime.now()}')
-    print(f'tzname={tz.tzlocal}')
-    print(tz.tzlocal)
-    month = 9
-    period = 30"""
-    
     with app.app_context():
+        """
+        start_str = "2021-10-21"
+        period = 30
+        
         gain = booking_dao.get_gain(start_str, period)
         print(f'Customers_gained={gain}')
         
         loss = booking_dao.get_loss(start_str, period)
         print(f'Customers lost={loss}')
         
-        """gain = booking_dao.get_gain_by_month(month, 2021)
+        gain = booking_dao.get_gain_by_month(month, 2021)
         print(f'Customers gained in month {month}={gain}')
         
         loss = booking_dao.get_loss_by_month(month, 2021)
@@ -158,24 +176,15 @@ if __name__ == '__main__':
         current = booking_dao.recurring_current()
         print(f'Recurring customer count today={current}')"""
         
+        ### Daily totals
+        """start_date_str = "2021-10-21"
+        end_date_str = "2021-10-01"
+        init_total = 684
         print("Reccuring customer totals")
+        total = get_daily(init_total, start_date_str, end_date_str)
+        print(f'Monthly Nett: {init_total-total}\n')"""
         
-        date_d = datetime.utcnow().astimezone(pytz.utc)
-        end_date_str = "2021-10-20"
-        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").astimezone(pytz.utc)
-        
-        """total = booking_dao.recurring_current()
-        print(f'recurring total on {date_d.strftime("%Y-%m-%d")} = {total}')"""
-        total = 685
-        
-        print(f'start at {date_d}')
-        """while date_d > end_date:
-            date_str = date_d.strftime("%Y-%m-%d")
-            gain = booking_dao.get_gain(date_str, 1)
-            loss = booking_dao.get_loss(date_str, 1)
-            total -= gain - loss
-            
-            date_d = date_d - timedelta(days=1)
-            
-            print(f'{date_d.strftime("%Y-%m-%d")}: total = {total} gain={gain} loss={loss} nett={gain-loss}')"""
-            
+        ### Get yearly, nett by month
+        print("Monthly totals for a specific year")
+        year = 2021
+        get_month_by_year(year)
