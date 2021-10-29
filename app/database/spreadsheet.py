@@ -14,14 +14,15 @@ class Spreadsheet:
             reader = csv.reader(csv_file, delimiter=',')
             for line_count, row in enumerate(reader):
                 if line_count == 0:
-                    #print(f'Column names are {", ".join(row)}')
+                    print(f'Column names are {", ".join(row)}')
                     continue
                 else:
                     yield row
             
                 
 if __name__ == '__main__':
-    sheet = Spreadsheet('app/database/sales.csv')
+    sheet = Spreadsheet('app/database/M2M_Was_First.csv')
     
     for row in sheet.get_row():
         print(f'values = {", ".join(row)}')
+        sys.exit(0)
