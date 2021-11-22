@@ -97,6 +97,9 @@ class Config(object):
     
     # zip2location URL
     ZIP2LOCATION_URL = os.environ.get('ZIP2LOCATION_URL')
+    
+    # new-bond-agent-calls Zapier URL
+    NEW_BOND_AGENT_CALLS = os.environ.get('NEW_BOND_AGENT_CALLS', None)
 
 class ProductionConfig(Config):
     DEBUG = False  

@@ -321,19 +321,20 @@ def search():
     service_category = request.args.get('category')
     created_at_str = request.args.get('date')
     booking_status = request.args.get('booking_status').upper()
-    
-    return search_bookings(service_category, created_at_str, booking_status)
 
-    """created_at = datetime.strptime(created_at_str, "%Y-%m-%d")
+    created_at = datetime.strptime(created_at_str, "%Y-%m-%d")
     start_created = local_to_UTC(created_at.replace(hour=0, minute=0, second=0, microsecond=0))
     end_created = local_to_UTC(created_at.replace(hour=23, minute=59, second=59, microsecond=0))
+    
+    #return search_bookings(service_category, start_created, end_created, booking_status)
     
     print(f'params: category={service_category} date={start_created},{end_created} booking_status={booking_status}')
     
     res = db.session.query(Booking) \
-        .filter_by(service_category=service_category, booking_status=booking_status).filter(and_(Booking.created_at >= start_created, Booking.created_at <= end_created)) \
+        .filter_by(service_category=service_category, booking_status=booking_status).filter(and_(Booking._created_at >= start_created, Booking._created_at <= end_created)) \
         .all()
-    
+
+
     print(res)
     
     found = []
@@ -345,18 +346,9 @@ def search():
         }
         found.append(data.copy())
     
-    return jsonify(found)"""
+    return jsonify(found)
 
-def search_bookings(service_category, created_at_str, booking_status):
-    def local_to_UTC(d):
-        local = pytz.timezone(current_app.config['TZ_LOCALTIME'])
-        local_dt = local.localize(d, is_dst=current_app.config['TZ_ISDST'])
-        utc_dt = local_dt.astimezone(pytz.utc)
-        return utc_dt
-        
-    created_at = datetime.strptime(created_at_str, "%Y-%m-%d")
-    start_created = local_to_UTC(created_at.replace(hour=0, minute=0, second=0, microsecond=0))
-    end_created = local_to_UTC(created_at.replace(hour=23, minute=59, second=59, microsecond=0))
+def search_bookings(service_category, start_created, end_created, booking_status):
     
     print(f'params: category={service_category} date={start_created},{end_created} booking_status={booking_status}')
     
@@ -377,4 +369,10 @@ def search_bookings(service_category, created_at_str, booking_status):
         found.append(data.copy())
     
     return jsonify(found)
+    
 
+def local_to_UTC(d):
+    local = pytz.timezone(current_app.config['TZ_LOCALTIME'])
+    local_dt = local.localize(d, is_dst=current_app.config['TZ_ISDST'])
+    utc_dt = local_dt.astimezone(pytz.utc)
+    return utc_dt

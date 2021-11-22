@@ -132,7 +132,10 @@ class Booking(db.Model):
     
     @hybrid_property
     def created_at(self):
-            return utc_to_local(self._created_at)
+        
+        print(f'created_at={self._created_at}')
+        
+        return utc_to_local(self._created_at)
             
     @created_at.setter
     def created_at(self, val):
