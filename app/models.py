@@ -122,7 +122,8 @@ class Booking(db.Model):
     NDIS_reference = db.Column(db.String(64), index=False, unique=False)
     #Is your date & time flexible? (266)
     flexible_date_time = db.Column(db.String(64), index=False, unique=False)
-    
+    # If hourly what would you like us to focus on?
+    hourly_notes = db.Column(db.Text(), index=False, unique=False)
     
     def __repr__(self):
         return f'<Booking {self.id}>'
@@ -643,8 +644,14 @@ def import_dict(d, b):
         
         #Is your date & time flexible? (266)
         CUSTOM_FLEXIBLE =  current_app.config['CUSTOM_FLEXIBLE']
-        if CUSTOM_NDIS_NUMBER and CUSTOM_NDIS_NUMBER in b_cf:
+        if CUSTOM_FLEXIBLE and CUSTOM_FLEXIBLE in b_cf:
             d.flexible_date_time = b_cf.get(CUSTOM_FLEXIBLE)
+            
+        # If hourly what would you like us to focus on? -- ONLY M2M
+        CUSTOM_HOURLY_NOTES = current_app.config['CUSTOM_HOURLY_NOTES']
+        if CUSTOM_HOURLY_NOTES and CUSTOM_HOURLY_NOTES in b_cf:
+            d.flexible_date_time = b_cf.get(CUSTOM_HOURLY_NOTES)
+            
         
     return d
 

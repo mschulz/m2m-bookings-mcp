@@ -78,6 +78,7 @@ class Config(object):
     CUSTOM_INVOICE_REFERENCE_EXTRA = os.environ.get('CUSTOM_INVOICE_REFERENCE_EXTRA', None)
     CUSTOM_NDIS_NUMBER = os.environ.get('CUSTOM_NDIS_NUMBER', None)
     CUSTOM_FLEXIBLE = os.environ.get('CUSTOM_FLEXIBLE', None)
+    CUSTOM_HOURLY_NOTES = os.environ.get('CUSTOM_HOURLY_NOTES', None)
     
     # SendInBlue details
     SENDINBLUE_API_KEY = os.environ.get('SENDINBLUE_API_KEY')
