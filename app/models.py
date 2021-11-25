@@ -650,7 +650,7 @@ def import_dict(d, b):
         # If hourly what would you like us to focus on? -- ONLY M2M
         CUSTOM_HOURLY_NOTES = current_app.config['CUSTOM_HOURLY_NOTES']
         if CUSTOM_HOURLY_NOTES and CUSTOM_HOURLY_NOTES in b_cf:
-            d.flexible_date_time = b_cf.get(CUSTOM_HOURLY_NOTES)
+            d.hourly_notes = b_cf.get(CUSTOM_HOURLY_NOTES)
             
         
     return d
