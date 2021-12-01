@@ -101,9 +101,6 @@ def nett():
         gain = booking_dao.get_gain(start_date_str, period_days, prior=True)
         loss = booking_dao.get_loss(start_date_str, period_days, prior=True)
         result = {
-            "status" :"success",
-            "gain": gain,
-            "loss": loss,
             "nett": gain - loss
         }
         return jsonify(result), 200
@@ -118,9 +115,6 @@ def nett():
         gain = booking_dao.get_gain_by_month(month, year)
         loss = booking_dao.get_loss_by_month(month, year)
         result = {
-            "status" :"success",
-            "gain": gain,
-            "loss": loss,
             "nett": gain - loss
         }
         return jsonify(result), 200
