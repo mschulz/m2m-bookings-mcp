@@ -12,11 +12,11 @@
 """
 
 from flask import jsonify
-from app.customers import customers_api
+from app.report import report_api
 from app.decorators import APIkey_required
 from app.reports import create_report
 
-@customers_api.route('/report', methods=['GET'])
+@report_api.route('/report', methods=['GET'])
 @APIkey_required
 def report():
     res = create_report()

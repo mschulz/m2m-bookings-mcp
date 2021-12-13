@@ -72,4 +72,6 @@ def register_blueprints(app):
     app.register_blueprint(bookings_api_blueprint)
     from app.customers import customers_api as customers_api_blueprint
     app.register_blueprint(customers_api_blueprint)
+    from app.report import report_api as report_api_blueprint
+    app.register_blueprint(report_api_blueprint)
     
