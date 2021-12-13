@@ -2,6 +2,6 @@
 
 from flask import Blueprint
 
-report_api = Blueprint('report', __name__)
+customers_api = Blueprint('customers', __name__)
 
 from . import views
