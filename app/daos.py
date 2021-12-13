@@ -46,69 +46,74 @@ class BookingDAO:
             return date_end, date_start
         else:
             date_end = date_start + timedelta(days=period_days)
-        
-        """print(f'_find_date_range: start_local_str={start_date_str} start_utc={date_start} end_utc={date_end}')"""
-        
         return date_start, date_end
+
+    def _get_gain_in_date_range(self, date_start, date_end):
+        items = db.session.query(self.model)\
+            .filter_by(was_first_recurring = True)\
+            .filter(self.model._created_at >= date_start)\
+            .filter(self.model._created_at < date_end)\
+            .distinct(self.model._customer_id)
+        return items
+
+    def get_gain_in_date_range(self, date_start, date_end):
+        items = self._get_gain_in_date_range(date_start, date_end)
+        return items.count()
+
+    def get_gain_in_date_range_list(self, date_start, date_end):
+        items = self._get_gain_in_date_range(self, date_start, date_end)
+        return [item.booking_id for item in items.all()]
     
     def get_gain(self, start_date_str, period_days, prior=True):
         """
         get count from start_date_str for period_days PRIOR to that date
         """
         date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
-        
-        """print(f'GAIN: start={date_start}  end={date_end}')"""
-        
-        db.session.query(self.model).filter_by(booking_id = 9990).first()
+        return self.get_gain_in_date_range(date_start, date_end)
     
-        items = db.session.query(self.model)\
-            .filter_by(was_first_recurring = True)\
-            .filter(self.model._created_at >= date_start)\
-            .filter(self.model._created_at < date_end)\
-            .distinct(self.model._customer_id)
-        
-        """for item in items:
-            print(f'item:: {item._customer_id }  {item._created_at}')"""
-            
-        return items.count()
-    
-    def get_loss(self, start_date_str, period_days, prior=True):
+    def get_gain_list(self, start_date_str, period_days, prior=True):
+        """
+        get count from start_date_str for period_days PRIOR to that date
+        """
         date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
-
-        """print(f'LOSS: start={date_start}  end={date_end}')"""
-        
-        db.session.query(self.model).filter_by(booking_id = 9990).first()
+        return self.get_gain_in_date_range_list(date_start, date_end)
     
+    def get_loss_in_date_range(self, date_start, date_end):
         items =  db.session.query(self.model)\
             .filter_by(cancellation_type = 'This Booking and all Future Bookings')\
             .filter(self.model._updated_at >= date_start)\
             .filter(self.model._updated_at < date_end)\
             .distinct(self.model._customer_id)
-        
-        """for item in items:
-            print(f'item:: {item._customer_id }  {item._updated_at}')"""
-            
         return items.count()
+
+    def get_loss(self, start_date_str, period_days, prior=True):
+        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
+        return self.get_loss_in_date_range(date_start, date_end)
     
     def _get_days_in_month(self, month, year):
+        if isinstance(month, str):
+            month = int(month)
+        if isinstance(year, str):
+            year = int(year)
         _, period = monthrange(year, month)
         start_date_str = f'{year}-{month:02}-01'
-        
-        """print(f'str={start_date_str} period={period}')"""
-        
         return (start_date_str, period)
         
     def get_gain_by_month(self, month, year):
         start_date_str, period = self._get_days_in_month(month, year)
         return self.get_gain(start_date_str, period, prior=False)
+        
+    def get_gain_by_month_list(self, month, year):
+        start_date_str, period = self._get_days_in_month(month, year)
+        return self.get_gain_list(start_date_str, period, prior=False)
     
     def get_loss_by_month(self, month, year):
         start_date_str, period = self._get_days_in_month(month, year)
         return self.get_loss(start_date_str, period, prior=False)
-    
+
     def recurring_current(self):
         return db.session.query(self.model)\
-        .filter(self.model._service_date >= utc_to_local(datetime.utcnow()).date())\
+        .filter(self.model.service_date >= utc_to_local(datetime.utcnow()).date())\
         .filter_by(booking_status = 'NOT_COMPLETE')\
             .filter(self.model.frequency != '1 Time Service')\
             .distinct(self.model._customer_id)\
