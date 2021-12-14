@@ -1,4 +1,4 @@
-# app/bookings/views.py
+# app/customers/views.py
 
 import json
 import datetime

@@ -129,9 +129,8 @@ def create_report():
     today_gain, today_loss = gain_loss_in_range(start_created, end_created)
 
     # Yesterday Figures
-    yesterday = pdl.yesterday('UTC').in_timezone(current_app.config['TZ_LOCALTIME'])
-    start_created = yesterday.start_of('day')
-    end_created = yesterday.end_of('day')
+    start_created = start_created.subtract(days=1)
+    end_created = end_created.subtract(days=1)
     yesterday_gain, yesterday_loss = gain_loss_in_range(start_created, end_created)
     
     # This week (to date) figures
@@ -183,8 +182,5 @@ if __name__ == '__main__':
     app = create_app()
     
     with app.app_context():
-        res = create_report()
-        print(json.dumps(res, indent=2))
-  with app.app_context():
         res = create_report()
         print(json.dumps(res, indent=2))
