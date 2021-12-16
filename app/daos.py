@@ -13,6 +13,7 @@
 import json
 from datetime import datetime, timedelta
 import pytz
+import pendulum as pdl
 
 from app import db
 from app.local_date_time import local_time_now
@@ -118,7 +119,16 @@ class BookingDAO:
             .filter(self.model.frequency != '1 Time Service')\
             .distinct(self.model._customer_id)\
             .count()
-            
+
+    @staticmethod
+    def gain_loss_in_range(start_date, end_date):
+        # Need to convert from Pendulum datetime to datetime.datetime format
+        start_created = datetime.fromtimestamp(start_date.timestamp(), pdl.tz.UTC)
+        end_created = datetime.fromtimestamp(end_date.timestamp(), pdl.tz.UTC)
+    
+        gain = booking_dao.get_gain_in_date_range(start_created, end_created)
+        loss = booking_dao.get_loss_in_date_range(start_created, end_created)
+        return gain, loss
 
 booking_dao = BookingDAO(Booking)
 
