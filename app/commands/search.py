@@ -52,6 +52,6 @@ def main():
         
         print(json.dumps({"result": res}, indent=2))
         
-        post_new_bond_agent_calls(res)
+        #post_new_bond_agent_calls(res)
 
 main()
