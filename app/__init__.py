@@ -39,7 +39,7 @@ def create_app():
     if not app.config['TESTING']:
         print(f'OVERRIDE_EMAIL: {ovrrd}')
     # Determine date and time where based - servers are mostlikely in the US
-    local_date, local_time = get_local_date_time_now(app.config['TZ_LOCALTIME'], app.config['TZ_ISDST'])
+    #local_date, local_time = get_local_date_time_now(app.config['TZ_LOCALTIME'], app.config['TZ_ISDST'])
 
     #initialise the logger
     setup_logging(app)

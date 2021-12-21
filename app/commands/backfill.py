@@ -17,6 +17,11 @@ from sqlalchemy import exc
 from app.commands.model import History
 
 
+def is_end_of_month(today):
+    days_in_month = today.days_in_month
+    day_today = int(today.format('DD'))
+    return days_in_month == day_today
+
 def backfill_data():
     # Start of historical data
     local_timezone = pdl.timezone(current_app.config['TZ_LOCALTIME'])
@@ -34,6 +39,9 @@ def backfill_data():
         today_gain, today_loss = booking_dao.gain_loss_in_range(start_created, end_created)
         nett_for_day = today_gain - today_loss
         
+        is_saturday = today.day_of_week == 6
+        is_eom = is_end_of_month(today)
+        
         
         if USE_DB:
             h = History()
@@ -42,6 +50,8 @@ def backfill_data():
             h.loss = today_loss
             h.nett = nett_for_day
             h.recurring = recurring_customer_count
+            h.is_saturday = today.day_of_week == 6
+            h.is_eom = is_end_of_month(today)
             db.session.add(h)
         else:
             print(start_created.date(), today_gain, today_loss, nett_for_day, recurring_customer_count)

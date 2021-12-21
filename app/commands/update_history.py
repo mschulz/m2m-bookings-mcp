@@ -9,6 +9,7 @@
 import json
 from datetime import datetime, date
 import pendulum as pdl
+import calendar
 
 from flask import current_app
 from app import db
@@ -47,16 +48,23 @@ def do_daily(today):
     print(yesterday_end_created.date(), yesterday_gain, yesterday_loss, nett_for_day, recurring_customer_count - todays_nett)
     return (yesterday_end_created.date(), yesterday_gain, yesterday_loss, recurring_customer_count - todays_nett)
 
-def add_to_history(day_date, gain, loss, rec_cus_count):
+def add_to_history(day_date, gain, loss, rec_cus_count, is_saturday, is_eom):
     h = History()
-    h.day_date = start_created.date()
+    h.day_date = day_date.date()
     h.gain = gain
     h.loss = loss
     h.nett = gain - loss
     h.recurring = rec_cus_count
+    h.is_saturday = is_saturday
+    h.is_eom = is_eom
     db.session.add(h)
     db.session.commit()
 
+def is_end_of_month(today):
+    days_in_month = today.days_in_month
+    day_today = int(today.format('DD'))
+    return days_in_month == day_today
+    
 if __name__ == '__main__':
     from app import create_app
 
@@ -66,6 +74,8 @@ if __name__ == '__main__':
     
     with app.app_context():
         today = pdl.now('UTC').in_timezone(current_app.config['TZ_LOCALTIME'])
+        is_saturday = today.day_of_week == 6
+        is_eom = is_end_of_month(today)
         day_date, gain, loss, rec_cus_count = do_daily(today)
         if USE_DB:
-            add_to_history(day_date, gain, loss, rec_cus_count)
+            add_to_history(day_date, gain, loss, rec_cus_count, is_saturday, is_eom)

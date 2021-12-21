@@ -18,6 +18,8 @@ class History(db.Model):
     loss = db.Column(db.Integer, index=False, unique=False)
     nett = db.Column(db.Integer, index=False, unique=False)
     recurring = db.Column(db.Integer, index=False, unique=False)
+    is_saturday = db.Column(db.Boolean, index=False, unique=False)
+    is_eom = db.Column(db.Boolean, index=False, unique=False)
     
     def __repr__(self):
         return f'<History {day_date} {nett} {recurring}>'

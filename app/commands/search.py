@@ -1,4 +1,4 @@
-# app/bookings/search.py
+# app/commands/search.py
 import json
 from app import create_app
 import pendulum as pdl
@@ -9,6 +9,7 @@ from app import db
 from app.models import Booking
 from sqlalchemy import exc, and_, func
 from app.post_to_zapier import post_new_bond_agent_calls
+from app.post_to_slack import slack_messages
 
 def search_bookings(service_category, start_created, end_created, booking_status):
     
@@ -52,6 +53,8 @@ def main():
         
         print(json.dumps({"result": res}, indent=2))
         
-        post_new_bond_agent_calls(res)
+        #post_new_bond_agent_calls(res)
+        
+        slack_messages(res)
 
 main()
