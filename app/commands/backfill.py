@@ -39,8 +39,8 @@ def backfill_data():
         today_gain, today_loss = booking_dao.gain_loss_in_range(start_created, end_created)
         nett_for_day = today_gain - today_loss
         
-        is_saturday = today.day_of_week == 6
-        is_eom = is_end_of_month(today)
+        is_saturday = start_created.day_of_week == 6
+        is_eom = is_end_of_month(start_created)
         
         
         if USE_DB:
@@ -50,11 +50,11 @@ def backfill_data():
             h.loss = today_loss
             h.nett = nett_for_day
             h.recurring = recurring_customer_count
-            h.is_saturday = today.day_of_week == 6
-            h.is_eom = is_end_of_month(today)
+            h.is_saturday = is_saturday
+            h.is_eom = is_eom
             db.session.add(h)
         else:
-            print(start_created.date(), today_gain, today_loss, nett_for_day, recurring_customer_count)
+            print(start_created.date(), today_gain, today_loss, nett_for_day, recurring_customer_count, is_saturday, is_eom)
 
         # Move to previous day for next calculation
         start_created = start_created.subtract(days=1)
@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     app = create_app()
     
-    USE_DB = True
+    USE_DB = False
     
     with app.app_context():
         # Create a new History table
