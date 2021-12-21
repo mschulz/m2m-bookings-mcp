@@ -4,43 +4,6 @@ import requests
 import json
 
 
-def post_message_to_slack(text, blocks = None):
-    headers = {
-         "Authorization":  "Bearer REDACTED_SLACK_TOKEN",
-         "Content-type": "application/json"
-    }
-    data = {
-        'channel': slack_channel,
-        'text': text,
-        'icon_emoji': slack_icon_emoji,
-        'username': slack_user_name,
-        'blocks': json.dumps(blocks) if blocks else None
-    }
-    url = 'https://slack.com/api/chat.postMessage'
-    return requests.post(url, headers=deaders, data=data).json()
-
-"""
-    Given a JSON structure like:
-    
-        {
-          "result": [
-            {
-              "category": "Bond Clean",
-              "name": "Shelley Moore",
-              "location": "Maid2Match Perth - Northern Suburbs",
-              "booking_url": "https://maid2match.launch27.com/admin/bookings/79629/edit"
-            }
-          ]
-        }
-    
-    Post a Slack message like:
-    
-    -- Shelly Moore --
-    Maid2Match Perth - Northern Suburbs
-    https://maid2match.launch27.com/admin/bookings/79629/edit
-    
-"""
-
 def block_item(name, location, url):
     return {
         "type": "section",
@@ -51,32 +14,78 @@ def block_item(name, location, url):
     }
 
 def build_blocks(message_list):
-    block_list = []
+    ending = "" if len(message_list) == 1 else 's'
+    block_list = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"Today's listing of {len(message_list)} new bond clean booking{ending} can be found below for calls to agents:"
+            }
+        },
+        {
+            "type": "divider"
+        }
+    ]
     for item in message_list:
         m = block_item(item["name"], item["location"], item["booking_url"])
         block_list.append(m)
+    return { "blocks": block_list}
+
+def post_message_to_slack(blocks):
+    headers = {
+         "Authorization":  "Bearer REDACTED_SLACK_TOKEN",
+         "Content-type": "application/json; charset=utf-8"
+    }
+    url = "REDACTED_SLACK_WEBHOOK"
+    res = requests.post(url, headers=headers, json=blocks)
     
-    print(json.dumps({ "blocks": block_list }, indent=2))
-    return json.dumps({ "blocks": block_list }) if block_list else None
+    print(res.text)
+    return res
 
-"""channel
-C02C0MC3DFX
-ts
-1639968814.000500
-bot_id
-B8976EP1T
+def slack_messages(data):
+    blocks = build_blocks(data)
+    
+    print(json.dumps(blocks, indent=2))
+    
+    post_message_to_slack(blocks)
 
-m2m-stats-debug channelid: CAX29F0RG
-"""
 
-def slack_messages(blocks):
+if __name__ == "__main__":
+    example_data = {
+      "result": [
+        {
+          "category": "Bond Clean",
+          "name": "Andy Stevenson",
+          "location": "Maid2Match Perth - Southern Suburbs",
+          "booking_url": "https://maid2match.launch27.com/admin/bookings/79664/edit"
+        },
+        {
+          "category": "Bond Clean",
+          "name": "Tim Svenson",
+          "location": "Maid2Match Sunshine Coast",
+          "booking_url": "https://maid2match.launch27.com/admin/bookings/79672/edit"
+        }
+      ]
+    }
+    
+    example_block = {
+      "blocks": [
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "*Andy Stevenson*\nMaid2Match Perth - Southern Suburbs\nhttps://maid2match.launch27.com/admin/bookings/79664/edit"
+          }
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "*Tim Svenson*\nMaid2Match Sunshine Coast\nhttps://maid2match.launch27.com/admin/bookings/79672/edit"
+          }
+        }
+      ]
+    }
 
-    """    token = 
-        channel = "C02C0MC3DFX"
-        text = ""
-        user_name = "Zapier"
-    """    
-
-    bb = build_blocks(blocks)
-
-    print(bb)
+    slack_messages(example_data["result"])

@@ -1,4 +1,4 @@
-# app/commands/search.py
+# app/commands/notify_bond_clean_calls.py
 import json
 from app import create_app
 import pendulum as pdl
@@ -50,10 +50,6 @@ def main():
         end_created = datetime.fromtimestamp(end_created.timestamp(), pdl.tz.UTC)
         
         res = search_bookings(service_category, start_created, end_created, booking_status)
-        
-        print(json.dumps({"result": res}, indent=2))
-        
-        #post_new_bond_agent_calls(res)
         
         slack_messages(res)
 

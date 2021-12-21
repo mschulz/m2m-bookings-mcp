@@ -77,6 +77,7 @@ if __name__ == '__main__':
         if USE_DB:
             try:
                 History.__table__.drop(db.engine)
+                print('Dropped History table')
             except exc.ProgrammingError:
                     pass # No table to delete
             History.__table__.create(db.session.bind, checkfirst=True)
