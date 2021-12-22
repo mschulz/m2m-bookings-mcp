@@ -50,7 +50,7 @@ def do_daily(today):
 
 def add_to_history(day_date, gain, loss, rec_cus_count, is_saturday, is_eom):
     h = History()
-    h.day_date = day_date.date()
+    h.day_date = day_date
     h.gain = gain
     h.loss = loss
     h.nett = gain - loss
