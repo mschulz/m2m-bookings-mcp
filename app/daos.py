@@ -89,6 +89,39 @@ class BookingDAO:
         date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
         return self.get_loss_in_date_range(date_start, date_end)
 
+    ### TESTING ALGO
+    def get_loss_in_date_range_list(self, date_start, date_end):
+        items =  db.session.query(self.model)\
+            .filter_by(cancellation_type = 'This Booking and all Future Bookings')\
+            .filter(self.model._updated_at >= date_start)\
+            .filter(self.model._updated_at < date_end)\
+            .distinct(self.model._customer_id)
+        return items
+
+    def get_loss_list(self, start_date_str, period_days, prior=True):
+        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
+        res = self.get_loss_in_date_range_list(date_start, date_end).all()
+        return [item.booking_id for item in res]
+
+    def get_cancelled_in_date_range_list(self, date_start, date_end):
+        items =  db.session.query(self.model)\
+            .filter_by(cancellation_type = 'This Booking and all Future Bookings')\
+            .filter(self.model._cancellation_date >= date_start)\
+            .filter(self.model._cancellation_date < date_end)\
+            .distinct(self.model._customer_id)
+        return items
+
+    def get_cancelled_loss(self, start_date_str, period_days, prior=True):
+        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
+        return self.get_cancelled_in_date_range_list(date_start, date_end).count()
+
+    def get_cancelled_loss_list(self, start_date_str, period_days, prior=True):
+        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
+        res = self.get_cancelled_in_date_range_list(date_start, date_end).all()
+        return [item.booking_id for item in res]
+
+    ###
+    
     def _get_days_in_month(self, month, year):
         if isinstance(month, str):
             month = int(month)
@@ -171,10 +204,10 @@ if __name__ == '__main__':
     app = create_app()
 
     with app.app_context():
-        """
-        start_str = "2021-10-21"
-        period = 30
+        start_str = "2022-01-01"
+        period = 1
 
+        """
         gain = booking_dao.get_gain(start_str, period)
         print(f'Customers_gained={gain}')
 
@@ -199,6 +232,31 @@ if __name__ == '__main__':
         print(f'Monthly Nett: {init_total-total}\n')"""
 
         ### Get yearly, nett by month
-        print("Monthly totals for a specific year")
+        """print("Monthly totals for a specific year")
         year = 2021
-        get_month_by_year(year)
+        get_month_by_year(year)"""
+
+        ### Test ALGO
+        print(f'Date: {start_str} -- looking at prior day')
+
+        date_start, date_end = booking_dao._find_dates_range(start_str, 1, True)
+        print(f'{date_start = }  {date_end = }')
+        local_date_start = utc_to_local(date_start)
+        local_date_end = utc_to_local(date_end)
+        print(f'{local_date_start = }  {local_date_end = }')
+        
+        gain = booking_dao.get_gain(start_str, period)
+        print(f'Customers_gained={gain}')
+
+        loss = booking_dao.get_loss(start_str, period)
+        print(f'Customers lost={loss}')
+
+        loss = booking_dao.get_cancelled_loss(start_str, period)
+        print(f'Customers cancelled={loss}')
+        
+        loss_list = booking_dao.get_loss_list(start_str, period)
+        print(f'Customers lost list={loss_list}')
+        
+        cancel_list = booking_dao.get_cancelled_loss_list(start_str, period)
+        print(f'Customers cancel list={cancel_list}')
+

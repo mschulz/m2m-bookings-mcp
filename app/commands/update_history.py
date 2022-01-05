@@ -23,9 +23,6 @@ def get_today_nett(today):
     end_created = today.end_of('day')
     today_gain, today_loss = booking_dao.gain_loss_in_range(start_created, end_created)
     nett = today_gain - today_loss
-    
-    print(f'{start_created = } {end_created = } {today_gain = } {today_loss = }')
-    
     return nett
     
 def do_daily(today):
@@ -36,19 +33,18 @@ def do_daily(today):
     yesterday_end_created = today.end_of('day').subtract(days=1)
     
     recurring_customer_count = booking_dao.recurring_current()
-    print(f'Today {recurring_customer_count = }')
+    todays_nett = get_today_nett(today)
+    print(f'Recurring since midnight today={todays_nett}')
     
     yesterday_gain, yesterday_loss = booking_dao.gain_loss_in_range(yesterday_start_created, yesterday_end_created)
     nett_for_day = yesterday_gain - yesterday_loss
     
-    todays_nett = get_today_nett(today)
-    
-    print(f'{todays_nett = }')
-    
-    print(yesterday_end_created.date(), yesterday_gain, yesterday_loss, nett_for_day, recurring_customer_count - todays_nett)
     return (yesterday_end_created.date(), yesterday_gain, yesterday_loss, recurring_customer_count - todays_nett)
 
-def add_to_history(day_date, gain, loss, rec_cus_count, is_saturday, is_eom):
+def add_to_history(day_date, gain, loss, rec_cus_count, use_db=True):
+    is_saturday = day_date.day_of_week == 6
+    is_eom = is_end_of_month(day_date)
+    
     h = History()
     h.day_date = day_date
     h.gain = gain
@@ -57,8 +53,17 @@ def add_to_history(day_date, gain, loss, rec_cus_count, is_saturday, is_eom):
     h.recurring = rec_cus_count
     h.is_saturday = is_saturday
     h.is_eom = is_eom
-    db.session.add(h)
-    db.session.commit()
+
+    print(h)
+    
+    if use_db:
+        try:
+            db.session.add(h)
+            db.session.commit()
+        except:
+            print('Failed to add to History table')
+            db.session.rollback()
+    
 
 def is_end_of_month(today):
     days_in_month = today.days_in_month
@@ -70,12 +75,12 @@ if __name__ == '__main__':
 
     app = create_app()
     
-    USE_DB = True
+    print('Update sales history ...')
     
     with app.app_context():
         today = pdl.now('UTC').in_timezone(current_app.config['TZ_LOCALTIME'])
-        is_saturday = today.day_of_week == 6
-        is_eom = is_end_of_month(today)
+        
+        print(f'Today is {today}')
+        
         day_date, gain, loss, rec_cus_count = do_daily(today)
-        if USE_DB:
-            add_to_history(day_date, gain, loss, rec_cus_count, is_saturday, is_eom)
+        add_to_history(day_date, gain, loss, rec_cus_count, use_db=False)

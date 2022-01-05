@@ -22,5 +22,5 @@ class History(db.Model):
     is_eom = db.Column(db.Boolean, index=False, unique=False)
     
     def __repr__(self):
-        return f'<History {day_date} {nett} {recurring}>'
+        return f'<History {self.day_date=} {self.gain=} {self.loss=} {self.nett=} {self.recurring=} {self.is_saturday=} {self.is_eom=}>'
 
