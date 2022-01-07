@@ -31,7 +31,7 @@ def new():
     data["booking_status"] = 'NOT_COMPLETE'
     booking_dao.create_update_booking(data)
         
-    customer_dao.create_or_update_data(data['customer'])
+    customer_dao.create_or_update_customer(data['customer'])
     
     return 'OK'
 
@@ -63,7 +63,7 @@ def completed():
     
     data = json.loads(request.data)
     data["booking_status"] = 'COMPLETED'
-    booking_dao.create_or_update_data(data)
+    booking_dao.create_update_booking(data)
     
     customer_dao.create_update_booking(data['customer'])
      
@@ -92,7 +92,7 @@ def cancellation():
     data["booking_status"] = 'CANCELLED'
     booking_dao.create_update_booking(data)
     
-    customer_dao.create_or_update_data(data['customer'])
+    customer_dao.create_or_update_customer(data['customer'])
     
     return 'OK'
 
@@ -107,9 +107,9 @@ def updated():
         print('Processing an updated booking')
 
     data = json.loads(request.data)
-    booking_dao.create_or_update_data(data)
+    booking_dao.create_update_booking(data)
     
-    customer_dao.create_or_update_data(data['customer'])
+    customer_dao.create_or_update_customer(data['customer'])
     
     return 'OK'
 
@@ -124,13 +124,13 @@ def team_changed():
         print('Processing an team assignment changed')
     
     data = json.loads(request.data)
-    booking_dao.create_or_update_data(data)
+    booking_dao.create_update_booking(data)
     
     ##  I think we should IGNORE this as it as triggered by a team assignment change only (that's what
     ##  one would assume by the name of the change)
     # Update the customer information table, if it has been updated since the last time it was stored
     #if 'customer' in data:
-    #        customer_dao.create_or_update_data(data['customer'])
+    #        customer_dao.create_or_update_customer(data['customer'])
 
     
     return 'OK'

@@ -195,7 +195,7 @@ class CustomerDAO:
     def get_by_customer_id(self, customer_id):
         return db.session.query(self.model).filter_by(customer_id = customer_id).first()
 
-    def create_or_update_data(self, data):
+    def create_or_update_customer(self, data):
         # Update the customer information table, if it has been updated since the last time it was stored
         current_app.logger.info(f'Customer data received: {data}')
 
