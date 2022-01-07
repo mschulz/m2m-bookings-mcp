@@ -25,7 +25,7 @@ def gain_loss_in_range(start_date, end_date):
     end_created = datetime.fromtimestamp(end_date.timestamp(), pdl.tz.UTC)
     
     gain = booking_dao.get_gain_in_date_range(start_created, end_created)
-    loss = booking_dao.get_loss_in_date_range(start_created, end_created)
+    loss = booking_dao.get_cancelled_in_date_range(start_created, end_created)
     return gain, loss
     
 def create_report():
@@ -53,7 +53,7 @@ def create_report():
     current_year = date_today.strftime("%Y")
     current_month = date_today.strftime("%m")
     month_gain = booking_dao.get_gain_by_month(current_month, current_year)
-    month_loss = booking_dao.get_loss_by_month(current_month, current_year)
+    month_loss = booking_dao.get_cancelled_by_month(current_month, current_year)
     
     #print(f'gain_this_month={booking_dao.get_gain_by_month_list(current_month, current_year)}')
     

@@ -22,6 +22,13 @@ def is_end_of_month(today):
     day_today = int(today.format('DD'))
     return days_in_month == day_today
 
+def get_today_nett(today):
+    start_created = today.start_of('day')
+    end_created = today.end_of('day')
+    today_gain, today_loss = booking_dao.gain_cancelled_in_range(start_created, end_created)
+    nett = today_gain - today_loss
+    return nett
+
 def backfill_data():
     # Start of historical data
     local_timezone = pdl.timezone(current_app.config['TZ_LOCALTIME'])
@@ -30,13 +37,17 @@ def backfill_data():
 
     # Today figures
     #  This program runs in the early hours of the FOLLOWING day, so we need to correct for this
-    recurring_customer_count = booking_dao.recurring_current()
+    recurring_customer_count = booking_dao.recurring_current() # this include nett since midnight last night
     today = pdl.now('UTC').in_timezone(current_app.config['TZ_LOCALTIME'])
     start_created = today.start_of('day').subtract(days=1)
     end_created = today.end_of('day').subtract(days=1)
 
+    # Reset recurring_customer_count to the recurring_customer_count now less the todays_nett from midnight last night
+    # This SHOULD give us the recurring customer count at midnight yesterday.
+    recurring_customer_count -= get_today_nett(today)
+    
     while start_created >= begin_datetime_utc:
-        today_gain, today_loss = booking_dao.gain_loss_in_range(start_created, end_created)
+        today_gain, today_loss = booking_dao.gain_cancelled_in_range(start_created, end_created)
         nett_for_day = today_gain - today_loss
         
         is_saturday = start_created.day_of_week == 6

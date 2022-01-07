@@ -15,11 +15,12 @@ import pytz
 import pendulum as pdl
 
 from app import db
-from app.models import Booking, Customer
+from app.models import Booking, Customer, import_dict, import_customer
 from calendar import monthrange
 from app.local_date_time import utc_to_local
 from config import Config
-
+from sqlalchemy import exc, and_, func
+from flask import current_app, request
 
 class BookingDAO:
     def __init__(self, model):
@@ -27,7 +28,48 @@ class BookingDAO:
 
     def get_by_booking_id(self, booking_id):
         return db.session.query(self.model).filter_by(booking_id = booking_id).first()
+    
+    def create_update_booking(self, new_data):
+        booking_id = new_data['id'] if 'id' in new_data else None
+        if not booking_id:
+            # This is a malformed set of data (this test might be redundant)
+            current_app.logger.error("booking has no booking_id - ignore this data")
+            abort(422, "booking has no booking_id - ignore this data")
+        
+        # Check if we already have a booking under this id
+        b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
+    
+        if b is None:
+            # Haven't seen the original booking - ADD it now
+            current_app.logger.info("haven't seen this booking - ADDING to database")
+    
+            # Load the database table
+            b = Booking()
+            import_dict(b, new_data)
+            db.session.add(b)
+        else:
+            # Have seen the original booking - UPDATE it now
+            current_app.logger.info("have seen this booking - UPDATING database")
+    
+            import_dict(b, new_data)
+    
+            current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {b.booking_id}')
+    
+            try:
+                db.session.commit()
+                current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
+            except exc.DataError as e:
+                abort(422, f'Data loaded into database: {b.to_dict()}')
+            except exc.IntegrityError as e:
+                db.session.rollback()
+                current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
 
+    def search(self, service_category, booking_status, start_created, end_created):
+        return db.session.query(self.model) \
+            .filter_by(service_category=service_category, booking_status=booking_status) \
+            .filter_by(and_(_created_at >= start_created, _created_at <= end_created)) \
+            .all()
+        
     def date_to_UTC_date(self, date_str):
         local = pytz.timezone(Config.TZ_LOCALTIME)
         naive = datetime.strptime(date_str, "%Y-%m-%d")
@@ -77,51 +119,6 @@ class BookingDAO:
         date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
         return self.get_gain_in_date_range_list(date_start, date_end)
 
-    def get_loss_in_date_range(self, date_start, date_end):
-        items =  db.session.query(self.model)\
-            .filter_by(cancellation_type = 'This Booking and all Future Bookings')\
-            .filter(self.model._updated_at >= date_start)\
-            .filter(self.model._updated_at < date_end)\
-            .distinct(self.model._customer_id)
-        return items.count()
-
-    def get_loss(self, start_date_str, period_days, prior=True):
-        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
-        return self.get_loss_in_date_range(date_start, date_end)
-
-    ### TESTING ALGO
-    def get_loss_in_date_range_list(self, date_start, date_end):
-        items =  db.session.query(self.model)\
-            .filter_by(cancellation_type = 'This Booking and all Future Bookings')\
-            .filter(self.model._updated_at >= date_start)\
-            .filter(self.model._updated_at < date_end)\
-            .distinct(self.model._customer_id)
-        return items
-
-    def get_loss_list(self, start_date_str, period_days, prior=True):
-        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
-        res = self.get_loss_in_date_range_list(date_start, date_end).all()
-        return [item.booking_id for item in res]
-
-    def get_cancelled_in_date_range_list(self, date_start, date_end):
-        items =  db.session.query(self.model)\
-            .filter_by(cancellation_type = 'This Booking and all Future Bookings')\
-            .filter(self.model._cancellation_date >= date_start)\
-            .filter(self.model._cancellation_date < date_end)\
-            .distinct(self.model._customer_id)
-        return items
-
-    def get_cancelled_loss(self, start_date_str, period_days, prior=True):
-        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
-        return self.get_cancelled_in_date_range_list(date_start, date_end).count()
-
-    def get_cancelled_loss_list(self, start_date_str, period_days, prior=True):
-        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
-        res = self.get_cancelled_in_date_range_list(date_start, date_end).all()
-        return [item.booking_id for item in res]
-
-    ###
-    
     def _get_days_in_month(self, month, year):
         if isinstance(month, str):
             month = int(month)
@@ -139,10 +136,37 @@ class BookingDAO:
         start_date_str, period = self._get_days_in_month(month, year)
         return self.get_gain_list(start_date_str, period, prior=False)
 
-    def get_loss_by_month(self, month, year):
-        start_date_str, period = self._get_days_in_month(month, year)
-        return self.get_loss(start_date_str, period, prior=False)
+    #### CANCELLATION Calculations ####
 
+    def get_cancelled(self, start_date_str, period_days, prior=True):
+        """
+        get count from start_date_str for period_days PRIOR to that date
+        """
+        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
+        return self.get_cancelled_in_date_range(date_start, date_end)
+
+    def get_cancelled_in_date_range(self, date_start, date_end):
+        items = self.get_cancelled_in_date_range_list(date_start, date_end)
+        return items.count()
+
+    def get_cancelled_in_date_range_list(self, date_start, date_end):
+        items =  db.session.query(self.model)\
+            .filter_by(cancellation_type = 'This Booking and all Future Bookings')\
+            .filter(self.model._cancellation_date >= date_start)\
+            .filter(self.model._cancellation_date < date_end)\
+            .distinct(self.model._customer_id)
+        return items
+
+    def get_cancelled_list(self, start_date_str, period_days, prior=True):
+        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
+        res = self.get_cancelled_in_date_range_list(date_start, date_end).all()
+        return [item.booking_id for item in res]
+
+    def get_cancelled_by_month(self, month, year):
+        start_date_str, period = self._get_days_in_month(month, year)
+        return self.get_cancelled(start_date_str, period, prior=False)
+
+    # Current Recurring customer count
     def recurring_current(self):
         return db.session.query(self.model)\
         .filter(self.model.service_date >= utc_to_local(datetime.utcnow()).date())\
@@ -152,14 +176,14 @@ class BookingDAO:
             .count()
 
     @staticmethod
-    def gain_loss_in_range(start_date, end_date):
+    def gain_cancelled_in_range(start_date, end_date):
         # Need to convert from Pendulum datetime to datetime.datetime format
         start_created = datetime.fromtimestamp(start_date.timestamp(), pdl.tz.UTC)
         end_created = datetime.fromtimestamp(end_date.timestamp(), pdl.tz.UTC)
 
         gain = booking_dao.get_gain_in_date_range(start_created, end_created)
-        loss = booking_dao.get_loss_in_date_range(start_created, end_created)
-        return gain, loss
+        cancelled = booking_dao.get_cancelled_in_date_range(start_created, end_created)
+        return gain, cancelled
 
 booking_dao = BookingDAO(Booking)
 
@@ -171,7 +195,37 @@ class CustomerDAO:
     def get_by_customer_id(self, customer_id):
         return db.session.query(self.model).filter_by(customer_id = customer_id).first()
 
+    def create_or_update_data(self, data):
+        # Update the customer information table, if it has been updated since the last time it was stored
+        current_app.logger.info(f'Customer data received: {data}')
+
+        c = db.session.query(self.model).filter_by(customer_id = data['id']).first()
+        if c is None:
+            # Nothing stored about this customer, so create a new row in the table
+            c = Customer()
+            import_customer(c, data)
+            db.session.add(c)
+            current_app.logger.info(f'Create row for new customer data')
+        else:
+            # Check if there is updated data in the customer fields
+            # First get the updated_at time from the stored data
+            stored_update_time = c.updated_at
+            import_customer(c, data)
+            new_update_time = c.updated_at
+        
+            # Check if the data has been updated since the last time it was stored in the table
+            if stored_update_time == new_update_time:
+                current_app.logger.info(f'No change to customer data')
+                return
+        try:
+            db.session.commit()
+            current_app.logger.info(f'({request.path}) Updated Customer data')
+        except exc.DataError as e:
+            db.session.rollback()
+            abort(422, f'Customer error in model data: {e}')
+
 customer_dao = CustomerDAO(Customer)
+
 
 if __name__ == '__main__':
     from app import create_app
@@ -179,8 +233,8 @@ if __name__ == '__main__':
     def get_month_by_year(year):
         for month in range(1, 13, 1):
             gain = booking_dao.get_gain_by_month(month, year)
-            loss = booking_dao.get_loss_by_month(month, year)
-            print (f'{year}-{month}: gain={gain} loss={loss} nett={gain-loss}')
+            cancelled = booking_dao.get_cancelled_by_month(month, year)
+            print (f'{year}-{month}: gain={gain} cancelled={cancelled} nett={gain-cancelled}')
 
     def get_daily(init_total, start_date_str, end_date_str):
         print("Reccuring customer totals")
@@ -193,32 +247,32 @@ if __name__ == '__main__':
         while date_d > end_date:
             date_str = date_d.strftime("%Y-%m-%d")
             gain = booking_dao.get_gain(date_str, 1)
-            loss = booking_dao.get_loss(date_str, 1)
+            cancelled = booking_dao.get_cancelled(date_str, 1)
 
             date_d = date_d - timedelta(days=1)
 
-            print(f'{date_str}: total = {total} gain={gain} loss={loss} nett={gain-loss}')
-            total -= gain - loss
+            print(f'{date_str}: total = {total} gain={gain} cancelled={cancelled} nett={gain-cancelled}')
+            total -= gain - cancelled
         return total
 
     app = create_app()
 
     with app.app_context():
-        start_str = "2022-01-01"
+        start_str = "2022-01-04"
         period = 1
 
         """
         gain = booking_dao.get_gain(start_str, period)
         print(f'Customers_gained={gain}')
 
-        loss = booking_dao.get_loss(start_str, period)
-        print(f'Customers lost={loss}')
+        cancelled = booking_dao.get_cancelled(start_str, period)
+        print(f'Customers lost={cancelled}')
 
         gain = booking_dao.get_gain_by_month(month, 2021)
         print(f'Customers gained in month {month}={gain}')
 
-        loss = booking_dao.get_loss_by_month(month, 2021)
-        print(f'Customers lostin month (month)={loss}')
+        cancelled = booking_dao.get_cancelled_by_month(month, 2021)
+        print(f'Customers lostin month (month)={cancelled}')
 
         current = booking_dao.recurring_current()
         print(f'Recurring customer count today={current}')"""
@@ -236,7 +290,6 @@ if __name__ == '__main__':
         year = 2021
         get_month_by_year(year)"""
 
-        ### Test ALGO
         print(f'Date: {start_str} -- looking at prior day')
 
         date_start, date_end = booking_dao._find_dates_range(start_str, 1, True)
@@ -248,15 +301,9 @@ if __name__ == '__main__':
         gain = booking_dao.get_gain(start_str, period)
         print(f'Customers_gained={gain}')
 
-        loss = booking_dao.get_loss(start_str, period)
-        print(f'Customers lost={loss}')
-
-        loss = booking_dao.get_cancelled_loss(start_str, period)
-        print(f'Customers cancelled={loss}')
+        cancelled = booking_dao.get_cancelled(start_str, period)
+        print(f'Customers cancelled={cancelled}')
         
-        loss_list = booking_dao.get_loss_list(start_str, period)
-        print(f'Customers lost list={loss_list}')
-        
-        cancel_list = booking_dao.get_cancelled_loss_list(start_str, period)
+        cancel_list = booking_dao.get_cancelled_list(start_str, period)
         print(f'Customers cancel list={cancel_list}')
 

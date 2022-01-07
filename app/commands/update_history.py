@@ -21,7 +21,7 @@ from app.commands.model import History
 def get_today_nett(today):
     start_created = today.start_of('day')
     end_created = today.end_of('day')
-    today_gain, today_loss = booking_dao.gain_loss_in_range(start_created, end_created)
+    today_gain, today_loss = booking_dao.gain_cancelled_in_range(start_created, end_created)
     nett = today_gain - today_loss
     return nett
     
@@ -36,7 +36,7 @@ def do_daily(today):
     todays_nett = get_today_nett(today)
     print(f'Recurring since midnight today={todays_nett}')
     
-    yesterday_gain, yesterday_loss = booking_dao.gain_loss_in_range(yesterday_start_created, yesterday_end_created)
+    yesterday_gain, yesterday_loss = booking_dao.gain_cancelled_in_range(yesterday_start_created, yesterday_end_created)
     nett_for_day = yesterday_gain - yesterday_loss
     
     return (yesterday_end_created.date(), yesterday_gain, yesterday_loss, recurring_customer_count - todays_nett)
@@ -54,7 +54,7 @@ def add_to_history(day_date, gain, loss, rec_cus_count, use_db=True):
     h.is_saturday = is_saturday
     h.is_eom = is_eom
 
-    print(h)
+    print(json.dumps(h.to_json(), indent=2))
     
     if use_db:
         try:

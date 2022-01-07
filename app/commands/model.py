@@ -6,6 +6,8 @@
 """
 
 from app import db
+from datetime import datetime
+import pendulum as pdl
 
 
 class History(db.Model):
@@ -24,3 +26,13 @@ class History(db.Model):
     def __repr__(self):
         return f'<History {self.day_date=} {self.gain=} {self.loss=} {self.nett=} {self.recurring=} {self.is_saturday=} {self.is_eom=}>'
 
+    def to_json(self):
+        return {
+            "day_date": pdl.instance(datetime.fromordinal(self.day_date.toordinal())).to_date_string(),
+            "gain": self.gain,
+            "loss": self.loss,
+            "nett": self.nett,
+            "recurring": self.recurring,
+            "is_saturday": self.is_saturday,
+            "is_eom": self.is_eom
+        }

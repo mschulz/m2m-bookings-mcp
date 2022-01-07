@@ -479,9 +479,6 @@ def dollar_string_to_int(val):
 
 
 def import_dict(d, b):
-    if 'custom_fields' in b:
-        custom_field_keys = b['custom_fields'].keys()
-    
     if 'id' in b:
         d.booking_id = b['id']
     d.created_at = b['created_at'] if 'created_at' in b else None
@@ -588,7 +585,6 @@ def import_dict(d, b):
     d.location = b['location'] if 'location' in b else get_location(d.postcode)
     
     # Custom field data
-    
     if 'custom_fields' in b:
         b_cf = b["custom_fields"]
         
@@ -759,10 +755,11 @@ def import_customer(c, d):
     # Have struck and example of the tags field being filled with the full comments field (?????)
     # I will truncated this to 64 characters, log an error message and send an email to the developer
     #   warning of what I have done.
-    if len(d['tags']) > 256:
-        msg = f'tags data is way too long, exceeds 256 characters. Truncating tag data for {c.name} data={d["tags"]}'
-        current_app.logger.warning(msg)
-    c.tags = d['tags'][:256] if 'tags' in d else None
+    if 'tags' in d:
+        if len(d['tags']) > 256:
+            msg = f'tags data is way too long, exceeds 256 characters. Truncating tag data for {c.name} data={d["tags"]}'
+            current_app.logger.warning(msg)
+        c.tags = d['tags'][:256] if 'tags' in d else None
 
     c.profile_url = d['profile_url'] if 'profile_url' in d else None
     

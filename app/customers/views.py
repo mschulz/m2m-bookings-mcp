@@ -125,10 +125,3 @@ def nett():
             "message": "Invalid/missing parameters"
         }
         return jsonify(result), 400
-
-
-"""def local_to_UTC(d):
-    local = pytz.timezone(current_app.config['TZ_LOCALTIME'])
-    local_dt = local.localize(d, is_dst=current_app.config['TZ_ISDST'])
-    utc_dt = local_dt.astimezone(pytz.utc)
-    return utc_dt"""

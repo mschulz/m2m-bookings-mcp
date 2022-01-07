@@ -15,7 +15,7 @@ def is_missing_booking(data):
     if not booking_id:
         # This is a malformed set of data (this test might be redundant)
         current_app.logger.error("booking has no booking_id - ignore this data")
-        abort(422)
+        abort(422, "booking has no booking_id - ignore this data")
     
     current_app.logger.info(f'Booking data received: {data}')
     
