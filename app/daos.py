@@ -34,7 +34,7 @@ class BookingDAO:
         if not booking_id:
             # This is a malformed set of data (this test might be redundant)
             current_app.logger.error("booking has no booking_id - ignore this data")
-            abort(422, "booking has no booking_id - ignore this data")
+            abort(422, description="booking has no booking_id - ignore this data")
         
         # Check if we already have a booking under this id
         b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
@@ -59,7 +59,7 @@ class BookingDAO:
                 db.session.commit()
                 current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
             except exc.DataError as e:
-                abort(422, f'Data loaded into database: {b.to_dict()}')
+                abort(422, description=f'Data loaded into database: {b.to_dict()}')
             except exc.IntegrityError as e:
                 db.session.rollback()
                 current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
@@ -222,7 +222,7 @@ class CustomerDAO:
             current_app.logger.info(f'({request.path}) Updated Customer data')
         except exc.DataError as e:
             db.session.rollback()
-            abort(422, f'Customer error in model data: {e}')
+            abort(422, description=f'Customer error in model data: {e}')
 
 customer_dao = CustomerDAO(Customer)
 

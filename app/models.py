@@ -694,7 +694,10 @@ class Customer(db.Model):
     
     @hybrid_property
     def created_at(self):
+        if self._created_at:
             return utc_to_local(self._created_at)
+        else:
+            return None
             
     @created_at.setter
     def created_at(self, val):
@@ -711,7 +714,10 @@ class Customer(db.Model):
     
     @hybrid_property
     def updated_at(self):
-        return utc_to_local(self._updated_at)
+        if self._updated_at:
+            return utc_to_local(self._updated_at)
+        else:
+            return None
     
     @updated_at.setter
     def updated_at(self, val):

@@ -30,15 +30,7 @@ def report_issue(e):
     m = current_app.config['SUPPORT_EMAIL'].split('@')
     to_addr = f"{m[0]}+error@{m[1]}"
 
-    error_message = e.message
-    if error_message:
-        e_m = f'({request.path}) {error_message}'
-    else:
-        original = getattr(e, "original_exception", None)
-        if original is None:
-            e_m = f'({request.path}) Encountered an internal error in the server:\nReason: {e}'
-        else:
-            e_m = f'({request.path}) {original}'
+    e_m = f'({request.path}) {str(e)}'
     current_app.logger.error(e_m)
     send_error_email(to_addr, e_m)
     

@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 import pytz
 
-from flask import request, current_app, abort, jsonify
+from flask import request, current_app, jsonify
 from app.bookings import bookings_api
 from app.decorators import APIkey_required
 from psycopg2.errors import UniqueViolation
