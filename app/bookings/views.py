@@ -107,7 +107,7 @@ def updated():
         print('Processing an updated booking')
 
     data = json.loads(request.data)
-    booking_dao.update_booking(data)
+    booking_dao.create_or_update_data(data)
     
     customer_dao.create_or_update_data(data['customer'])
     

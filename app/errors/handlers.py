@@ -30,7 +30,7 @@ def report_issue(e):
     m = current_app.config['SUPPORT_EMAIL'].split('@')
     to_addr = f"{m[0]}+error@{m[1]}"
 
-    error_message = e.description['message']
+    error_message = e.message
     if error_message:
         e_m = f'({request.path}) {error_message}'
     else:
