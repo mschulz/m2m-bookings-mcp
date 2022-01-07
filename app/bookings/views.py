@@ -65,7 +65,7 @@ def completed():
     data["booking_status"] = 'COMPLETED'
     booking_dao.create_update_booking(data)
     
-    customer_dao.create_update_customer(data['customer'])
+    customer_dao.create_or_update_customer(data['customer'])
      
     return 'OK'
 
