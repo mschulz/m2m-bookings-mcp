@@ -63,7 +63,7 @@ def completed():
     
     data = json.loads(request.data)
     data["booking_status"] = 'COMPLETED'
-    booking_dao.update_booking(data)
+    booking_dao.create_or_update_data(data)
     
     customer_dao.create_update_booking(data['customer'])
      
