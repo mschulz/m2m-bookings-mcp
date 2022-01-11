@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     app = create_app()
     
-    USE_DB = False
+    USE_DB = True
     
     with app.app_context():
         # Create a new History table

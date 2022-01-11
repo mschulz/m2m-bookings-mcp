@@ -84,4 +84,4 @@ if __name__ == '__main__':
         print(f'Today is {today}')
         
         day_date, gain, loss, rec_cus_count = do_daily(today)
-        add_to_history(day_date, gain, loss, rec_cus_count, use_db=False)
+        add_to_history(day_date, gain, loss, rec_cus_count, use_db=True)
