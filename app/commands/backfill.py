@@ -39,8 +39,8 @@ def backfill_data():
     #  This program runs in the early hours of the FOLLOWING day, so we need to correct for this
     recurring_customer_count = booking_dao.recurring_current() # this include nett since midnight last night
     today = pdl.now('UTC').in_timezone(current_app.config['TZ_LOCALTIME'])
-    start_created = today.start_of('day').subtract(days=1)
-    end_created = today.end_of('day').subtract(days=1)
+    start_created = today.start_of('day').subtract(days=1).in_timezone('utc')
+    end_created = today.end_of('day').subtract(days=1).in_timezone('utc')
 
     # Reset recurring_customer_count to the recurring_customer_count now less the todays_nett from midnight last night
     # This SHOULD give us the recurring customer count at midnight yesterday.
@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     app = create_app()
     
-    USE_DB = True
+    USE_DB = False
     
     with app.app_context():
         # Create a new History table

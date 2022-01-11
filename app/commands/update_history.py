@@ -19,8 +19,8 @@ from app.commands.model import History
 
 
 def get_today_nett(today):
-    start_created = today.start_of('day')
-    end_created = today.end_of('day')
+    start_created = today.start_of('day').in_timezone('utc')
+    end_created = today.end_of('day').in_timezone('utc')
     today_gain, today_loss = booking_dao.gain_cancelled_in_range(start_created, end_created)
     nett = today_gain - today_loss
     return nett
@@ -29,16 +29,17 @@ def do_daily(today):
     # Today figures
     #  This program runs in the early hours of the FOLLOWING day, so we need to correct for this
     recurring_customer_count = booking_dao.recurring_current()
-    yesterday_start_created = today.start_of('day').subtract(days=1)
+    yesterday_start_created = today.start_of('day').subtract(days=1).in_timezone('utc')
     yesterday_end_created = today.end_of('day').subtract(days=1)
     
     recurring_customer_count = booking_dao.recurring_current()
     todays_nett = get_today_nett(today)
     print(f'Recurring since midnight today={todays_nett}')
     
-    yesterday_gain, yesterday_loss = booking_dao.gain_cancelled_in_range(yesterday_start_created, yesterday_end_created)
+    yesterday_gain, yesterday_loss = booking_dao.gain_cancelled_in_range(yesterday_start_created, yesterday_end_created.in_timezone('utc'))
     nett_for_day = yesterday_gain - yesterday_loss
     
+    # Report day_date in local time, for Alex to use
     return (yesterday_end_created.date(), yesterday_gain, yesterday_loss, recurring_customer_count - todays_nett)
 
 def add_to_history(day_date, gain, loss, rec_cus_count, use_db=True):
@@ -83,4 +84,4 @@ if __name__ == '__main__':
         print(f'Today is {today}')
         
         day_date, gain, loss, rec_cus_count = do_daily(today)
-        add_to_history(day_date, gain, loss, rec_cus_count, use_db=True)
+        add_to_history(day_date, gain, loss, rec_cus_count, use_db=False)

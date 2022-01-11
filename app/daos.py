@@ -102,7 +102,7 @@ class BookingDAO:
         return items.count()
 
     def get_gain_in_date_range_list(self, date_start, date_end):
-        items = self._get_gain_in_date_range(self, date_start, date_end)
+        items = self._get_gain_in_date_range(date_start, date_end)
         return [item.booking_id for item in items.all()]
 
     def get_gain(self, start_date_str, period_days, prior=True):
@@ -145,11 +145,7 @@ class BookingDAO:
         date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
         return self.get_cancelled_in_date_range(date_start, date_end)
 
-    def get_cancelled_in_date_range(self, date_start, date_end):
-        items = self.get_cancelled_in_date_range_list(date_start, date_end)
-        return items.count()
-
-    def get_cancelled_in_date_range_list(self, date_start, date_end):
+    def _get_cancelled_in_date_range(self, date_start, date_end):
         items =  db.session.query(self.model)\
             .filter_by(cancellation_type = 'This Booking and all Future Bookings')\
             .filter(self.model._cancellation_date >= date_start)\
@@ -157,9 +153,17 @@ class BookingDAO:
             .distinct(self.model._customer_id)
         return items
 
+    def get_cancelled_in_date_range(self, date_start, date_end):
+        items = self._get_cancelled_in_date_range(date_start, date_end)
+        return items.count()
+
+    def get_cancelled_in_date_range_list(self, date_start, date_end):
+        items =  self._get_cancelled_in_date_range(date_start, date_end)
+        return [item.booking_id for item in items.all()]
+
     def get_cancelled_list(self, start_date_str, period_days, prior=True):
         date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
-        res = self.get_cancelled_in_date_range_list(date_start, date_end).all()
+        res = self._get_cancelled_in_date_range_list(date_start, date_end).all()
         return [item.booking_id for item in res]
 
     def get_cancelled_by_month(self, month, year):
@@ -175,14 +179,13 @@ class BookingDAO:
             .distinct(self.model._customer_id)\
             .count()
 
-    @staticmethod
-    def gain_cancelled_in_range(start_date, end_date):
+    def gain_cancelled_in_range(self, start_date, end_date):
         # Need to convert from Pendulum datetime to datetime.datetime format
         start_created = datetime.fromtimestamp(start_date.timestamp(), pdl.tz.UTC)
         end_created = datetime.fromtimestamp(end_date.timestamp(), pdl.tz.UTC)
 
-        gain = booking_dao.get_gain_in_date_range(start_created, end_created)
-        cancelled = booking_dao.get_cancelled_in_date_range(start_created, end_created)
+        gain = self.get_gain_in_date_range(start_created, end_created)
+        cancelled = self.get_cancelled_in_date_range(start_created, end_created)
         return gain, cancelled
 
 booking_dao = BookingDAO(Booking)

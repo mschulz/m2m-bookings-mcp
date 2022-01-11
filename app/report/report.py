@@ -19,34 +19,32 @@ from flask import current_app
 from app.daos import booking_dao
 
 
-def gain_loss_in_range(start_date, end_date):
-    # Need to convert from Pendulum datetime to datetime.datetime format
-    start_created = datetime.fromtimestamp(start_date.timestamp(), pdl.tz.UTC)
-    end_created = datetime.fromtimestamp(end_date.timestamp(), pdl.tz.UTC)
-    
-    gain = booking_dao.get_gain_in_date_range(start_created, end_created)
-    loss = booking_dao.get_cancelled_in_date_range(start_created, end_created)
-    return gain, loss
-    
 def create_report():
     # Today figures
     today = pdl.now('UTC').in_timezone(current_app.config['TZ_LOCALTIME'])
-    start_created = today.start_of('day')
-    end_created = today.end_of('day')
+    start_created = today.start_of('day').in_timezone('utc')
+    end_created = today.end_of('day').in_timezone('utc')
     
-    today_gain, today_loss = gain_loss_in_range(start_created, end_created)
+    print(f'Today is {today}')
+    
+    today_gain, today_loss = booking_dao.gain_cancelled_in_range(start_created, end_created)
 
     # Yesterday Figures
     yesterday = pdl.yesterday('UTC').in_timezone(current_app.config['TZ_LOCALTIME'])
-    start_created = yesterday.start_of('day')
-    end_created = yesterday.end_of('day')
-    yesterday_gain, yesterday_loss = gain_loss_in_range(start_created, end_created)
+    start_created = yesterday.start_of('day').in_timezone('utc')
+    end_created = yesterday.end_of('day').in_timezone('utc')
+    yesterday_gain, yesterday_loss = booking_dao.gain_cancelled_in_range(start_created, end_created)
+    
+    print(f'yesterday gains = {booking_dao.get_gain_in_date_range_list(start_created, end_created)}')
+    print(f'yesterday cancels = {booking_dao.get_cancelled_in_date_range_list(start_created, end_created)}')
+    
+    print(f'yesterday is {yesterday}')
     
     # This week (to date) figures
     today = pdl.now('UTC').in_timezone(current_app.config['TZ_LOCALTIME'])
-    start_created = today.start_of('week').subtract(days=1)
+    start_created = today.start_of('week').subtract(days=1).in_timezone('utc')
     end_created = start_created.add(days=7)
-    week_gain, week_loss = gain_loss_in_range(start_created, end_created)
+    week_gain, week_loss = booking_dao.gain_cancelled_in_range(start_created, end_created)
     
     #this month (to date) figures
     date_today = date.today()
