@@ -29,7 +29,7 @@ def get_today_nett(today):
     nett = today_gain - today_loss
     return nett
 
-def backfill_data():
+def backfill_data(today, use_db=True):
     # Start of historical data
     local_timezone = pdl.timezone(current_app.config['TZ_LOCALTIME'])
     begin_datetime_local = pdl.datetime(2020,6,1,tz=local_timezone)
@@ -37,13 +37,12 @@ def backfill_data():
 
     # Today figures
     #  This program runs in the early hours of the FOLLOWING day, so we need to correct for this
-    recurring_customer_count = booking_dao.recurring_current() # this include nett since midnight last night
-    today = pdl.now('UTC').in_timezone(current_app.config['TZ_LOCALTIME'])
     start_created = today.start_of('day').subtract(days=1).in_timezone('utc')
     end_created = today.end_of('day').subtract(days=1).in_timezone('utc')
-
+    
     # Reset recurring_customer_count to the recurring_customer_count now less the todays_nett from midnight last night
     # This SHOULD give us the recurring customer count at midnight yesterday.
+    recurring_customer_count = booking_dao.recurring_current() # this include nett since midnight last night
     recurring_customer_count -= get_today_nett(today)
     
     while start_created >= begin_datetime_utc:
@@ -53,10 +52,13 @@ def backfill_data():
         is_saturday = start_created.day_of_week == 6
         is_eom = is_end_of_month(start_created)
         
+    
+        day_date = start_created.in_timezone(current_app.config['TZ_LOCALTIME']).date()
+
         
-        if USE_DB:
+        if use_db:
             h = History()
-            h.day_date = start_created.date()
+            h.day_date = day_date
             h.gain = today_gain
             h.loss = today_loss
             h.nett = nett_for_day
@@ -65,13 +67,13 @@ def backfill_data():
             h.is_eom = is_eom
             db.session.add(h)
         else:
-            print(start_created.date(), today_gain, today_loss, nett_for_day, recurring_customer_count, is_saturday, is_eom)
+            print(day_date, today_gain, today_loss, nett_for_day, recurring_customer_count, is_saturday, is_eom)
 
         # Move to previous day for next calculation
         start_created = start_created.subtract(days=1)
         end_created = end_created.subtract(days=1)
         recurring_customer_count -= nett_for_day
-    if USE_DB:
+    if use_db:
         db.session.commit()
     
 
@@ -80,8 +82,7 @@ if __name__ == '__main__':
     import sys
 
     app = create_app()
-    
-    USE_DB = True
+    USE_DB = False
     
     with app.app_context():
         # Create a new History table
@@ -100,5 +101,6 @@ if __name__ == '__main__':
                 db.session.rollback()
                 print('Failed to delete all rows of History -- exiting')
                 sys.exit(1)
-        
-        backfill_data()
+        today = pdl.now('UTC').in_timezone(current_app.config['TZ_LOCALTIME'])
+        print(f'{today=}')
+        backfill_data(today, use_db=USE_DB)
