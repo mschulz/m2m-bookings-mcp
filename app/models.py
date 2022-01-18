@@ -535,7 +535,7 @@ def import_dict(d, b):
     if 'cancellation_date' in b:
         d.cancellation_date = b['cancellation_date']
     if '_cancellation_datetime' in b:
-        d._cancellation_date = b['_cancellation_date']
+        d._cancellation_date = b['_cancellation_datetime']
     d.cancellation_reason = b['cancellation_reason'] if 'cancellation_reason' in b else None
     if 'cancellation_fee' in b:
         d.cancellation_fee = b['cancellation_fee']
