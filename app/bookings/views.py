@@ -81,6 +81,9 @@ def cancellation():
         print('Processing a cancelled booking')
     
     data = json.loads(request.data)
+    data["_cancellation_datetime"] = UTC_now()
+    
+    print(f'{data["_cancellation_datetime"]=}')
     
     # In the rare case where Launch27 does not send out the booking via Zapier, this code has
     # no row on which to work.  To fix this, we will accept the data here and create the entry.
@@ -91,7 +94,6 @@ def cancellation():
             notify_cancelled_completed(data)
 
     data["booking_status"] = 'CANCELLED'
-    data["_cancellation_datetime"] = UTC_now()
     booking_dao.create_update_booking(data)
     
     customer_dao.create_or_update_customer(data['customer'])
