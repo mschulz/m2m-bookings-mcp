@@ -16,11 +16,15 @@ from sqlalchemy import exc
 
 from app.commands.model import History
 
+SUNDAY = 6
 
 def is_end_of_month(today):
     days_in_month = today.days_in_month
     day_today = int(today.format('DD'))
     return days_in_month == day_today
+
+def is_saturday(d):
+    return int(d.day_of_week) == SUNDAY
 
 def get_today_nett(today):
     start_created = today.start_of('day')
@@ -48,13 +52,7 @@ def backfill_data(today, use_db=True):
     while start_created >= begin_datetime_utc:
         today_gain, today_loss = booking_dao.gain_cancelled_in_range(start_created, end_created)
         nett_for_day = today_gain - today_loss
-        
-        is_saturday = start_created.day_of_week == 6
-        is_eom = is_end_of_month(start_created)
-        
-    
         day_date = start_created.in_timezone(current_app.config['TZ_LOCALTIME']).date()
-
         
         if use_db:
             h = History()
@@ -63,11 +61,11 @@ def backfill_data(today, use_db=True):
             h.loss = today_loss
             h.nett = nett_for_day
             h.recurring = recurring_customer_count
-            h.is_saturday = is_saturday
-            h.is_eom = is_eom
+            h.is_saturday = is_saturday(day_date)
+            h.is_eom = is_end_of_month(day_date)
             db.session.add(h)
         else:
-            print(day_date, today_gain, today_loss, nett_for_day, recurring_customer_count, is_saturday, is_eom)
+            print(day_date, today_gain, today_loss, nett_for_day, recurring_customer_count, is_saturday(day_date), is_end_of_month(day_date))
 
         # Move to previous day for next calculation
         start_created = start_created.subtract(days=1)
@@ -82,7 +80,7 @@ if __name__ == '__main__':
     import sys
 
     app = create_app()
-    USE_DB = True
+    USE_DB = False
     
     with app.app_context():
         # Create a new History table
