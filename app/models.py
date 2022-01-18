@@ -66,11 +66,14 @@ class Booking(db.Model):
     _customer_id = db.Column(db.Integer, index=False, unique=False)
     ### Points to the unique customer for this booking
     ### customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'))
+    
     cancellation_type = db.Column(db.String(64), index=False, unique=False)
     cancelled_by = db.Column(db.String(64), index=False, unique=False)
     _cancellation_date = db.Column(db.Date, index=False, unique=False, nullable=True)
     cancellation_reason = db.Column(db.Text(), index=False, unique=False)
     _cancellation_fee = db.Column(db.Integer, index=False, unique=False)
+    _cancellation_datetime = db.Column(db.DateTime(timezone=True), index=False, unique=False)   ########### NEW #########
+    
     _price_adjustment = db.Column(db.Integer, index=False, unique=False)
     price_adjustment_comment =  db.Column(db.Text(), index=False, unique=False)
     booking_status = db.Column(db.String(64), index=False, unique=False)

@@ -173,8 +173,8 @@ class BookingDAO:
     # Current Recurring customer count
     def recurring_current(self):
         return db.session.query(self.model)\
-        .filter(self.model.service_date >= utc_to_local(datetime.utcnow()).date())\
-        .filter_by(booking_status = 'NOT_COMPLETE')\
+            .filter(self.model.service_date >= utc_to_local(datetime.utcnow()).date())\
+            .filter_by(booking_status = 'NOT_COMPLETE')\
             .filter(self.model.frequency != '1 Time Service')\
             .distinct(self.model._customer_id)\
             .count()
@@ -187,6 +187,13 @@ class BookingDAO:
         gain = self.get_gain_in_date_range(start_created, end_created)
         cancelled = self.get_cancelled_in_date_range(start_created, end_created)
         return gain, cancelled
+    
+    def get_cancellations(self):
+        return db.session.query(self.model)\
+        .filter_by(booking_status = 'CANCELLED')\
+        .filter(self.model._cancellation_date != None)\
+        .all()
+
 
 booking_dao = BookingDAO(Booking)
 
