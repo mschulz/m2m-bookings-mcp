@@ -10,6 +10,7 @@ from app.decorators import APIkey_required
 from psycopg2.errors import UniqueViolation
 from app.notify import is_completed, notify_cancelled_completed, is_missing_booking
 from app.daos import booking_dao, customer_dao
+from app.local_date_time import UTC_now
 
 
 @bookings_api.route('/', methods=['GET'])
@@ -90,6 +91,7 @@ def cancellation():
             notify_cancelled_completed(data)
 
     data["booking_status"] = 'CANCELLED'
+    data["_cancellation_datetime"] = UTC_now()
     booking_dao.create_update_booking(data)
     
     customer_dao.create_or_update_customer(data['customer'])

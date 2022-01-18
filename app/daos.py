@@ -193,6 +193,55 @@ class BookingDAO:
         .filter_by(booking_status = 'CANCELLED')\
         .filter(self.model._cancellation_date != None)\
         .all()
+    
+    #### CANCELLATION Calculations NEW!!!!####
+
+    def get_cancelled_new(self, start_date_str, period_days, prior=True):
+        """
+        get count from start_date_str for period_days PRIOR to that date
+        """
+        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
+        return self.get_cancelled_in_date_range_new(date_start, date_end)
+
+    def _get_cancelled_in_date_range_new(self, date_start, date_end):
+        items =  db.session.query(self.model)\
+            .filter_by(cancellation_type = 'This Booking and all Future Bookings')\
+            .filter(self.model._cancellation_datetime >= date_start)\
+            .filter(self.model._cancellation_datetime < date_end)\
+            .distinct(self.model._customer_id)
+        return items
+
+    def get_cancelled_in_date_range_new(self, date_start, date_end):
+        items = self._get_cancelled_in_date_range_new(date_start, date_end)
+        return items.count()
+
+    def get_cancelled_in_date_range_list_new(self, date_start, date_end):
+        items =  self._get_cancelled_in_date_range_new(date_start, date_end)
+        return [item.booking_id for item in items.all()]
+
+    def get_cancelled_list(self, start_date_str, period_days, prior=True):
+        date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
+        res = self._get_cancelled_in_date_range_list_new(date_start, date_end).all()
+        return [item.booking_id for item in res]
+
+    def get_cancelled_by_month_new(self, month, year):
+        start_date_str, period = self._get_days_in_month(month, year)
+        return self.get_cancelled_new(start_date_str, period, prior=False)
+
+    def gain_cancelled_in_range_new(self, start_date, end_date):
+        # Need to convert from Pendulum datetime to datetime.datetime format
+        start_created = datetime.fromtimestamp(start_date.timestamp(), pdl.tz.UTC)
+        end_created = datetime.fromtimestamp(end_date.timestamp(), pdl.tz.UTC)
+
+        gain = self.get_gain_in_date_range(start_created, end_created)
+        cancelled = self.get_cancelled_in_date_range_new(start_created, end_created)
+        return gain, cancelled
+    
+    def get_cancellations_new(self):
+        return db.session.query(self.model)\
+        .filter_by(booking_status = 'CANCELLED')\
+        .filter(self.model._cancellation_datetime != None)\
+        .all()
 
 
 booking_dao = BookingDAO(Booking)
