@@ -18,6 +18,16 @@ from app.daos import booking_dao
 from app.commands.model import History
 
 
+SUNDAY = 6
+
+def is_end_of_month(today):
+    days_in_month = today.days_in_month
+    day_today = int(today.format('DD'))
+    return days_in_month == day_today
+
+def is_saturday(d):
+    return int(d.day_of_week) == SUNDAY
+
 def get_today_nett():
     today = pdl.now('UTC').in_timezone(current_app.config['TZ_LOCALTIME'])
     start_created = today.start_of('day').in_timezone('utc')
@@ -48,8 +58,6 @@ def do_daily(today):
     return (yesterday_end_created.date(), yesterday_gain, yesterday_loss, recurring_customer_count - todays_nett)
 
 def add_to_history(day_date, gain, loss, rec_cus_count, use_db=True):
-    is_saturday = day_date.day_of_week == 6
-    is_eom = is_end_of_month(day_date)
     
     h = History()
     h.day_date = day_date
@@ -57,8 +65,8 @@ def add_to_history(day_date, gain, loss, rec_cus_count, use_db=True):
     h.loss = loss
     h.nett = gain - loss
     h.recurring = rec_cus_count
-    h.is_saturday = is_saturday
-    h.is_eom = is_eom
+    h.is_saturday = is_saturday(day_date)
+    h.is_eom = is_end_of_month(day_date)
 
     print(json.dumps(h.to_json(), indent=2))
     
@@ -69,13 +77,8 @@ def add_to_history(day_date, gain, loss, rec_cus_count, use_db=True):
         except:
             print('Failed to add to History table')
             db.session.rollback()
-    
 
-def is_end_of_month(today):
-    days_in_month = today.days_in_month
-    day_today = int(today.format('DD'))
-    return days_in_month == day_today
-    
+
 if __name__ == '__main__':
     from app import create_app
 

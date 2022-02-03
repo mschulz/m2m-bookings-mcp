@@ -50,9 +50,13 @@ def backfill_data(today, use_db=True):
     recurring_customer_count -= get_today_nett(today)
     
     while start_created >= begin_datetime_utc:
-        today_gain, today_loss = booking_dao.gain_cancelled_in_range(start_created, end_created)
+        today_gain, today_loss = booking_dao.gain_cancelled_in_range_new(start_created, end_created)
         nett_for_day = today_gain - today_loss
         day_date = start_created.in_timezone(current_app.config['TZ_LOCALTIME']).date()
+    
+        print(f'Day is {start_created=} {end_created=}')
+        print(f'Day gains = {booking_dao.get_gain_in_date_range_list(start_created, end_created)}')
+        print(f'Day cancels = {booking_dao.get_cancelled_in_date_range_list(start_created, end_created)}')
         
         if use_db:
             h = History()

@@ -21,7 +21,8 @@ from app.report.report_new import create_report_new
 @report_api.route('/report', methods=['GET'])
 @APIkey_required
 def report():
-    res = create_report()
+    #res = create_report()
+    res = create_report_new()
     return jsonify(res)
 
 @report_api.route('/report-new', methods=['GET'])

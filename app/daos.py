@@ -155,10 +155,14 @@ class BookingDAO:
 
     def get_cancelled_in_date_range(self, date_start, date_end):
         items = self._get_cancelled_in_date_range(date_start, date_end)
+        
+        l = [item.booking_id for item in items.all()]
+        print(f'get_cancelled_in_date_range({len(l)}): {l}')
+        
         return items.count()
 
     def get_cancelled_in_date_range_list(self, date_start, date_end):
-        items =  self._get_cancelled_in_date_range(date_start, date_end)
+        items = self._get_cancelled_in_date_range(date_start, date_end)
         return [item.booking_id for item in items.all()]
 
     def get_cancelled_list(self, start_date_str, period_days, prior=True):
