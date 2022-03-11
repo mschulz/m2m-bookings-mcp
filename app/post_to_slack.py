@@ -89,3 +89,93 @@ if __name__ == "__main__":
     }
 
     slack_messages(example_data["result"])
+
+    """
+    https://app.slack.com/block-kit-builder/T2TL2CGS2#%7B%22blocks%22:%5B%7B%22type%22:%22section%22,%22text%22:%7B%22type%22:%22mrkdwn%22,%22text%22:%22Hello,%20Assistant%20to%20the%20Regional%20Manager%20Dwight!%20*Michael%20Scott*%20wants%20to%20know%20where%20you'd%20like%20to%20take%20the%20Paper%20Company%20investors%20to%20dinner%20tonight.%5Cn%5Cn%20*Please%20select%20a%20restaurant:*%22%7D%7D,%7B%22type%22:%22divider%22%7D,%7B%22type%22:%22actions%22,%22elements%22:%5B%7B%22type%22:%22checkboxes%22,%22options%22:%5B%7B%22text%22:%7B%22type%22:%22plain_text%22,%22text%22:%22*this%20is%20plain_text%20text*%22,%22emoji%22:true%7D,%22description%22:%7B%22type%22:%22plain_text%22,%22text%22:%22*this%20is%20plain_text%20text*%22,%22emoji%22:true%7D,%22value%22:%22value-0%22%7D,%7B%22text%22:%7B%22type%22:%22plain_text%22,%22text%22:%22*this%20is%20plain_text%20text*%22,%22emoji%22:true%7D,%22description%22:%7B%22type%22:%22plain_text%22,%22text%22:%22*this%20is%20plain_text%20text*%22,%22emoji%22:true%7D,%22value%22:%22value-1%22%7D,%7B%22text%22:%7B%22type%22:%22plain_text%22,%22text%22:%22*this%20is%20plain_text%20text*%22,%22emoji%22:true%7D,%22description%22:%7B%22type%22:%22plain_text%22,%22text%22:%22*this%20is%20plain_text%20text*%22,%22emoji%22:true%7D,%22value%22:%22value-2%22%7D%5D,%22action_id%22:%22actionId-0%22%7D,%7B%22type%22:%22checkboxes%22,%22options%22:%5B%7B%22text%22:%7B%22type%22:%22mrkdwn%22,%22text%22:%22*this%20is%20mrkdwn%20text*%22%7D,%22description%22:%7B%22type%22:%22mrkdwn%22,%22text%22:%22*this%20is%20mrkdwn%20text*%22%7D,%22value%22:%22value-0%22%7D,%7B%22text%22:%7B%22type%22:%22mrkdwn%22,%22text%22:%22*this%20is%20mrkdwn%20text*%22%7D,%22description%22:%7B%22type%22:%22mrkdwn%22,%22text%22:%22*this%20is%20mrkdwn%20text*%22%7D,%22value%22:%22value-1%22%7D,%7B%22text%22:%7B%22type%22:%22mrkdwn%22,%22text%22:%22*this%20is%20mrkdwn%20text*%22%7D,%22description%22:%7B%22type%22:%22mrkdwn%22,%22text%22:%22*this%20is%20mrkdwn%20text*%22%7D,%22value%22:%22value-2%22%7D%5D,%22action_id%22:%22actionId-1%22%7D%5D%7D%5D%7D
+    {
+    	"type": "actions",
+    	"elements": [{
+    			"type": "checkboxes",
+    			"options": [{
+    					"text": {
+    						"type": "plain_text",
+    						"text": "*this is plain_text text*",
+    						"emoji": true
+    					},
+    					"description": {
+    						"type": "plain_text",
+    						"text": "*this is plain_text text*",
+    						"emoji": true
+    					},
+    					"value": "value-0"
+    				},
+    				{
+    					"text": {
+    						"type": "plain_text",
+    						"text": "*this is plain_text text*",
+    						"emoji": true
+    					},
+    					"description": {
+    						"type": "plain_text",
+    						"text": "*this is plain_text text*",
+    						"emoji": true
+    					},
+    					"value": "value-1"
+    				},
+    				{
+    					"text": {
+    						"type": "plain_text",
+    						"text": "*this is plain_text text*",
+    						"emoji": true
+    					},
+    					"description": {
+    						"type": "plain_text",
+    						"text": "*this is plain_text text*",
+    						"emoji": true
+    					},
+    					"value": "value-2"
+    				}
+    			],
+    			"action_id": "actionId-0"
+    		},
+    		{
+    			"type": "checkboxes",
+    			"options": [{
+    					"text": {
+    						"type": "mrkdwn",
+    						"text": "*this is mrkdwn text*"
+    					},
+    					"description": {
+    						"type": "mrkdwn",
+    						"text": "*this is mrkdwn text*"
+    					},
+    					"value": "value-0"
+    				},
+    				{
+    					"text": {
+    						"type": "mrkdwn",
+    						"text": "*this is mrkdwn text*"
+    					},
+    					"description": {
+    						"type": "mrkdwn",
+    						"text": "*this is mrkdwn text*"
+    					},
+    					"value": "value-1"
+    				},
+    				{
+    					"text": {
+    						"type": "mrkdwn",
+    						"text": "*this is mrkdwn text*"
+    					},
+    					"description": {
+    						"type": "mrkdwn",
+    						"text": "*this is mrkdwn text*"
+    					},
+    					"value": "value-2"
+    				}
+    			],
+    			"action_id": "actionId-1"
+    		}
+    	]
+    }
+    """

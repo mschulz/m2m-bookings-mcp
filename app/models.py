@@ -327,7 +327,7 @@ class Booking(db.Model):
     
     @team_share.setter
     def team_share(self, val):
-        if val:
+        if val and ',' not in val:
             try:
                 if '-' in val:
                     #  "team_share_amount": "Team Euclid - $67.64"

@@ -15,18 +15,10 @@ from flask import jsonify
 from app.report import report_api
 from app.decorators import APIkey_required
 from app.report.report import create_report
-from app.report.report_new import create_report_new
 
 
 @report_api.route('/report', methods=['GET'])
 @APIkey_required
 def report():
-    #res = create_report()
-    res = create_report_new()
-    return jsonify(res)
-
-@report_api.route('/report-new', methods=['GET'])
-@APIkey_required
-def report_new():
-    res = create_report_new()
+    res = create_report()
     return jsonify(res)

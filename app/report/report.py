@@ -1,4 +1,4 @@
-# app/report/report.py
+# app/report/report_new.py
 
 """
     Return customer summary data:
@@ -33,18 +33,18 @@ def create_report():
     yesterday = pdl.now('UTC').in_timezone(current_app.config['TZ_LOCALTIME']).subtract(days=1)
     start_created = yesterday.start_of('day').in_timezone('utc')
     end_created = yesterday.end_of('day').in_timezone('utc')
-    yesterday_gain, yesterday_loss = booking_dao.gain_cancelled_in_range(start_created, end_created)
+    yesterday_gain, yesterday_loss = booking_dao.gain_cancelled_in_range_new(start_created, end_created)
     
     print(f'Yesterday is {yesterday} {start_created=} {end_created=}')
     print(f'yesterday gains = {booking_dao.get_gain_in_date_range_list(start_created, end_created)}')
-    print(f'yesterday cancels = {booking_dao.get_cancelled_in_date_range_list(start_created, end_created)}')
+    print(f'yesterday cancels = {booking_dao.get_cancelled_in_date_range_list_new(start_created, end_created)}')
     
     print(f'yesterday is {yesterday}')
     
     # This week (to date) figures
     start_created = today.start_of('week').subtract(days=1).in_timezone('utc')
     end_created = start_created.add(days=7)
-    week_gain, week_loss = booking_dao.gain_cancelled_in_range(start_created, end_created)
+    week_gain, week_loss = booking_dao.gain_cancelled_in_range_new(start_created, end_created)
     
     #this month (to date) figures
     #date_today = date.today()
@@ -53,7 +53,7 @@ def create_report():
     current_year = today.format("YYYY")
     current_month = today.format("MM")
     month_gain = booking_dao.get_gain_by_month(current_month, current_year)
-    month_loss = booking_dao.get_cancelled_by_month(current_month, current_year)
+    month_loss = booking_dao.get_cancelled_by_month_new(current_month, current_year)
     
     #print(f'gain_this_month={booking_dao.get_gain_by_month_list(current_month, current_year)}')
     
