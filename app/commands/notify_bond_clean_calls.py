@@ -5,33 +5,11 @@ import pendulum as pdl
 from datetime import datetime
 
 
-from app import db
-from app.models import Booking
+from app.daos import booking_dao
 from sqlalchemy import exc, and_, func
 from app.post_to_zapier import post_new_bond_agent_calls
 from app.post_to_slack import slack_messages
 
-def search_bookings(service_category, start_created, end_created, booking_status):
-    
-    print(f'params: category={service_category} date={start_created},{end_created} booking_status={booking_status}')
-    
-    res = db.session.query(Booking) \
-        .filter_by(service_category=service_category, booking_status=booking_status).filter(and_(Booking._created_at >= start_created, Booking._created_at <= end_created)) \
-        .all()
-    
-    print(res)
-    
-    found = []
-    for item in res:
-        data = {
-            "category": item.service_category,
-            "name": item.name,
-            "location": item.location,
-            "booking_url": f"https://maid2match.launch27.com/admin/bookings/{item.booking_id}/edit"
-        }
-        found.append(data.copy())
-    
-    return found
 
 def main():
 
@@ -49,7 +27,7 @@ def main():
         start_created = datetime.fromtimestamp(start_created.timestamp(), pdl.tz.UTC)
         end_created = datetime.fromtimestamp(end_created.timestamp(), pdl.tz.UTC)
         
-        res = search_bookings(service_category, start_created, end_created, booking_status)
+        res = booking_dao.get_by_date_range(service_category, booking_status, start_created, end_created)
         
         slack_messages(res)
 

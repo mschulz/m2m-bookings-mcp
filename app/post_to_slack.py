@@ -14,22 +14,36 @@ def block_item(name, location, url):
     }
 
 def build_blocks(message_list):
-    ending = "" if len(message_list) == 1 else 's'
-    block_list = [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"Today's listing of {len(message_list)} new bond clean booking{ending} can be found below for calls to agents:"
+    if len(message_list) == 0:
+        block_list = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "There are no new bond clean bookings for today"
+                }
+            },
+            {
+                "type": "divider"
             }
-        },
-        {
-            "type": "divider"
-        }
-    ]
-    for item in message_list:
-        m = block_item(item["name"], item["location"], item["booking_url"])
-        block_list.append(m)
+        ]
+    else:
+        ending = "" if len(message_list) == 1 else 's'
+        block_list = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"Today's listing of {len(message_list)} new bond clean booking{ending} can be found below for calls to agents:"
+                }
+            },
+            {
+                "type": "divider"
+            }
+        ]
+        for item in message_list:
+            m = block_item(item["name"], item["location"], item["booking_url"])
+            block_list.append(m)
     return { "blocks": block_list}
 
 def post_message_to_slack(blocks):

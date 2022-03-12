@@ -3,9 +3,8 @@
 import json
 import requests
 from flask import current_app, abort
-from app import db
-from app.models import Booking
 from app.email import send_warning_email
+from app.daos import booking_dao, customer_dao
 
 
 def is_missing_booking(data):
@@ -20,16 +19,17 @@ def is_missing_booking(data):
     current_app.logger.info(f'Booking data received: {data}')
     
     # Check if we already have a booking under this id
-    b = db.session.query(Booking).filter(Booking.booking_id == booking_id).first()
+    b = get_by_booking_id(booking_id)
     
     return b is None
 
 def is_completed(data):
     """ Check if this about to be cancelled booking is already marked as completed. """
     booking_id = data['id'] if 'id' in data else None
-    
+    if not booking_id:
+        return False
     # Check if we already have a booking under this id
-    b = db.session.query(Booking).filter(Booking.booking_id == booking_id).first()
+    b = get_by_booking_id(booking_id)
     
     return b.booking_status == "COMPLETED"
 

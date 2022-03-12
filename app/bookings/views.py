@@ -11,6 +11,7 @@ from psycopg2.errors import UniqueViolation
 from app.notify import is_completed, notify_cancelled_completed, is_missing_booking
 from app.daos import booking_dao, customer_dao
 from app.local_date_time import UTC_now
+from sqlalchemy import exc
 
 
 @bookings_api.route('/', methods=['GET'])
@@ -30,9 +31,16 @@ def new():
     
     data = json.loads(request.data)
     data["booking_status"] = 'NOT_COMPLETE'
-    booking_dao.create_update_booking(data)
-        
-    customer_dao.create_or_update_customer(data['customer'])
+    try:
+        booking_dao.create_update_booking(data)
+        customer_dao.create_or_update_customer(data['customer'])
+    except exc.OperationalError as e:
+        msg = {
+            'status': 'fail',
+            'reason': 'database is temporarily unavailable',
+            'message': e
+        }
+        return jsonify(msg), 503
     
     return 'OK'
 
@@ -49,7 +57,15 @@ def restored():
     
     data = json.loads(request.data)
     data["booking_status"] = 'NOT_COMPLETE'
-    booking_dao.create_update_booking(data)
+    try:
+        booking_dao.create_update_booking(data)
+    except exc.OperationalError as e:
+        msg = {
+            'status': 'fail',
+            'reason': 'database is temporarily unavailable',
+            'message': e
+        }
+        return jsonify(msg), 503
     return 'OK'
 
 
@@ -64,10 +80,17 @@ def completed():
     
     data = json.loads(request.data)
     data["booking_status"] = 'COMPLETED'
-    booking_dao.create_update_booking(data)
+    try:
+        booking_dao.create_update_booking(data)
+        customer_dao.create_or_update_customer(data['customer'])
+    except exc.OperationalError as e:
+        msg = {
+            'status': 'fail',
+            'reason': 'database is temporarily unavailable',
+            'message': e
+        }
+        return jsonify(msg), 503
     
-    customer_dao.create_or_update_customer(data['customer'])
-     
     return 'OK'
 
 
@@ -95,10 +118,16 @@ def cancellation():
     
     print(f'{data["_cancellation_datetime"]=}')
     
-    booking_dao.create_update_booking(data)
-    
-    customer_dao.create_or_update_customer(data['customer'])
-    
+    try:
+        booking_dao.create_update_booking(data)
+        customer_dao.create_or_update_customer(data['customer'])
+    except exc.OperationalError as e:
+        msg = {
+            'status': 'fail',
+            'reason': 'database is temporarily unavailable',
+            'message': e
+        }
+        return jsonify(msg), 503
     return 'OK'
 
 
@@ -112,9 +141,16 @@ def updated():
         print('Processing an updated booking')
 
     data = json.loads(request.data)
-    booking_dao.create_update_booking(data)
-    
-    customer_dao.create_or_update_customer(data['customer'])
+    try:
+        booking_dao.create_update_booking(data)
+        customer_dao.create_or_update_customer(data['customer'])
+    except exc.OperationalError as e:
+        msg = {
+            'status': 'fail',
+            'reason': 'database is temporarily unavailable',
+            'message': e
+        }
+        return jsonify(msg), 503
     
     return 'OK'
 
@@ -129,7 +165,15 @@ def team_changed():
         print('Processing an team assignment changed')
     
     data = json.loads(request.data)
-    booking_dao.create_update_booking(data)
+    try:
+        booking_dao.create_update_booking(data)
+    except exc.OperationalError as e:
+        msg = {
+            'status': 'fail',
+            'reason': 'database is temporarily unavailable',
+            'message': e
+        }
+        return jsonify(msg), 503
     
     ##  I think we should IGNORE this as it as triggered by a team assignment change only (that's what
     ##  one would assume by the name of the change)
@@ -158,30 +202,21 @@ def search():
     start_created = local_to_UTC(created_at.replace(hour=0, minute=0, second=0, microsecond=0))
     end_created = local_to_UTC(created_at.replace(hour=23, minute=59, second=59, microsecond=0))
     
-    #return search_bookings(service_category, start_created, end_created, booking_status)
-    
-    print(f'params: category={service_category} date={start_created},{end_created} booking_status={booking_status}')
-    
-    res = booking_dao.search(self, service_category, booking_status, start_created, end_created)
-
-    print(res)
-    
-    found = []
-    for item in res:
-        data = {
-            "category": item.service_category,
-            "name": item.name,
-            "location": item.location
-        }
-        found.append(data.copy())
-    
-    return jsonify(found)
+    return search_bookings(service_category, start_created, end_created, booking_status)
 
 def search_bookings(service_category, start_created, end_created, booking_status):
     
     print(f'params: category={service_category} date={start_created},{end_created} booking_status={booking_status}')
     
-    res = booking_dao.search(self, service_category, booking_status, start_created, end_created)
+    try:
+        res = booking_dao.get_by_date_range(service_category, booking_status, start_created, end_created)
+    except exc.OperationalError as e:
+        msg = {
+            'status': 'fail',
+            'reason': 'database is temporarily unavailable',
+            'message': e
+        }
+        return jsonify(msg), 503
     
     print(res)
     

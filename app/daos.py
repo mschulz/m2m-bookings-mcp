@@ -64,10 +64,13 @@ class BookingDAO:
                 db.session.rollback()
                 current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
 
-    def search(self, service_category, booking_status, start_created, end_created):
+    def get_by_date_range(self, service_category, booking_status, start_created, end_created):
+    
+        print(f'params: category={service_category} date={start_created},{end_created} booking_status={booking_status}')
+    
         return db.session.query(self.model) \
             .filter_by(service_category=service_category, booking_status=booking_status) \
-            .filter_by(and_(_created_at >= start_created, _created_at <= end_created)) \
+            .filter(and_(self.model._created_at >= start_created, self.model._created_at <= end_created)) \
             .all()
         
     def date_to_UTC_date(self, date_str):

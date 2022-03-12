@@ -773,5 +773,28 @@ def import_customer(c, d):
         c.tags = d['tags'][:256] if 'tags' in d else None
 
     c.profile_url = d['profile_url'] if 'profile_url' in d else None
+
+
+if __name__ == '__main__':
+    def teams_assigned_test(val):
+        # "team_details": "[{u'phone': u'+6 (142) 695-8397', u'first_name': u'Irene & Yong',
+        # u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid',
+        #  u'id': u'8447'}]", 
+        if val is not None:
+            print(val)
+            if isinstance(val, str):
+                team_list_dict = json.loads(val.replace("'", '"').replace('u"', '"'))
+                team_list = [item['title'] for item in team_list_dict]
+                print(f'json_str: {team_list}')
+            else:
+                print(f'funny: {val}')
+                if val and  (val[0] != '['):    # Hack for reading CSV file
+                    team_list = [ val ]
+                else:
+                    team_list = []
+            print(f'team_list: {team_list}')
+            return ','.join(team_list)
     
-    
+    val = "[{u'phone': u'+6 (142) 695-8397', u'first_name': u'Irene & Yong', u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid', u'id': u'8447'}]"
+    res = teams_assigned_test(val)
+    print(res)

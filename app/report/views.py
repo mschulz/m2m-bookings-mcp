@@ -15,10 +15,18 @@ from flask import jsonify
 from app.report import report_api
 from app.decorators import APIkey_required
 from app.report.report import create_report
-
+from sqlalchemy import exc
 
 @report_api.route('/report', methods=['GET'])
 @APIkey_required
 def report():
-    res = create_report()
-    return jsonify(res)
+    try:
+        res = create_report()
+        return jsonify(res)
+    except exc.OperationalError as e:
+        msg = {
+            'status': 'fail',
+            'reason': 'database is temporarily unavailable',
+            'message': e
+        }
+        return jsonify(msg), 503
