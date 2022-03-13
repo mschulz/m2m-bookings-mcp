@@ -19,7 +19,7 @@ def is_missing_booking(data):
     current_app.logger.info(f'Booking data received: {data}')
     
     # Check if we already have a booking under this id
-    b = get_by_booking_id(booking_id)
+    b = booking_dao.get_by_booking_id(booking_id)
     
     return b is None
 
@@ -29,7 +29,7 @@ def is_completed(data):
     if not booking_id:
         return False
     # Check if we already have a booking under this id
-    b = get_by_booking_id(booking_id)
+    b = booking_dao.get_by_booking_id(booking_id)
     
     return b.booking_status == "COMPLETED"
 
