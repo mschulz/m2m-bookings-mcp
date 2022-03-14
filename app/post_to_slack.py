@@ -42,7 +42,14 @@ def build_blocks(message_list):
             }
         ]
         for item in message_list:
-            m = block_item(item["name"], item["location"], item["booking_url"])
+            url = f"https://maid2match.launch27.com/admin/bookings/{item.booking_id}/edit"
+            
+            print(f'item: {item}')
+            print(f'{item.name=}')
+            print(f'{item.location=}')
+            print(f'{url=}')
+            
+            m = block_item(item.name, item.location, url)
             block_list.append(m)
     return { "blocks": block_list}
 
@@ -58,7 +65,12 @@ def post_message_to_slack(blocks):
     return res
 
 def slack_messages(data):
+    
+    print(f'slack_messages: {data}')
+    
     blocks = build_blocks(data)
+    
+    print(f'build_blocks: {blocks}')
     
     print(json.dumps(blocks, indent=2))
     
