@@ -1,7 +1,9 @@
 # app/models
 
 import json
-from datetime import datetime
+from datetime import datetime, date
+import dateutil.parser
+import ast
 
 from app import db
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -134,6 +136,17 @@ class Booking(db.Model):
     def to_dict(self):
         return {col.name: getattr(self, col.name) for col in self.__table__.columns}
     
+    def to_json(self):
+        def json_serial(obj):
+            """JSON serializer for objects not serializable by default json code"""
+            if isinstance(obj, (datetime, date)):
+                return obj.isoformat()
+            #raise TypeError ("Type {type(obj)} not serializable" )
+            return obj
+        
+        d = self.to_dict()
+        return {k:json_serial(v) for k,v in d.items()}
+    
     @hybrid_property
     def created_at(self):
         
@@ -145,7 +158,9 @@ class Booking(db.Model):
     def created_at(self, val):
         if val is not None:
             try:
-                if ' ' in val:
+                if 'Z' in val:
+                    self._cancellation_date = dateutil.parser.isoparse(val).date()
+                elif ' ' in val:
                     # '17/07/2020 21:01'
                     self._created_at = datetime.strptime(val, "%d/%m/%Y %H:%M")
                 else:
@@ -162,7 +177,9 @@ class Booking(db.Model):
     def updated_at(self, val):
         if val is not None:
             try:
-                if ' ' in val:
+                if 'Z' in val:
+                    self._cancellation_date = dateutil.parser.isoparse(val).date()
+                elif ' ' in val:
                     # '17/07/2020 21:01'
                     self._updated_at = datetime.strptime(val, "%d/%m/%Y %H:%M")
                 else:
@@ -284,42 +301,36 @@ class Booking(db.Model):
     @hybrid_property
     def teams_assigned(self):
         return self._teams_assigned
-    
+
+    def get_team_list(self, val, key_str):
+        if val:
+            # Convert the string into a dictionary
+            team_details = ast.literal_eval(val)
+            print(f'{team_details}')
+            team_details_list = [item["title"] for item in team_details]
+            assigned_teams_string = ','.join(team_details_list)
+            return assigned_teams_string
+        else:
+            return ''
+
     @teams_assigned.setter
     def teams_assigned(self, val):
         # "team_details": "[{u'phone': u'+6 (142) 695-8397', u'first_name': u'Irene & Yong',
         # u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid',
         #  u'id': u'8447'}]", 
-        if val is not None:
-            if isinstance(val, str):
-                if val and  (val[0] != '['):    # Hack for reading CSV file
-                    team_list = [ val ]
-                else:
-                    team_list = []
-            else:
-                team_list_dict = json.loads(val.replace("'", '"').replace('u"', '"'))
-                team_list = [item['title'] for item in team_list_dict]
-            self._teams_assigned = ','.join(team_list)
+            self._teams_assigned_ids = get_team_list(val, 'title')
    
     @hybrid_property
     def teams_assigned_ids(self):
         return self._teams_assigned_ids
-    
+
     @teams_assigned_ids.setter
     def teams_assigned_ids(self, val):
         # "team_details": "[{u'phone': u'+6 (142) 695-8397', u'first_name': u'Irene & Yong',
         # u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid',
         #  u'id': u'8447'}]",
         if val is not None:
-            if isinstance(val, str):
-                if val and  (val[0] != '['):    # Hack for reading CSV file
-                    team_list_ids = [ val ]
-                else:
-                    team_list_ids = []
-            else:
-                team_list_dict = json.loads(val.replace("'", '"').replace('u"', '"'))
-                team_list_ids = [item['id'] for item in team_list_dict]
-            self._teams_assigned_ids = ','.join(team_list_ids)
+            self._teams_assigned_ids = get_team_list(val, 'id')
 
     @hybrid_property
     def team_share(self):
@@ -331,7 +342,10 @@ class Booking(db.Model):
             try:
                 if '-' in val:
                     #  "team_share_amount": "Team Euclid - $67.64"
-                    self._team_share =  dollar_string_to_int(val.split(' - ')[1])
+                    if '-' in val:
+                        self._team_share =  dollar_string_to_int(val.split(' - ')[1])
+                    else:
+                        self._team_share =  dollar_string_to_int(val.split(': ')[1])
                 else:
                     self._team_share =  dollar_string_to_int(val)
             except IndexError as e:
@@ -393,7 +407,9 @@ class Booking(db.Model):
         # "2018-10-25T11:06:33+10:00"
         if val:
             try:
-                if 'T' in val:
+                if 'Z' in val:
+                    self._cancellation_date = dateutil.parser.isoparse(val).date()
+                elif 'T' in val:
                     self._cancellation_date = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z").date()
                 elif ' ' in val:
                     if '/' in val:
@@ -411,6 +427,8 @@ class Booking(db.Model):
     
     @cancellation_fee.setter
     def cancellation_fee(self, val):
+        if not isinstance(val, str):
+            val = str(val)
         if val is not None and len(val) > 0:
             self._cancellation_fee= dollar_string_to_int(val)
     
@@ -420,12 +438,14 @@ class Booking(db.Model):
     
     @price_adjustment.setter
     def price_adjustment(self, val):
-        # "2018-10-25T11:06:33+10:00"
-        if val is not None:
+        if not isinstance(val, str):
+            val = str(val)
+        if val is not None and len(val) > 0:
             try:
                 self._price_adjustment = dollar_string_to_int(val)
             except ValueError as e:
-                current_app.logger.error(f'price_adjustment error ({val}): {e}')
+                print(f'price_adjustment error val="{val}": error_message:{e}')
+                current_app.logger.error(f'price_adjustment error val="{val}": error_message:{e}')
  
     @hybrid_property
     def is_first_recurring(self):
@@ -468,17 +488,24 @@ class Booking(db.Model):
     @pricing_parameters_price.setter
     def pricing_parameters_price(self, val):
         # "2018-10-25T11:06:33+10:00"
-        if val is not None:
+        if not isinstance(val, str):
+            val = str(val)
+        if val is not None and len(val) > 0:
             try:
                 self._pricing_parameters_price = dollar_string_to_int(val)
             except ValueError as e:
-                current_app.logger.error(f'price_adjustment error ({val}): {e}')
+                current_app.logger.error(f'pricing_parameters_price error ({val}): {e}')
 
 def string_to_boolean(val):
+    if isinstance(val, bool):
+        return val
     return val.lower() in ['true', 'yes', '1']
 
 def dollar_string_to_int(val):
-    return int(val.replace('$','').replace('.','')) 
+    if isinstance(val, str):
+        return int(val.replace('$','').replace('.',''))
+    else: 
+        return int(str(val).replace('$','').replace('.','')) 
 
 
 def import_dict(d, b):
@@ -555,7 +582,7 @@ def import_dict(d, b):
     d.source = b['source'] if 'source' in b else None
     d.state = b['state'] if 'state' in b else None
     d.sms_notifications_enabled = b['sms_notifications_enabled'] if 'sms_notifications_enabled' in b else None
-    d.pricing_parameters = b['pricing_parameters'].replace('<br/>', ', ') if 'pricing_parameters' in b else None
+    d.pricing_parameters = b['pricing_parameters'].replace('<br/>', ', ') if 'pricing_parameters' in b and b['pricing_parameters'] else None
     d.pricing_parameters_price = b['pricing_parameters_price'] if 'pricing_parameters_price' in b else None
 
     # Customer data
@@ -576,6 +603,111 @@ def import_dict(d, b):
             
     
     d.phone = b['phone'] if 'phone' in b else None
+    d.postcode = b['zip'] if 'zip' in b else None
+    
+    # Errors have started creeping in with invalid postcode being entered into the database.  We need to alert staff
+    # to these errors so that this can be corrected ASAP
+    try:
+        if d.postcode:
+            postcode_int = int(d.postcode)
+    except Exception as e:
+        current_app.logger.error(f'({request.path}) Invalid postcode {d.postcode} entered for customer "{d.name}"')
+        
+    
+    d.location = b['location'] if 'location' in b else get_location(d.postcode)
+    
+    # Custom field data
+    if 'custom_fields' in b:
+        b_cf = b["custom_fields"]
+        
+        ## How did you find Maid2Match
+        CUSTOM_SOURCE = current_app.config['CUSTOM_SOURCE']
+        if CUSTOM_SOURCE and CUSTOM_SOURCE in b_cf:
+            d.lead_source = b_cf[CUSTOM_SOURCE][:64]
+        
+        # Which team member booked this clean in?
+        CUSTOM_BOOKED_BY = current_app.config['CUSTOM_BOOKED_BY']
+        if CUSTOM_BOOKED_BY and CUSTOM_BOOKED_BY in b_cf:
+            d.booked_by = b_cf[CUSTOM_BOOKED_BY][:64]
+        
+        #Send customer email copy of invoice? (265)
+        CUSTOM_EMAIL_INVOICE = current_app.config['CUSTOM_EMAIL_INVOICE']
+        if CUSTOM_EMAIL_INVOICE and CUSTOM_EMAIL_INVOICE in b_cf:
+            d.invoice_tobe_emailed = b_cf.get(CUSTOM_EMAIL_INVOICE)
+        
+        #Name for Invoice (267)
+        CUSTOM_INVOICE_NAME = current_app.config['CUSTOM_INVOICE_NAME']
+        if CUSTOM_INVOICE_NAME and CUSTOM_INVOICE_NAME in b_cf:
+            d.invoice_name = b_cf.get(CUSTOM_INVOICE_NAME)
+        
+        #If NDIS: Who Pays For Your Service? (263)
+        CUSTOM_WHO_PAYS = current_app.config['CUSTOM_WHO_PAYS']
+        if CUSTOM_WHO_PAYS and CUSTOM_WHO_PAYS in b_cf:
+            d.NDIS_who_pays =b_cf.get(CUSTOM_WHO_PAYS)
+        
+        #Email For Invoices (NDIS and Bank Transfer Only) (261)
+        CUSTOM_INVOICE_EMAIL_ADDRESS = current_app.config['CUSTOM_INVOICE_EMAIL_ADDRESS']
+        if CUSTOM_INVOICE_EMAIL_ADDRESS and CUSTOM_INVOICE_EMAIL_ADDRESS in b_cf:
+            d.invoice_email = b_cf[CUSTOM_INVOICE_EMAIL_ADDRESS][:64]
+        
+        #How long since your last lawn service?
+        CUSTOM_LAST_SERVICE = current_app.config['CUSTOM_LAST_SERVICE']
+        if CUSTOM_LAST_SERVICE and CUSTOM_LAST_SERVICE in b_cf:
+            d.last_service = b_cf.get(CUSTOM_LAST_SERVICE)
+        
+        #Invoice Reference (e.g. NDIS #) (262)
+        CUSTOM_INVOICE_REFERENCE = current_app.config['CUSTOM_INVOICE_REFERENCE']
+        if CUSTOM_INVOICE_REFERENCE and CUSTOM_INVOICE_REFERENCE in b_cf:
+            d.invoice_reference = b_cf.get(CUSTOM_INVOICE_REFERENCE)
+        
+        #Invoice Reference (e.g. NDIS #) (262)
+        CUSTOM_INVOICE_REFERENCE_EXTRA = current_app.config['CUSTOM_INVOICE_REFERENCE_EXTRA']
+        if CUSTOM_INVOICE_REFERENCE_EXTRA and CUSTOM_INVOICE_REFERENCE_EXTRA in b_cf:
+            d.invoice_reference_extra = b_cf.get(CUSTOM_INVOICE_REFERENCE_EXTRA)
+        
+        #NDIS Number (301)
+        CUSTOM_NDIS_NUMBER = current_app.config['CUSTOM_NDIS_NUMBER']
+        if CUSTOM_NDIS_NUMBER and CUSTOM_NDIS_NUMBER in b_cf:
+            d.NDIS_reference = b_cf.get(CUSTOM_NDIS_NUMBER)
+        
+        #Is your date & time flexible? (266)
+        CUSTOM_FLEXIBLE =  current_app.config['CUSTOM_FLEXIBLE']
+        if CUSTOM_FLEXIBLE and CUSTOM_FLEXIBLE in b_cf:
+            d.flexible_date_time = b_cf.get(CUSTOM_FLEXIBLE)
+            
+        # If hourly what would you like us to focus on? -- ONLY M2M
+        CUSTOM_HOURLY_NOTES = current_app.config['CUSTOM_HOURLY_NOTES']
+        if CUSTOM_HOURLY_NOTES and CUSTOM_HOURLY_NOTES in b_cf:
+            d.hourly_notes = b_cf.get(CUSTOM_HOURLY_NOTES)
+            
+        
+    return d
+
+
+def import_cancel_dict(d, b):
+    d.booking_id = b['booking_id']
+    d.updated_at = b['updated_at'] if 'updated_at' in b else None ###
+    if 'cancellation_type' in b:
+        d.cancellation_type = b['cancellation_type']
+    if 'cancelled_by' in b:
+        d.cancelled_by = b['cancelled_by']
+    if 'cancellation_date' in b:
+        d.cancellation_date = b['cancellation_date']
+    if '_cancellation_datetime' in b:
+        d._cancellation_datetime = b['_cancellation_datetime']
+    d.cancellation_reason = b['cancellation_reason'] if 'cancellation_reason' in b else None
+    if 'cancellation_fee' in b:
+        d.cancellation_fee = b['cancellation_fee']
+    if 'booking_status' in b:
+        d.booking_status = b['booking_status']
+    if 'is_first_recurring' in b:
+        d.is_first_recurring = b['is_first_recurring']
+        if d.is_first_recurring:
+            d.was_first_recurring = True
+    if 'is_new_customer' in b:
+        d.is_new_customer = b['is_new_customer']
+        if d.is_new_customer:
+            d.was_new_customer = True
     d.postcode = b['zip'] if 'zip' in b else None
     
     # Errors have started creeping in with invalid postcode being entered into the database.  We need to alert staff

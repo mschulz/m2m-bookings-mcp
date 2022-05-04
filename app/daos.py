@@ -15,7 +15,7 @@ import pytz
 import pendulum as pdl
 
 from app import db
-from app.models import Booking, Customer, import_dict, import_customer
+from app.models import Booking, Customer, import_dict, import_customer, import_cancel_dict
 from calendar import monthrange
 from app.local_date_time import utc_to_local
 from config import Config
@@ -63,6 +63,24 @@ class BookingDAO:
             except exc.IntegrityError as e:
                 db.session.rollback()
                 current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
+
+    def update_booking(self, new_data):
+        booking_id = new_data['booking_id'] if 'booking_id' in new_data else None
+        b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
+        current_app.logger.info("have seen this booking - UPDATING database")
+
+        import_cancel_dict(b, new_data)
+
+        current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {b.booking_id}')
+
+        try:
+            db.session.commit()
+            current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
+        except exc.DataError as e:
+            abort(422, description=f'Data loaded into database: {b.to_dict()}')
+        except exc.IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
 
     def get_by_date_range(self, service_category, booking_status, start_created, end_created):
     
