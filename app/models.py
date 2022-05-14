@@ -153,19 +153,25 @@ class Booking(db.Model):
         print(f'created_at={self._created_at}')
         
         return utc_to_local(self._created_at)
-            
+
+    @staticmethod
+    def _unmangle_datetime(val):
+        if 'Z' in val:
+            return dateutil.parser.isoparse(val)
+        elif 'am' in val or 'pm' in val:
+            return datetime.strptime(val, "%d/%m/%Y %I:%M%p")
+        elif 'T' in val:
+            # "2018-10-25T11:06:33+10:00"
+            return datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+        elif ' ' in val:
+            # '17/07/2020 21:01'
+            return datetime.strptime(val, "%d/%m/%Y %H:%M")
+    
     @created_at.setter
     def created_at(self, val):
         if val is not None:
             try:
-                if 'Z' in val:
-                    self._cancellation_date = dateutil.parser.isoparse(val).date()
-                elif ' ' in val:
-                    # '17/07/2020 21:01'
-                    self._created_at = datetime.strptime(val, "%d/%m/%Y %H:%M")
-                else:
-                    # "2018-10-24T13:10:19+10:00"
-                    self._created_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+                self._created_at = self._unmangle_datetime(val)
             except ValueError as e:
                 current_app.logger.error(f'created_at error ({val}): {e}')
     
@@ -177,14 +183,7 @@ class Booking(db.Model):
     def updated_at(self, val):
         if val is not None:
             try:
-                if 'Z' in val:
-                    self._cancellation_date = dateutil.parser.isoparse(val).date()
-                elif ' ' in val:
-                    # '17/07/2020 21:01'
-                    self._updated_at = datetime.strptime(val, "%d/%m/%Y %H:%M")
-                else:
-                    # "2018-10-25T11:06:33+10:00"
-                    self._updated_at = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+                self._updated_at = self._unmangle_datetime(val)
             except ValueError as e:
                 current_app.logger.error(f'updated_at error ({val}): {e}')
 
@@ -307,7 +306,7 @@ class Booking(db.Model):
             # Convert the string into a dictionary
             team_details = ast.literal_eval(val)
             print(f'{team_details}')
-            team_details_list = [item["title"] for item in team_details]
+            team_details_list = [item[key_str] for item in team_details]
             assigned_teams_string = ','.join(team_details_list)
             return assigned_teams_string
         else:
@@ -318,7 +317,7 @@ class Booking(db.Model):
         # "team_details": "[{u'phone': u'+6 (142) 695-8397', u'first_name': u'Irene & Yong',
         # u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid',
         #  u'id': u'8447'}]", 
-            self._teams_assigned_ids = get_team_list(val, 'title')
+            self._teams_assigned_ids = self.get_team_list(val, 'title')
    
     @hybrid_property
     def teams_assigned_ids(self):
@@ -330,7 +329,7 @@ class Booking(db.Model):
         # u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid',
         #  u'id': u'8447'}]",
         if val is not None:
-            self._teams_assigned_ids = get_team_list(val, 'id')
+            self._teams_assigned_ids = self.get_team_list(val, 'id')
 
     @hybrid_property
     def team_share(self):
@@ -376,12 +375,7 @@ class Booking(db.Model):
         # "2018-10-25T11:06:33+10:00"
         if val is not None and len(val)> 0:
             try:
-                if ' ' in val:
-                    # '17/07/2020 21:01'
-                    self._next_booking_date = datetime.strptime(val, "%d/%m/%Y %H:%M")
-                else:
-                    # "2018-10-25T11:06:33+10:00"
-                    self._next_booking_date = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+                self._next_booking_date = self._unmangle_datetime(val)
             except ValueError as e:
                 current_app.logger.error(f'next_booking_date error ({val}): {e}')
    
@@ -407,17 +401,7 @@ class Booking(db.Model):
         # "2018-10-25T11:06:33+10:00"
         if val:
             try:
-                if 'Z' in val:
-                    self._cancellation_date = dateutil.parser.isoparse(val).date()
-                elif 'T' in val:
-                    self._cancellation_date = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z").date()
-                elif ' ' in val:
-                    if '/' in val:
-                        self._cancellation_date = datetime.strptime(val, "%d/%m/%Y %H:%M").date()
-                    else:
-                        self._cancellation_date = datetime.strptime(val, "%Y-%m-%d %H:%M:%S%z").date()
-                else:
-                    self._cancellation_date = datetime.strptime(val, "%d/%m/%Y").date()
+                self._cancellation_date= self._unmangle_datetime(val)
             except ValueError as e:
                 current_app.logger.error(f'cancellation_date error: "{val}" leads to error: {e}')
 
