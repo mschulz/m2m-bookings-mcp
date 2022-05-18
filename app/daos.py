@@ -90,6 +90,18 @@ class BookingDAO:
             .filter_by(service_category=service_category, booking_status=booking_status) \
             .filter(and_(self.model._created_at >= start_created, self.model._created_at <= end_created)) \
             .all()
+
+    def completed_bookings_by_service_date(self, from_date, to_date):
+    
+        print(f'params: from={from_date} to={to_date}')
+    
+        return db.session.query(self.model) \
+            .filter_by(booking_status='COMPLETED') \
+            .filter(and_(self.model._service_date >= from_date, self.model._service_date <=to_date)) \
+            .all()
+        """return db.session.query(self.model) \
+            .filter_by(_service_date = from_date) \
+            .all()"""
         
     def date_to_UTC_date(self, date_str):
         local = pytz.timezone(Config.TZ_LOCALTIME)
@@ -219,6 +231,12 @@ class BookingDAO:
         .filter(self.model._cancellation_date != None)\
         .all()
     
+    def get_missing_cancellations(self):
+        return db.session.query(self.model)\
+        .filter_by(booking_status = 'CANCELLED')\
+        .filter(self.model._cancellation_date == None)\
+        .all()
+    
     #### CANCELLATION Calculations NEW!!!!####
 
     def get_cancelled_new(self, start_date_str, period_days, prior=True):
@@ -246,8 +264,8 @@ class BookingDAO:
 
     def get_cancelled_list(self, start_date_str, period_days, prior=True):
         date_start, date_end = self. _find_dates_range(start_date_str, period_days, prior)
-        res = self._get_cancelled_in_date_range_list_new(date_start, date_end).all()
-        return [item.booking_id for item in res]
+        res = self.get_cancelled_in_date_range_list_new(date_start, date_end)
+        return res
 
     def get_cancelled_by_month_new(self, month, year):
         start_date_str, period = self._get_days_in_month(month, year)
@@ -342,7 +360,7 @@ if __name__ == '__main__':
     app = create_app()
 
     with app.app_context():
-        start_str = "2022-01-04"
+        start_str = "2022-05-05"
         period = 1
 
         """
@@ -376,7 +394,7 @@ if __name__ == '__main__':
 
         print(f'Date: {start_str} -- looking at prior day')
 
-        date_start, date_end = booking_dao._find_dates_range(start_str, 1, True)
+        """date_start, date_end = booking_dao._find_dates_range(start_str, 1, True)
         print(f'{date_start = }  {date_end = }')
         local_date_start = utc_to_local(date_start)
         local_date_end = utc_to_local(date_end)
@@ -389,5 +407,9 @@ if __name__ == '__main__':
         print(f'Customers cancelled={cancelled}')
         
         cancel_list = booking_dao.get_cancelled_list(start_str, period)
-        print(f'Customers cancel list={cancel_list}')
+        print(f'Customers cancel list={cancel_list}')"""
 
+        start_date = datetime.strptime(start_str, "%Y-%m-%d").date()
+        
+        items = booking_dao.completed_bookings_by_service_date(start_date, start_date)
+        print(items)

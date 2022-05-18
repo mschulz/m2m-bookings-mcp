@@ -31,7 +31,7 @@ class Config(object):
     
     # Database configuration
     DATABASE_TABLENAME = 'test_db'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', f'sqlite:///{basedir}/{DATABASE_TABLENAME}')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL').replace('postgres://', 'postgresql://')
     #SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', "postgresql://localhost/{DATABASE_TABLENAME}")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     

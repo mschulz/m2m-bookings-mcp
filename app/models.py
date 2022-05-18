@@ -156,17 +156,24 @@ class Booking(db.Model):
 
     @staticmethod
     def _unmangle_datetime(val):
-        if 'Z' in val:
-            return dateutil.parser.isoparse(val)
-        elif 'am' in val or 'pm' in val:
-            return datetime.strptime(val, "%d/%m/%Y %I:%M%p")
-        elif 'T' in val:
-            # "2018-10-25T11:06:33+10:00"
-            return datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
-        elif ' ' in val:
-            # '17/07/2020 21:01'
-            return datetime.strptime(val, "%d/%m/%Y %H:%M")
-    
+        try:
+            if 'Z' in val:
+                return dateutil.parser.isoparse(val)
+            elif 'am' in val or 'pm' in val:
+                return datetime.strptime(val, "%d/%m/%Y %I:%M%p")
+            elif 'T' in val:
+                # "2018-10-25T11:06:33+10:00"
+                return datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
+            elif ' ' in val:
+                # '17/07/2020 21:01'
+                return datetime.strptime(val, "%d/%m/%Y %H:%M")
+            elif '/' in val:
+                return datetime.strptime(val, "%d/%m/%Y")
+            else:
+                return datetime.strptime(val, "%Y-%m-%d")
+        except ValueError as e:
+            current_app.logger.error(f'service_date error ({val}): {e}')
+        
     @created_at.setter
     def created_at(self, val):
         if val is not None:
@@ -401,7 +408,7 @@ class Booking(db.Model):
         # "2018-10-25T11:06:33+10:00"
         if val:
             try:
-                self._cancellation_date= self._unmangle_datetime(val)
+                self._cancellation_date= self._unmangle_datetime(val).date()
             except ValueError as e:
                 current_app.logger.error(f'cancellation_date error: "{val}" leads to error: {e}')
 

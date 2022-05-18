@@ -12,7 +12,7 @@ from app.notify import is_completed, notify_cancelled_completed, is_missing_book
 from app.daos import booking_dao, customer_dao
 from app.local_date_time import UTC_now
 from sqlalchemy import exc
-
+from app.bookings.search import search_bookings, search_completed_bookings_by_service_date
 
 @bookings_api.route('/', methods=['GET'])
 @APIkey_required
@@ -204,37 +204,18 @@ def search():
     
     return search_bookings(service_category, start_created, end_created, booking_status)
 
-def search_bookings(service_category, start_created, end_created, booking_status):
-    
-    print(f'params: category={service_category} date={start_created},{end_created} booking_status={booking_status}')
-    
-    try:
-        res = booking_dao.get_by_date_range(service_category, booking_status, start_created, end_created)
-    except exc.OperationalError as e:
-        msg = {
-            'status': 'fail',
-            'reason': 'database is temporarily unavailable',
-            'message': e
-        }
-        return jsonify(msg), 503
-    
-    print(res)
-    
-    found = []
-    for item in res:
-        data = {
-            "category": item.service_category,
-            "name": item.name,
-            "location": item.location,
-            "booking_id": item.booking_id
-        }
-        found.append(data.copy())
-    
-    return jsonify(found)
-    
 
-def local_to_UTC(d):
-    local = pytz.timezone(current_app.config['TZ_LOCALTIME'])
-    local_dt = local.localize(d, is_dst=current_app.config['TZ_ISDST'])
-    utc_dt = local_dt.astimezone(pytz.utc)
-    return utc_dt
+@bookings_api.route('/booking/search', methods=['GET'])
+@APIkey_required
+def search_by_dates():
+    '''
+        search through bookings.
+    '''
+    if not current_app.testing:
+        print('Search through bookings within date range')
+
+    start_date_str = request.args.get('from')
+    end_date_str = request.args.get('to')
+    
+    return search_completed_bookings_by_service_date(start_date_str, end_date_str)
+
