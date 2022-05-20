@@ -39,6 +39,8 @@ def notify_cancelled_completed(data):
     """ send this data to the notification webhook. """
     url = current_app.config['NOTIFICATION_URL']
     data['APP_NAME'] = current_app.config['APP_NAME']
+    # Cancellation_date is in UTC.  Get the update_at timestamp and extract the date.
+    # Use this date for the cancellation date.
     updated_at_date = datetime.strptime(data['updated_at'], "%Y-%m-%dT%H:%M:%S%z").date()
     data['cancellation_date'] = updated_at_date.strftime("%d/%m/%Y")
     headers = {
