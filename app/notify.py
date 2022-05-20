@@ -2,6 +2,8 @@
 
 import json
 import requests
+from datetime import datetime
+
 from flask import current_app, abort
 from app.email import send_warning_email
 from app.daos import booking_dao, customer_dao
@@ -37,6 +39,8 @@ def notify_cancelled_completed(data):
     """ send this data to the notification webhook. """
     url = current_app.config['NOTIFICATION_URL']
     data['APP_NAME'] = current_app.config['APP_NAME']
+    updated_at_date = datetime.strptime(data['updated_at'], "%Y-%m-%dT%H:%M:%S%z").date()
+    data['cancellation_date'] = updated_at_date.strftime("%d/%m/%Y")
     headers = {
         'content-type': "application/json"
     }
@@ -46,4 +50,5 @@ def notify_cancelled_completed(data):
     if response.status_code != 200:
         toaddr = current_app.config['SUPPORT_EMAIL']
         error_msg = f'Notification returned status_code={response.status_code}\n{data}'
+        current_app.logger.warn(error_msg)
         send_warning_email(toaddr, error_msg)

@@ -80,7 +80,7 @@ def main():
             
             # Update the booking table
             item.cancellation_date = cancellation_date.strftime("%Y-%m-%d")
-            db.session.commit()
+            #db.session.commit()
  
 if __name__ == '__main__':
     main()
