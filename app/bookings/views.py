@@ -14,6 +14,13 @@ from app.local_date_time import UTC_now
 from sqlalchemy import exc
 from app.bookings.search import search_bookings, search_completed_bookings_by_service_date
 
+def reject_booking(d):
+    """
+    reject any booking request where postcode==TBC.
+    """
+    return d['zip'] in ['TBC']:
+
+
 @bookings_api.route('/', methods=['GET'])
 @APIkey_required
 def hello():
@@ -30,7 +37,12 @@ def new():
         print('Processing a new booking ...')
     
     data = json.loads(request.data)
+    
+    if reject_booking(data):
+        return 'OK'
+
     data["booking_status"] = 'NOT_COMPLETE'
+    
     try:
         booking_dao.create_update_booking(data)
         customer_dao.create_or_update_customer(data['customer'])
@@ -56,6 +68,10 @@ def restored():
         print('Processing a RESTORED booking ...')
     
     data = json.loads(request.data)
+    
+    if reject_booking(data):
+        return 'OK'
+    
     data["booking_status"] = 'NOT_COMPLETE'
     try:
         booking_dao.create_update_booking(data)
@@ -79,6 +95,10 @@ def completed():
         print('Processing a completed booking')
     
     data = json.loads(request.data)
+    
+    if reject_booking(data):
+        return 'OK'
+    
     data["booking_status"] = 'COMPLETED'
     try:
         booking_dao.create_update_booking(data)
@@ -104,6 +124,9 @@ def cancellation():
         print('Processing a cancelled booking')
     
     data = json.loads(request.data)
+    
+    if reject_booking(data):
+        return 'OK'
     
     # In the rare case where Launch27 does not send out the booking via Zapier, this code has
     # no row on which to work.  To fix this, we will accept the data here and create the entry.
@@ -141,6 +164,10 @@ def updated():
         print('Processing an updated booking')
 
     data = json.loads(request.data)
+    
+    if reject_booking(data):
+        return 'OK'
+    
     try:
         booking_dao.create_update_booking(data)
         customer_dao.create_or_update_customer(data['customer'])
@@ -165,6 +192,9 @@ def team_changed():
         print('Processing an team assignment changed')
     
     data = json.loads(request.data)
+    
+    if reject_booking(data):
+        return 'OK'
     try:
         booking_dao.create_update_booking(data)
     except exc.OperationalError as e:
