@@ -20,7 +20,7 @@ from calendar import monthrange
 from app.local_date_time import utc_to_local
 from config import Config
 from sqlalchemy import exc, and_, func
-from flask import current_app, request
+from flask import current_app, request, abort
 
 class BookingDAO:
     def __init__(self, model):
