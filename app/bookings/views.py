@@ -18,7 +18,7 @@ def reject_booking(d):
     """
     reject any booking request where postcode==TBC.
     """
-    return d['zip'] in ['TBC']:
+    return d['zip'] in ['TBC']
 
 
 @bookings_api.route('/', methods=['GET'])
