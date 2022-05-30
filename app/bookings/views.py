@@ -128,6 +128,9 @@ def cancellation():
     
     data = json.loads(request.data)
     
+    print(f"team_details:: {data['team_details']}")
+    print(data)
+    
     if reject_booking(data):
         return 'OK'
     
@@ -168,6 +171,9 @@ def updated():
 
     data = json.loads(request.data)
     
+    print(f"team_details:: {data['team_details']}")
+    print(data)
+    
     if reject_booking(data):
         return 'OK'
     
@@ -195,6 +201,9 @@ def team_changed():
         print('Processing an team assignment changed')
     
     data = json.loads(request.data)
+    
+    print(f"team_details:: {data['team_details']}")
+    print(data)
     
     if reject_booking(data):
         return 'OK'
