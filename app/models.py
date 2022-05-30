@@ -325,7 +325,7 @@ class Booking(db.Model):
         # "team_details": "[{u'phone': u'+6 (142) 695-8397', u'first_name': u'Irene & Yong',
         # u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid',
         #  u'id': u'8447'}]", 
-            self._teams_assigned_ids = self.get_team_list(val, 'title')
+            self._teams_assigned = self.get_team_list(val, 'title')
    
     @hybrid_property
     def teams_assigned_ids(self):
