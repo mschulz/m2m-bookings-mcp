@@ -96,6 +96,9 @@ def completed():
     
     data = json.loads(request.data)
     
+    print(f"team_details:: {data['team_details]}")
+    print(data)
+    
     if reject_booking(data):
         return 'OK'
     

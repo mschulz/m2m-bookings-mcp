@@ -309,6 +309,7 @@ class Booking(db.Model):
         return self._teams_assigned
 
     def get_team_list(self, val, key_str):
+        print(f"get_team_list:: {val = }")
         if val:
             # Convert the string into a dictionary
             team_details = ast.literal_eval(val)
