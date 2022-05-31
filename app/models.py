@@ -150,7 +150,7 @@ class Booking(db.Model):
     @hybrid_property
     def created_at(self):
         
-        #print(f'created_at={self._created_at}')
+        print(f'created_at={self._created_at}')
         
         return utc_to_local(self._created_at)
 
@@ -309,12 +309,13 @@ class Booking(db.Model):
         return self._teams_assigned
 
     def get_team_list(self, val, key_str):
-        print(f"get_team_list:: {val = }")
         if val:
             # Convert the string into a dictionary
             team_details = ast.literal_eval(val)
-            print(f'{team_details}')
             team_details_list = [item[key_str] for item in team_details]
+            
+            print(f'{team_details_list=}')
+            
             assigned_teams_string = ','.join(team_details_list)
             return assigned_teams_string
         else:
@@ -325,6 +326,7 @@ class Booking(db.Model):
         # "team_details": "[{u'phone': u'+6 (142) 695-8397', u'first_name': u'Irene & Yong',
         # u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid',
         #  u'id': u'8447'}]", 
+        if val is not None:
             self._teams_assigned = self.get_team_list(val, 'title')
    
     @hybrid_property
