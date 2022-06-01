@@ -313,9 +313,6 @@ class Booking(db.Model):
             # Convert the string into a dictionary
             team_details = ast.literal_eval(val)
             team_details_list = [item[key_str] for item in team_details]
-            
-            print(f'{team_details_list=}')
-            
             assigned_teams_string = ','.join(team_details_list)
             return assigned_teams_string
         else:
