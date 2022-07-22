@@ -50,7 +50,7 @@ def new():
         msg = {
             'status': 'fail',
             'reason': 'database is temporarily unavailable',
-            'message': e
+            'message': str(e)
         }
         return jsonify(msg), 503
     
@@ -79,7 +79,7 @@ def restored():
         msg = {
             'status': 'fail',
             'reason': 'database is temporarily unavailable',
-            'message': e
+            'message': str(e)
         }
         return jsonify(msg), 503
     return 'OK'
@@ -110,7 +110,7 @@ def completed():
         msg = {
             'status': 'fail',
             'reason': 'database is temporarily unavailable',
-            'message': e
+            'message': str(e)
         }
         return jsonify(msg), 503
     
@@ -154,7 +154,7 @@ def cancellation():
         msg = {
             'status': 'fail',
             'reason': 'database is temporarily unavailable',
-            'message': e
+            'message': str(e)
         }
         return jsonify(msg), 503
     return 'OK'
@@ -184,7 +184,7 @@ def updated():
         msg = {
             'status': 'fail',
             'reason': 'database is temporarily unavailable',
-            'message': e
+            'message': str(e)
         }
         return jsonify(msg), 503
     
@@ -213,7 +213,7 @@ def team_changed():
         msg = {
             'status': 'fail',
             'reason': 'database is temporarily unavailable',
-            'message': e
+            'message': str(e)
         }
         return jsonify(msg), 503
     
