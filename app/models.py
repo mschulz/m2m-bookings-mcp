@@ -629,7 +629,7 @@ def import_dict(d, b):
         #Name for Invoice (267)
         CUSTOM_INVOICE_NAME = current_app.config['CUSTOM_INVOICE_NAME']
         if CUSTOM_INVOICE_NAME and CUSTOM_INVOICE_NAME in b_cf:
-            d.invoice_name = b_cf.get(CUSTOM_INVOICE_NAME)
+            d.invoice_name = b_cf.get(CUSTOM_INVOICE_NAME)[:128]
         
         #If NDIS: Who Pays For Your Service? (263)
         CUSTOM_WHO_PAYS = current_app.config['CUSTOM_WHO_PAYS']
@@ -734,7 +734,7 @@ def import_cancel_dict(d, b):
         #Name for Invoice (267)
         CUSTOM_INVOICE_NAME = current_app.config['CUSTOM_INVOICE_NAME']
         if CUSTOM_INVOICE_NAME and CUSTOM_INVOICE_NAME in b_cf:
-            d.invoice_name = b_cf.get(CUSTOM_INVOICE_NAME)
+            d.invoice_name = b_cf.get(CUSTOM_INVOICE_NAME)[:128]
         
         #If NDIS: Who Pays For Your Service? (263)
         CUSTOM_WHO_PAYS = current_app.config['CUSTOM_WHO_PAYS']
