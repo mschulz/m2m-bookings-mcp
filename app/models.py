@@ -498,6 +498,19 @@ def dollar_string_to_int(val):
     else: 
         return int(str(val).replace('$','').replace('.','')) 
 
+def check_postcode(b):
+    # Errors have started creeping in with invalid postcode being entered into the database.  We need to alert staff
+    # to these errors so that this can be corrected ASAP
+    p = b['zip'] if 'zip' in b else None
+    if p:
+        #check if it is numeric
+        try:
+            p_int = int(p)
+            return p
+        except Exception as e:
+            current_app.logger.error(f'({request.path}) Invalid postcode {d.postcode} entered for customer "{d.name}"')
+                return None
+
 
 def import_dict(d, b):
     if 'id' in b:
@@ -594,18 +607,9 @@ def import_dict(d, b):
             
     
     d.phone = b['phone'] if 'phone' in b else None
-    d.postcode = b['zip'] if 'zip' in b else None
-    
-    # Errors have started creeping in with invalid postcode being entered into the database.  We need to alert staff
-    # to these errors so that this can be corrected ASAP
-    try:
-        if d.postcode:
-            postcode_int = int(d.postcode)
-    except Exception as e:
-        current_app.logger.error(f'({request.path}) Invalid postcode {d.postcode} entered for customer "{d.name}"')
-        
-    
-    d.location = b['location'] if 'location' in b else get_location(d.postcode)
+    d.postcode = check_postcode(b)
+    if d.postcode:
+        d.location = b['location'] if 'location' in b else get_location(d.postcode)
     
     # Custom field data
     if 'custom_fields' in b:
@@ -699,18 +703,9 @@ def import_cancel_dict(d, b):
         d.is_new_customer = b['is_new_customer']
         if d.is_new_customer:
             d.was_new_customer = True
-    d.postcode = b['zip'] if 'zip' in b else None
-    
-    # Errors have started creeping in with invalid postcode being entered into the database.  We need to alert staff
-    # to these errors so that this can be corrected ASAP
-    try:
-        if d.postcode:
-            postcode_int = int(d.postcode)
-    except Exception as e:
-        current_app.logger.error(f'({request.path}) Invalid postcode {d.postcode} entered for customer "{d.name}"')
-        
-    
-    d.location = b['location'] if 'location' in b else get_location(d.postcode)
+    d.postcode = check_postcode(b)
+    if d.postcode:
+        d.location = b['location'] if 'location' in b else get_location(d.postcode)
     
     # Custom field data
     if 'custom_fields' in b:
@@ -874,17 +869,9 @@ def import_customer(c, d):
     c.city = d['city'] if 'city' in d else None
     c.state = d['state'] if 'state' in d else None
     c.company_name = d['company_name'] if 'company_name' in d else None
-
-    c.postcode = d['zip'] if 'zip' in d else None
-    # Errors have started creeping in with invalid postcode being entered into the database.  We need to alert staff
-    # to these errors so that this can be corrected ASAP
-    try:
-        if c.postcode:
-            postcode_int = int(c.postcode)
-    except Exception as e:
-        current_app.logger.error(f'({request.path}) Invalid postcode {c.postcode} entered for customer "{c.first_name} {c.last_name}".')
-
-    c.location = d['location'] if 'location' in d else None
+    c.postcode = check_postcode(d)
+    if c.postcode:
+        c.location = d['location'] if 'location' in d else None
     c.notes = d['notes'] if 'notes' in d else None
     # Have struck and example of the tags field being filled with the full comments field (?????)
     # I will truncated this to 64 characters, log an error message and send an email to the developer
