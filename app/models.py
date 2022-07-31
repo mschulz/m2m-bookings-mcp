@@ -509,7 +509,7 @@ def check_postcode(b):
             return p
         except Exception as e:
             current_app.logger.error(f'({request.path}) Invalid postcode {b.zip} entered for booking_id "{b.booking_id}"')
-                return None
+            return None
 
 
 def import_dict(d, b):

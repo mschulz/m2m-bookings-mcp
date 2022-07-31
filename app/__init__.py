@@ -35,9 +35,9 @@ def create_app():
     app = Flask(__name__, instance_relative_config=True, static_url_path='')
     app.config.from_object(os.environ['APP_SETTINGS'])
 
-    ovrrd = app.config["OVERRIDE_EMAIL"]
+    #ovrrd = app.config["OVERRIDE_EMAIL"]
     if not app.config['TESTING']:
-        print(f'OVERRIDE_EMAIL: {ovrrd}')
+        print(f'OVERRIDE_EMAIL: {app.config["OVERRIDE_EMAIL"]}')
     # Determine date and time where based - servers are mostlikely in the US
     #local_date, local_time = get_local_date_time_now(app.config['TZ_LOCALTIME'], app.config['TZ_ISDST'])
 
