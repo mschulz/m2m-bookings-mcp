@@ -507,8 +507,8 @@ def check_postcode(b):
         try:
             p_int = int(p)
             return p
-        except Exception as e:
-            current_app.logger.error(f'({request.path}) Invalid postcode {b.zip} entered for booking_id "{b.booking_id}"')
+        except ValueError as e:
+            current_app.logger.error(f'({request.path}) Invalid postcode {p} entered for booking_id "{b.booking_id}"')
             return None
 
 
