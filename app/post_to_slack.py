@@ -5,11 +5,12 @@ import json
 
 
 def block_item(name, location, url):
+    # old return: "text": f"*{name}*\n{location}\n{url}"
     return {
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": f"*{name}*\n{location}\n{url}"
+            "text": f"<{url}|{name}> {location}"
         }
     }
 
