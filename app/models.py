@@ -498,7 +498,7 @@ def dollar_string_to_int(val):
     else: 
         return int(str(val).replace('$','').replace('.','')) 
 
-def check_postcode(b):
+def check_postcode(b, who, who_id):
     # Errors have started creeping in with invalid postcode being entered into the database.  We need to alert staff
     # to these errors so that this can be corrected ASAP
     p = b['zip'] if 'zip' in b else None
@@ -508,7 +508,7 @@ def check_postcode(b):
             p_int = int(p)
             return p
         except ValueError as e:
-            current_app.logger.error(f'({request.path}) Invalid postcode {p} entered for booking_id "{b.booking_id}"')
+            current_app.logger.error(f'({request.path}) Invalid postcode {p} entered for {who} "{who_id}"')
             return None
 
 
@@ -607,7 +607,7 @@ def import_dict(d, b):
             
     
     d.phone = b['phone'] if 'phone' in b else None
-    d.postcode = check_postcode(b)
+    d.postcode = check_postcode(b, "booking_id", b['id'])
     if d.postcode:
         d.location = b['location'] if 'location' in b else get_location(d.postcode)
     
@@ -703,7 +703,7 @@ def import_cancel_dict(d, b):
         d.is_new_customer = b['is_new_customer']
         if d.is_new_customer:
             d.was_new_customer = True
-    d.postcode = check_postcode(b)
+    d.postcode = check_postcode(b, "booking_id", b['booking_id'])
     if d.postcode:
         d.location = b['location'] if 'location' in b else get_location(d.postcode)
     
@@ -869,7 +869,7 @@ def import_customer(c, d):
     c.city = d['city'] if 'city' in d else None
     c.state = d['state'] if 'state' in d else None
     c.company_name = d['company_name'] if 'company_name' in d else None
-    c.postcode = check_postcode(d)
+    c.postcode = check_postcode(d, "customer_id", d['id'])
     if c.postcode:
         c.location = d['location'] if 'location' in d else None
     c.notes = d['notes'] if 'notes' in d else None
