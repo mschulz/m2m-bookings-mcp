@@ -16,11 +16,13 @@ import pendulum as pdl
 
 from app import db
 from app.models import Booking, Customer, import_dict, import_customer, import_cancel_dict
+from app.models_reservation import Reservation
 from calendar import monthrange
 from app.local_date_time import utc_to_local
 from config import Config
 from sqlalchemy import exc, and_, func
 from flask import current_app, request, abort
+
 
 class BookingDAO:
     def __init__(self, model):
@@ -55,14 +57,14 @@ class BookingDAO:
     
             current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {b.booking_id}')
     
-            try:
-                db.session.commit()
-                current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
-            except exc.DataError as e:
-                abort(422, description=f'Data loaded into database: {b.to_dict()}')
-            except exc.IntegrityError as e:
-                db.session.rollback()
-                current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
+        try:
+            db.session.commit()
+            current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
+        except exc.DataError as e:
+            abort(422, description=f'Data loaded into database: {b.to_dict()}')
+        except exc.IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
 
     def update_booking(self, new_data):
         booking_id = new_data['booking_id'] if 'booking_id' in new_data else None
@@ -288,6 +290,83 @@ class BookingDAO:
 
 
 booking_dao = BookingDAO(Booking)
+
+
+class ReservationDAO:
+    def __init__(self, model):
+        self.model = model
+
+    def get_by_booking_id(self, booking_id):
+        return db.session.query(self.model).filter_by(booking_id = booking_id).first()
+    
+    def create_update_booking(self, new_data):
+        booking_id = new_data['id'] if 'id' in new_data else None
+        if not booking_id:
+            # This is a malformed set of data (this test might be redundant)
+            current_app.logger.error("reservation has no booking_id - ignore this data")
+            abort(422, description="reservation has no booking_id - ignore this data")
+        
+        # Check if we already have a booking under this id
+        b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
+    
+        if b is None:
+            # Haven't seen the original booking - ADD it now
+            current_app.logger.info("haven't seen this reservation - ADDING to database")
+    
+            # Load the database table
+            b = Reservation()
+            import_dict(b, new_data)
+            db.session.add(b)
+        else:
+            # Have seen the original booking - UPDATE it now
+            current_app.logger.info("have seen this reservation - UPDATING database")
+    
+            import_dict(b, new_data)
+    
+            current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {b.booking_id}')
+    
+        try:
+            db.session.commit()
+            current_app.logger.info(f'reservation loaded into database: {b.to_dict()}')
+        except exc.DataError as e:
+            abort(422, description=f'reservation loaded into database: {b.to_dict()}')
+        except exc.IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.info(f'reservation already loaded into database: {b.to_dict()}')
+
+    def update_booking(self, new_data):
+        booking_id = new_data['booking_id'] if 'booking_id' in new_data else None
+        b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
+        current_app.logger.info("have seen this booking - UPDATING database")
+
+        import_cancel_dict(b, new_data)
+
+        current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {b.booking_id}')
+
+        try:
+            db.session.commit()
+            current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
+        except exc.DataError as e:
+            abort(422, description=f'Data loaded into database: {b.to_dict()}')
+        except exc.IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
+
+    def cancel_booking(self, new_data):
+        booking_id = new_data['id'] if 'id' in new_data else None
+        if booking_id is None:
+            return
+        b = db.session.query(self.model).filter_by(booking_id = booking_id).delete()
+        try:
+            db.session.commit()
+            current_app.logger.info(f'Reservation deleted from database: {booking_id}')
+        except exc.DataError as e:
+            abort(422, description=f'Reservation data error: {new_data}')
+        except exc.IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.info(f'Reservation Inegrity error: {new_data}')
+
+reservation_dao = ReservationDAO(Reservation)
 
 
 class CustomerDAO:

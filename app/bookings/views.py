@@ -9,7 +9,7 @@ from app.bookings import bookings_api
 from app.decorators import APIkey_required
 from psycopg2.errors import UniqueViolation
 from app.notify import is_completed, notify_cancelled_completed, is_missing_booking
-from app.daos import booking_dao, customer_dao
+from app.daos import booking_dao, customer_dao, reservation_dao
 from app.local_date_time import UTC_now
 from sqlalchemy import exc
 from app.bookings.search import search_bookings, search_completed_bookings_by_service_date
@@ -20,6 +20,39 @@ def reject_booking(d):
     """
     return d['zip'] in ['TBC']
 
+
+def update_table(data, status=None, is_restored=False):
+    if reject_booking(data):  # Handles 'TBC' postcode exception
+        return 'OK'
+    if status:
+        data["booking_status"] = status
+    if data['service_category'] == current_app.config['RESERVATION_CATEGORY']:
+        # Update Reservation table
+        print("Update Reservation table")
+        try:
+            reservation_dao.create_update_booking(data)
+        except exc.OperationalError as e:
+            msg = {
+                'status': 'fail',
+                'reason': 'database is temporarily unavailable',
+                'message': str(e)
+            }
+            return jsonify(msg), 503
+    else:
+        # Update Booking table
+        print("Update Booking table")
+        try:
+            booking_dao.create_update_booking(data)
+            if not is_restored:
+                customer_dao.create_or_update_customer(data['customer'])
+        except exc.OperationalError as e:
+            msg = {
+                'status': 'fail',
+                'reason': 'database is temporarily unavailable',
+                'message': str(e)
+            }
+            return jsonify(msg), 503
+    return 'OK'
 
 @bookings_api.route('/', methods=['GET'])
 @APIkey_required
@@ -38,23 +71,7 @@ def new():
     
     data = json.loads(request.data)
     
-    if reject_booking(data):
-        return 'OK'
-
-    data["booking_status"] = 'NOT_COMPLETE'
-    
-    try:
-        booking_dao.create_update_booking(data)
-        customer_dao.create_or_update_customer(data['customer'])
-    except exc.OperationalError as e:
-        msg = {
-            'status': 'fail',
-            'reason': 'database is temporarily unavailable',
-            'message': str(e)
-        }
-        return jsonify(msg), 503
-    
-    return 'OK'
+    return update_table(data, 'NOT_COMPLETE')
 
 
 @bookings_api.route('/booking/restored', methods=['POST'])
@@ -68,21 +85,7 @@ def restored():
         print('Processing a RESTORED booking ...')
     
     data = json.loads(request.data)
-    
-    if reject_booking(data):
-        return 'OK'
-    
-    data["booking_status"] = 'NOT_COMPLETE'
-    try:
-        booking_dao.create_update_booking(data)
-    except exc.OperationalError as e:
-        msg = {
-            'status': 'fail',
-            'reason': 'database is temporarily unavailable',
-            'message': str(e)
-        }
-        return jsonify(msg), 503
-    return 'OK'
+    return update_table(data, 'NOT_COMPLETE', True)
 
 
 @bookings_api.route('/booking/completed', methods=['POST'])
@@ -99,22 +102,7 @@ def completed():
     print(f"team_details:: {data['team_details']}")
     print(data)
     
-    if reject_booking(data):
-        return 'OK'
-    
-    data["booking_status"] = 'COMPLETED'
-    try:
-        booking_dao.create_update_booking(data)
-        customer_dao.create_or_update_customer(data['customer'])
-    except exc.OperationalError as e:
-        msg = {
-            'status': 'fail',
-            'reason': 'database is temporarily unavailable',
-            'message': str(e)
-        }
-        return jsonify(msg), 503
-    
-    return 'OK'
+    return update_table(data, 'COMPLETED')
 
 
 @bookings_api.route('/booking/cancellation', methods=['POST'])
@@ -142,22 +130,8 @@ def cancellation():
         if is_completed(data):
             notify_cancelled_completed(data)
 
-    data["booking_status"] = 'CANCELLED'
     data["_cancellation_datetime"] = UTC_now()
-    
-    print(f'{data["_cancellation_datetime"]=}')
-    
-    try:
-        booking_dao.create_update_booking(data)
-        customer_dao.create_or_update_customer(data['customer'])
-    except exc.OperationalError as e:
-        msg = {
-            'status': 'fail',
-            'reason': 'database is temporarily unavailable',
-            'message': str(e)
-        }
-        return jsonify(msg), 503
-    return 'OK'
+    return update_table(data, 'CANCELLED')
 
 
 @bookings_api.route('/booking/updated', methods=['POST'])
@@ -173,22 +147,8 @@ def updated():
     
     print(f"team_details:: {data['team_details']}")
     print(data)
-    
-    if reject_booking(data):
-        return 'OK'
-    
-    try:
-        booking_dao.create_update_booking(data)
-        customer_dao.create_or_update_customer(data['customer'])
-    except exc.OperationalError as e:
-        msg = {
-            'status': 'fail',
-            'reason': 'database is temporarily unavailable',
-            'message': str(e)
-        }
-        return jsonify(msg), 503
-    
-    return 'OK'
+
+    return update_table(data)
 
 
 @bookings_api.route('/booking/team_changed', methods=['POST'])
@@ -204,27 +164,8 @@ def team_changed():
     
     print(f"team_details:: {data['team_details']}")
     print(data)
-    
-    if reject_booking(data):
-        return 'OK'
-    try:
-        booking_dao.create_update_booking(data)
-    except exc.OperationalError as e:
-        msg = {
-            'status': 'fail',
-            'reason': 'database is temporarily unavailable',
-            'message': str(e)
-        }
-        return jsonify(msg), 503
-    
-    ##  I think we should IGNORE this as it as triggered by a team assignment change only (that's what
-    ##  one would assume by the name of the change)
-    # Update the customer information table, if it has been updated since the last time it was stored
-    #if 'customer' in data:
-    #        customer_dao.create_or_update_customer(data['customer'])
 
-    
-    return 'OK'
+    return update_table(data, is_restored=True)
 
 
 @bookings_api.route('/booking', methods=['GET'])

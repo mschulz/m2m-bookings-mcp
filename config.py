@@ -31,7 +31,7 @@ class Config(object):
     
     # Database configuration
     DATABASE_TABLENAME = 'test_db'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL').replace('postgres://', 'postgresql://')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgres:///test').replace('postgres://', 'postgresql://')
     #SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', "postgresql://localhost/{DATABASE_TABLENAME}")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
@@ -92,6 +92,7 @@ class Config(object):
     
     # service_category default for each business
     SERVICE_CATEGORY_DEFAULT = os.environ.get('SERVICE_CATEGORY_DEFAULT')
+    RESERVATION_CATEGORY = os.environ.get('RESERVATION_CATEGORY', 'NDIS Reservation')
     
     # Notification webhook
     NOTIFICATION_URL = os.environ.get('NOTIFICATION_URL')
