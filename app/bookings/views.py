@@ -6,7 +6,7 @@ import pytz
 
 from flask import request, current_app, jsonify
 from app.bookings import bookings_api
-from app.decorators import APIkey_required
+from app.decorators import APIkey_required, catch_operational_errors
 from psycopg2.errors import UniqueViolation
 from app.notify import is_completed, notify_cancelled_completed, is_missing_booking
 from app.daos import booking_dao, customer_dao, reservation_dao
@@ -29,29 +29,13 @@ def update_table(data, status=None, is_restored=False):
     if data['service_category'] == current_app.config['RESERVATION_CATEGORY']:
         # Update Reservation table
         print("Update Reservation table")
-        try:
-            reservation_dao.create_update_booking(data)
-        except exc.OperationalError as e:
-            msg = {
-                'status': 'fail',
-                'reason': 'database is temporarily unavailable',
-                'message': str(e)
-            }
-            return jsonify(msg), 503
+        reservation_dao.create_update_booking(data)
     else:
         # Update Booking table
         print("Update Booking table")
-        try:
-            booking_dao.create_update_booking(data)
-            if not is_restored:
-                customer_dao.create_or_update_customer(data['customer'])
-        except exc.OperationalError as e:
-            msg = {
-                'status': 'fail',
-                'reason': 'database is temporarily unavailable',
-                'message': str(e)
-            }
-            return jsonify(msg), 503
+        booking_dao.create_update_booking(data)
+        if not is_restored:
+            customer_dao.create_or_update_customer(data['customer'])
     return 'OK'
 
 @bookings_api.route('/', methods=['GET'])
@@ -62,6 +46,7 @@ def hello():
 
 @bookings_api.route('/booking/new', methods=['POST'])
 @APIkey_required
+@catch_operational_errors
 def new():
     ''' 
         return 'Hello World!' to check link.
@@ -76,6 +61,7 @@ def new():
 
 @bookings_api.route('/booking/restored', methods=['POST'])
 @APIkey_required
+@catch_operational_errors
 def restored():
     ''' 
         Should only restore a cancelled booking, therefore booking data alrerady
@@ -90,6 +76,7 @@ def restored():
 
 @bookings_api.route('/booking/completed', methods=['POST'])
 @APIkey_required
+@catch_operational_errors
 def completed():
     '''
         return 'Hello World!' to check link.
@@ -107,6 +94,7 @@ def completed():
 
 @bookings_api.route('/booking/cancellation', methods=['POST'])
 @APIkey_required
+@catch_operational_errors
 def cancellation():
     '''
         return 'Hello World!' to check link.
@@ -136,6 +124,7 @@ def cancellation():
 
 @bookings_api.route('/booking/updated', methods=['POST'])
 @APIkey_required
+@catch_operational_errors
 def updated():
     '''
         return 'Hello World!' to check link.
@@ -153,6 +142,7 @@ def updated():
 
 @bookings_api.route('/booking/team_changed', methods=['POST'])
 @APIkey_required
+@catch_operational_errors
 def team_changed():
     '''
         return 'Hello World!' to check link.
@@ -170,6 +160,7 @@ def team_changed():
 
 @bookings_api.route('/booking', methods=['GET'])
 @APIkey_required
+@catch_operational_errors
 def search():
     '''
         search through bookings.
@@ -190,6 +181,7 @@ def search():
 
 @bookings_api.route('/booking/search', methods=['GET'])
 @APIkey_required
+@catch_operational_errors
 def search_by_dates():
     '''
         search through bookings.

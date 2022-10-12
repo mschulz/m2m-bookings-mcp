@@ -1,22 +1,24 @@
-from flask import request, render_template, current_app
+from flask import request, current_app
 from app import db
 from app.errors import bp
 from app.email import send_error_email
 
 @bp.app_errorhandler(401)
 def unauthorized(error):
-    return render_template('errors/401.html'), 401
+    report_issue('Method Not Unauthorized')
+    return "Fail", 401
 
 
 @bp.app_errorhandler(404)
 def not_found_error(error):
-    return render_template('errors/404.html'), 404
+    report_issue('Method Not Found')
+    return "Fail", 404
 
 
 @bp.app_errorhandler(422)
 def unprocessable_entity(error):
     db.session.rollback()
-    report_issue(e)
+    report_issue(error)
     return "Fail", 422    
 
 
@@ -25,6 +27,18 @@ def internal_error(e):
     db.session.rollback()
     report_issue(e)
     return "Fail", 500    
+
+
+@bp.app_errorhandler(503)
+def internal_error(e):
+    db.session.rollback()
+    report_issue(e)
+    msg = {
+        'status': 'fail',
+        'reason': 'database is temporarily unavailable',
+        'message': str(e)
+    }
+    return jsonify(msg), 503
 
 def report_issue(e):
     m = current_app.config['SUPPORT_EMAIL'].split('@')
