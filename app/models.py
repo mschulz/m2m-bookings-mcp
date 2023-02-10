@@ -349,9 +349,9 @@ class Booking(db.Model):
                 if '-' in val:
                     #  "team_share_amount": "Team Euclid - $67.64"
                     if '-' in val:
-                        self._team_share =  dollar_string_to_int(val.split(' - ')[1])
+                        self._team_share =  dollar_string_to_int(val.split(' - ')[-1])
                     else:
-                        self._team_share =  dollar_string_to_int(val.split(': ')[1])
+                        self._team_share =  dollar_string_to_int(val.split(': ')[-1])
                 else:
                     self._team_share =  dollar_string_to_int(val)
             except IndexError as e:

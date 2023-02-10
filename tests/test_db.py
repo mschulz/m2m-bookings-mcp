@@ -312,7 +312,7 @@ class TestQuery(unittest.TestCase):
             "id": "14450",
             "team_share_amount": "Team Euclid - $67.64"
         }
-        expected = dollar_string_to_int(data['team_share_amount'].split(' - ')[1])
+        expected = dollar_string_to_int(data['team_share_amount'].split(' - ')[-1])
         result = self.get_result(data)
         assert result.team_share == expected
             
@@ -327,7 +327,7 @@ class TestQuery(unittest.TestCase):
             db.session.add(b)
             db.session.commit()
         
-            expected = dollar_string_to_int(data['team_share_total'].split(' - ')[1])
+            expected = dollar_string_to_int(data['team_share_total'].split(' - ')[-1])
             result = db.session.query(Booking).filter(Booking.booking_id == data['id']).first()
             assert result.team_share_total == expected
             
