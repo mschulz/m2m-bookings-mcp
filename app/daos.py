@@ -18,6 +18,7 @@ from app import db
 from app.models import Booking, Customer, import_dict, import_customer, import_cancel_dict
 from app.models_reservation import Reservation
 from app.models_reservation import import_dict as res_import_dict
+from app.models_reservation import import_cancel_dict as res_import_cancel_dict
 from calendar import monthrange
 from app.local_date_time import utc_to_local
 from config import Config
@@ -322,7 +323,7 @@ class ReservationDAO:
             # Have seen the original booking - UPDATE it now
             current_app.logger.info("have seen this reservation - UPDATING database")
     
-            import_dict(b, new_data)
+            res_import_cancel_dict(b, new_data)
     
             current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {b.booking_id}')
     
@@ -340,7 +341,7 @@ class ReservationDAO:
         b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
         current_app.logger.info("have seen this booking - UPDATING database")
 
-        import_cancel_dict(b, new_data)
+        res_import_cancel_dict(b, new_data)
 
         current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {b.booking_id}')
 
