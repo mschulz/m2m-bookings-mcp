@@ -865,7 +865,7 @@ def import_customer(c, d):
     c.name = d['name'] if 'name' in d else None
     c.email = d['email'] if 'email' in d else None
     c.phone = d['phone'] if 'phone' in d else None
-    c.address = d['address'] if 'address' in d else None
+    c.address = d['address'][:128] if 'address' in d else None
     c.city = d['city'] if 'city' in d else None
     c.state = d['state'] if 'state' in d else None
     c.company_name = d['company_name'] if 'company_name' in d else None

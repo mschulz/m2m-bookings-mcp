@@ -590,7 +590,8 @@ def import_dict(d, b):
     d.pricing_parameters_price = b['pricing_parameters_price'] if 'pricing_parameters_price' in b else None
 
     # Customer data
-    d.address = b['address'] if 'address' in b else None
+    if 'address' in b:
+        d.address = b['address'][:128]
     d.last_name = b['last_name'] if 'last_name' in b else None
     d.city = b['city'] if 'city' in b else None
     d.first_name = b['first_name'] if 'first_name' in b else None
