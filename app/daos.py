@@ -17,6 +17,7 @@ import pendulum as pdl
 from app import db
 from app.models import Booking, Customer, import_dict, import_customer, import_cancel_dict
 from app.models_reservation import Reservation
+from app.models_reservation import import_dict as res_import_dict
 from calendar import monthrange
 from app.local_date_time import utc_to_local
 from config import Config
@@ -315,7 +316,7 @@ class ReservationDAO:
     
             # Load the database table
             b = Reservation()
-            import_dict(b, new_data)
+            res_import_dict(b, new_data)
             db.session.add(b)
         else:
             # Have seen the original booking - UPDATE it now
