@@ -592,6 +592,7 @@ def import_dict(d, b):
     # Customer data
     if 'address' in b:
         d.address = b['address'][:128]
+        print('Truncating address to 128 characters')
     d.last_name = b['last_name'] if 'last_name' in b else None
     d.city = b['city'] if 'city' in b else None
     d.first_name = b['first_name'] if 'first_name' in b else None
