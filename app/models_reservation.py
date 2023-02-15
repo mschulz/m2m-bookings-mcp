@@ -683,7 +683,7 @@ def import_dict(d, b):
 
 def import_cancel_dict(d, b):
     #d.booking_id = b['booking_id']
-    d.booking_id = b['d']
+    d.booking_id = b['id']
     d.updated_at = b['updated_at'] if 'updated_at' in b else None ###
     if 'cancellation_type' in b:
         d.cancellation_type = b['cancellation_type']
