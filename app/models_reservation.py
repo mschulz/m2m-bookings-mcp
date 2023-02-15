@@ -706,7 +706,7 @@ def import_cancel_dict(d, b):
         d.is_new_customer = b['is_new_customer']
         if d.is_new_customer:
             d.was_new_customer = True
-    d.postcode = check_postcode(b, "booking_id", b['booking_id'])
+    d.postcode = check_postcode(b, "booking_id", b['id'])
     if d.postcode:
         d.location = b['location'] if 'location' in b else get_location(d.postcode)
     
