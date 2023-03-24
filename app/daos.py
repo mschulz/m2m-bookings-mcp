@@ -67,6 +67,9 @@ class BookingDAO:
         except exc.IntegrityError as e:
             db.session.rollback()
             current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
+        except exc.OperationalError as e:
+            db.session.rollback()
+            current_app.logger.info(f'SSL connection has been closed unexpectedly')
 
     def update_booking(self, new_data):
         booking_id = new_data['booking_id'] if 'booking_id' in new_data else None
@@ -85,6 +88,9 @@ class BookingDAO:
         except exc.IntegrityError as e:
             db.session.rollback()
             current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
+        except exc.OperationalError as e:
+            db.session.rollback()
+            current_app.logger.info(f'SSL connection has been closed unexpectedly')
 
     def get_by_date_range(self, service_category, booking_status, start_created, end_created):
     
@@ -335,6 +341,9 @@ class ReservationDAO:
         except exc.IntegrityError as e:
             db.session.rollback()
             current_app.logger.info(f'reservation already loaded into database: {b.to_dict()}')
+        except exc.OperationalError as e:
+            db.session.rollback()
+            current_app.logger.info(f'SSL connection has been closed unexpectedly')
 
     def update_booking(self, new_data):
         booking_id = new_data['booking_id'] if 'booking_id' in new_data else None
@@ -353,6 +362,9 @@ class ReservationDAO:
         except exc.IntegrityError as e:
             db.session.rollback()
             current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
+        except exc.OperationalError as e:
+            db.session.rollback()
+            current_app.logger.info(f'SSL connection has been closed unexpectedly')
 
     def cancel_booking(self, new_data):
         booking_id = new_data['id'] if 'id' in new_data else None
@@ -367,6 +379,9 @@ class ReservationDAO:
         except exc.IntegrityError as e:
             db.session.rollback()
             current_app.logger.info(f'Reservation Inegrity error: {new_data}')
+        except exc.OperationalError as e:
+            db.session.rollback()
+            current_app.logger.info(f'SSL connection has been closed unexpectedly')
 
 reservation_dao = ReservationDAO(Reservation)
 
@@ -406,6 +421,9 @@ class CustomerDAO:
         except exc.DataError as e:
             db.session.rollback()
             abort(422, description=f'Customer error in model data: {e}')
+        except exc.OperationalError as e:
+            db.session.rollback()
+            current_app.logger.info(f'SSL connection has been closed unexpectedly')
 
 customer_dao = CustomerDAO(Customer)
 
