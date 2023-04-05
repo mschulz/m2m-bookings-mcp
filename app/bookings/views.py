@@ -21,7 +21,7 @@ def reject_booking(d):
     return d['zip'] in ['TBC']
 
 
-def update_table(data, status=None, is_restored=False):
+def update_table(data, status=None, check_ndis_reservation=False, is_restored=False):
     if reject_booking(data):  # Handles 'TBC' postcode exception
         return 'OK'
     if status:
@@ -33,6 +33,13 @@ def update_table(data, status=None, is_restored=False):
     else:
         # Update Booking table
         print("Update Booking table")
+        booking_id = data["booking_id"]
+        """
+        If this is an UPDATE (check_ndis_reservation is True)
+        and there is an entry in the reservation table (isa_ndis_reservation(booking_id)) 
+        """
+        if check_ndis_reservation and reservation_dao.get_by_booking_id(booking_id):
+            reservation_dao.mark_converted(booking_id)
         booking_dao.create_update_booking(data)
         if not is_restored:
             customer_dao.create_or_update_customer(data['customer'])
@@ -56,7 +63,7 @@ def new():
     
     data = json.loads(request.data)
     
-    return update_table(data, 'NOT_COMPLETE')
+    return update_table(data, status='NOT_COMPLETE')
 
 
 @bookings_api.route('/booking/restored', methods=['POST'])
@@ -71,7 +78,7 @@ def restored():
         print('Processing a RESTORED booking ...')
     
     data = json.loads(request.data)
-    return update_table(data, 'NOT_COMPLETE', True)
+    return update_table(data, status='NOT_COMPLETE', is_restored=True)
 
 
 @bookings_api.route('/booking/completed', methods=['POST'])
@@ -89,7 +96,7 @@ def completed():
     print(f"team_details:: {data['team_details']}")
     print(data)
     
-    return update_table(data, 'COMPLETED')
+    return update_table(data, status='COMPLETED')
 
 
 @bookings_api.route('/booking/cancellation', methods=['POST'])
@@ -119,7 +126,7 @@ def cancellation():
             notify_cancelled_completed(data)
 
     data["_cancellation_datetime"] = UTC_now()
-    return update_table(data, 'CANCELLED')
+    return update_table(data, status='CANCELLED')
 
 
 @bookings_api.route('/booking/updated', methods=['POST'])
@@ -137,7 +144,7 @@ def updated():
     print(f"team_details:: {data['team_details']}")
     print(data)
 
-    return update_table(data)
+    return update_table(data, check_ndis_reservation=True)
 
 
 @bookings_api.route('/booking/team_changed', methods=['POST'])
