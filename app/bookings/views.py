@@ -33,7 +33,7 @@ def update_table(data, status=None, check_ndis_reservation=False, is_restored=Fa
     else:
         # Update Booking table
         print("Update Booking table")
-        booking_id = data["booking_id"]
+        booking_id = data['id']
         """
         If this is an UPDATE (check_ndis_reservation is True)
         and there is an entry in the reservation table (isa_ndis_reservation(booking_id)) 
