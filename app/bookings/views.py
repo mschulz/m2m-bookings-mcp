@@ -18,7 +18,7 @@ def reject_booking(d):
     """
     reject any booking request where postcode==TBC.
     """
-    return d['zip'] in ['TBC']
+    return d['zip'].upper() in ['TBC', 'TBA']
 
 
 def update_table(data, status=None, check_ndis_reservation=False, is_restored=False):

@@ -503,13 +503,14 @@ def check_postcode(b, who, who_id):
     # to these errors so that this can be corrected ASAP
     p = b['zip'] if 'zip' in b else None
     if p:
-        #check if it is numeric
-        try:
-            p_int = int(p)
+        if p.isnumeric():
+        # OK. return the postcode string
             return p
-        except ValueError as e:
-            current_app.logger.error(f'({request.path}) Invalid postcode {p} entered for {who} "{who_id}"')
-            return None
+        else:
+            # if it is not numeric then it is not a valid postcode
+            current_app.logger.error(f'({request.path}) Invalid postcode {b.zip} NOT entered for booking_id "{b.booking_id}"')
+    # if there is no postocde provided or an error
+    return None
 
 
 def import_dict(d, b):
