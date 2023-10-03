@@ -61,7 +61,7 @@ class BookingDAO:
     
         try:
             db.session.commit()
-            current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
+            #current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
         except exc.DataError as e:
             abort(422, description=f'Data loaded into database: {b.to_dict()}')
         except exc.IntegrityError as e:
@@ -82,7 +82,7 @@ class BookingDAO:
 
         try:
             db.session.commit()
-            current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
+            #current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
         except exc.DataError as e:
             abort(422, description=f'Data loaded into database: {b.to_dict()}')
         except exc.IntegrityError as e:
@@ -103,7 +103,7 @@ class BookingDAO:
 
     def completed_bookings_by_service_date(self, from_date, to_date):
     
-        print(f'params: from={from_date} to={to_date}')
+        #print(f'params: from={from_date} to={to_date}')
     
         return db.session.query(self.model) \
             .filter_by(booking_status='COMPLETED') \
@@ -335,7 +335,7 @@ class ReservationDAO:
     
         try:
             db.session.commit()
-            current_app.logger.info(f'reservation loaded into database: {b.to_dict()}')
+            #info(f'reservation loaded into database: {b.to_dict()}')
         except exc.DataError as e:
             abort(422, description=f'reservation loaded into database: {b.to_dict()}')
         except exc.IntegrityError as e:
@@ -356,7 +356,7 @@ class ReservationDAO:
 
         try:
             db.session.commit()
-            current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
+            #current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
         except exc.DataError as e:
             abort(422, description=f'Data loaded into database: {b.to_dict()}')
         except exc.IntegrityError as e:
