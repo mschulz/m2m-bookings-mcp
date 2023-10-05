@@ -508,7 +508,11 @@ def check_postcode(b, who, who_id):
             return p
         else:
             # if it is not numeric then it is not a valid postcode
-            current_app.logger.error(f'({request.path}) Invalid postcode {p} NOT entered for booking_id "{b.booking_id}"')
+            if 'booking_id' in b:
+                err_msg = f'({request.path}) Invalid postcode {p} NOT entered for booking_id "{b.booking_id}"'
+            else:
+                err_msg = f'({request.path}) Invalid postcode {p} NOT entered for customer_id "{who_id}"'
+            current_app.logger.error(err_msg)
     # if there is no postcode provided or an error
     return None
 
