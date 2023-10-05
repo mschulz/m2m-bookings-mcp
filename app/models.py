@@ -508,8 +508,8 @@ def check_postcode(b, who, who_id):
             return p
         else:
             # if it is not numeric then it is not a valid postcode
-            current_app.logger.error(f'({request.path}) Invalid postcode {b.zip} NOT entered for booking_id "{b.booking_id}"')
-    # if there is no postocde provided or an error
+            current_app.logger.error(f'({request.path}) Invalid postcode {p} NOT entered for booking_id "{b.booking_id}"')
+    # if there is no postcode provided or an error
     return None
 
 
@@ -870,7 +870,7 @@ def import_customer(c, d):
     c.city = d['city'] if 'city' in d else None
     c.state = d['state'] if 'state' in d else None
     c.company_name = d['company_name'] if 'company_name' in d else None
-    c.postcode = check_postcode(d, "customer_id", d['id'])
+    c.postcode = check_postcode(d, "customer_id", d['id']) if 'id' in d else None
     if c.postcode:
         c.location = d['location'] if 'location' in d else None
     c.notes = d['notes'] if 'notes' in d else None
