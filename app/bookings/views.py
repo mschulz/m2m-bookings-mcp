@@ -14,16 +14,25 @@ from app.local_date_time import UTC_now
 from sqlalchemy import exc
 from app.bookings.search import search_bookings, search_completed_bookings_by_service_date
 
-def reject_booking(d):
+
+def internal_meeting_booking(d):
     """
-    reject any booking request where postcode==TBC.
+    reject outright any booking request for a meeting
     """
-    return d['zip'].upper() in ['TBC', 'TBA']
+    return ('service_category' in d) and (d['service_category'] == 'Internal Meeting')
+    
+    if 'service_category' in d) and (d['service_category'] == 'Internal Meeting'):
+        return True
+    """
+    reject any booking request where postcode==TBC, or TBA, with mixed cases.
+    """
+    postcode = d['zip'] if 'zip' in d else None
+    if postcode is None or postcode.isnumeric():
+        return False
+    return postcode.lower() in ["tbc", "tba"]
 
 
 def update_table(data, status=None, check_ndis_reservation=False, is_restored=False):
-    if reject_booking(data):  # Handles 'TBC' postcode exception
-        return 'OK'
     if status:
         data["booking_status"] = status
     if data['service_category'] == current_app.config['RESERVATION_CATEGORY']:
@@ -55,9 +64,8 @@ def hello():
 @APIkey_required
 @catch_operational_errors
 def new():
-    ''' 
-        return 'Hello World!' to check link.
-    '''
+    if internal_meeting_booking(request.data):
+        return 'OK'
     if not current_app.testing:
         print('Processing a new booking ...')
     
@@ -70,6 +78,8 @@ def new():
 @APIkey_required
 @catch_operational_errors
 def restored():
+    if internal_meeting_booking(request.data):
+        return 'OK'
     ''' 
         Should only restore a cancelled booking, therefore booking data alrerady
         in the database.
@@ -85,6 +95,8 @@ def restored():
 @APIkey_required
 @catch_operational_errors
 def completed():
+    if internal_meeting_booking(request.data):
+        return 'OK'
     '''
         return 'Hello World!' to check link.
     '''
@@ -103,6 +115,8 @@ def completed():
 @APIkey_required
 @catch_operational_errors
 def cancellation():
+    if internal_meeting_booking(request.data):
+        return 'OK'
     '''
         return 'Hello World!' to check link.
     '''
@@ -113,9 +127,6 @@ def cancellation():
     
     print(f"team_details:: {data['team_details']}")
     print(data)
-    
-    if reject_booking(data):
-        return 'OK'
     
     # In the rare case where Launch27 does not send out the booking via Zapier, this code has
     # no row on which to work.  To fix this, we will accept the data here and create the entry.
@@ -133,6 +144,8 @@ def cancellation():
 @APIkey_required
 @catch_operational_errors
 def updated():
+    if internal_meeting_booking(request.data):
+        return 'OK'
     '''
         return 'Hello World!' to check link.
     '''
@@ -151,6 +164,8 @@ def updated():
 @APIkey_required
 @catch_operational_errors
 def team_changed():
+    if internal_meeting_booking(request.data):
+        return 'OK'
     '''
         return 'Hello World!' to check link.
     '''
