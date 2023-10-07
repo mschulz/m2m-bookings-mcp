@@ -19,9 +19,7 @@ def internal_meeting_booking(d):
     """
     reject outright any booking request for a meeting
     """
-    return ('service_category' in d) and (d['service_category'] == 'Internal Meeting')
-    
-    if 'service_category' in d) and (d['service_category'] == 'Internal Meeting'):
+    if ('service_category' in d) and (d['service_category'] == 'Internal Meeting'):
         return True
     """
     reject any booking request where postcode==TBC, or TBA, with mixed cases.
