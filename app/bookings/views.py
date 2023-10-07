@@ -19,7 +19,7 @@ def internal_meeting_booking(d):
     """
     reject outright any booking request for a meeting
     """
-    if (b'service_category' in d) and (d['service_category'] == b'Internal Meeting'):
+    if ('service_category' in d) and (d['service_category'] == 'Internal Meeting'):
         return True
     """
     reject any booking request where postcode==TBC, or TBA, with mixed cases.
@@ -62,12 +62,12 @@ def hello():
 @APIkey_required
 @catch_operational_errors
 def new():
-    if internal_meeting_booking(request.data):
-        return 'OK'
     if not current_app.testing:
         print('Processing a new booking ...')
     
     data = json.loads(request.data)
+    if internal_meeting_booking(data):
+        return 'OK'
     
     return update_table(data, status='NOT_COMPLETE')
 
@@ -76,8 +76,6 @@ def new():
 @APIkey_required
 @catch_operational_errors
 def restored():
-    if internal_meeting_booking(request.data):
-        return 'OK'
     ''' 
         Should only restore a cancelled booking, therefore booking data alrerady
         in the database.
@@ -86,6 +84,9 @@ def restored():
         print('Processing a RESTORED booking ...')
     
     data = json.loads(request.data)
+    if internal_meeting_booking(data):
+        return 'OK'
+    
     return update_table(data, status='NOT_COMPLETE', is_restored=True)
 
 
@@ -93,8 +94,6 @@ def restored():
 @APIkey_required
 @catch_operational_errors
 def completed():
-    if internal_meeting_booking(request.data):
-        return 'OK'
     '''
         return 'Hello World!' to check link.
     '''
@@ -102,6 +101,8 @@ def completed():
         print('Processing a completed booking')
     
     data = json.loads(request.data)
+    if internal_meeting_booking(data):
+        return 'OK'
     
     print(f"team_details:: {data['team_details']}")
     print(data)
@@ -113,8 +114,6 @@ def completed():
 @APIkey_required
 @catch_operational_errors
 def cancellation():
-    if internal_meeting_booking(request.data):
-        return 'OK'
     '''
         return 'Hello World!' to check link.
     '''
@@ -122,6 +121,8 @@ def cancellation():
         print('Processing a cancelled booking')
     
     data = json.loads(request.data)
+    if internal_meeting_booking(data):
+        return 'OK'
     
     print(f"team_details:: {data['team_details']}")
     print(data)
@@ -142,8 +143,6 @@ def cancellation():
 @APIkey_required
 @catch_operational_errors
 def updated():
-    if internal_meeting_booking(request.data):
-        return 'OK'
     '''
         return 'Hello World!' to check link.
     '''
@@ -151,6 +150,8 @@ def updated():
         print('Processing an updated booking')
 
     data = json.loads(request.data)
+    if internal_meeting_booking(data):
+        return 'OK'
     
     print(f"team_details:: {data['team_details']}")
     print(data)
@@ -162,8 +163,6 @@ def updated():
 @APIkey_required
 @catch_operational_errors
 def team_changed():
-    if internal_meeting_booking(request.data):
-        return 'OK'
     '''
         return 'Hello World!' to check link.
     '''
@@ -171,6 +170,8 @@ def team_changed():
         print('Processing an team assignment changed')
     
     data = json.loads(request.data)
+    if internal_meeting_booking(data):
+        return 'OK'
     
     print(f"team_details:: {data['team_details']}")
     print(data)
