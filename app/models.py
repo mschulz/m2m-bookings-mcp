@@ -643,7 +643,8 @@ def import_dict(d, b):
         #If NDIS: Who Pays For Your Service? (263)
         CUSTOM_WHO_PAYS = current_app.config['CUSTOM_WHO_PAYS']
         if CUSTOM_WHO_PAYS and CUSTOM_WHO_PAYS in b_cf:
-            d.NDIS_who_pays =b_cf.get(CUSTOM_WHO_PAYS)
+            d.NDIS_who_pays = b_cf.get(CUSTOM_WHO_PAYS)[:64]
+            
         
         #Email For Invoices (NDIS and Bank Transfer Only) (261)
         CUSTOM_INVOICE_EMAIL_ADDRESS = current_app.config['CUSTOM_INVOICE_EMAIL_ADDRESS']
@@ -738,8 +739,8 @@ def import_cancel_dict(d, b):
         
         #If NDIS: Who Pays For Your Service? (263)
         CUSTOM_WHO_PAYS = current_app.config['CUSTOM_WHO_PAYS']
-        if CUSTOM_WHO_PAYS and CUSTOM_WHO_PAYS in b_cf:
-            d.NDIS_who_pays =b_cf.get(CUSTOM_WHO_PAYS)
+        if CUSTOM_W4PAYS and CUSTOM_WHO_PAYS in b_cf:
+            d.NDIS_who_pays = b_cf.get(CUSTOM_WHO_PAYS)[:64]
         
         #Email For Invoices (NDIS and Bank Transfer Only) (261)
         CUSTOM_INVOICE_EMAIL_ADDRESS = current_app.config['CUSTOM_INVOICE_EMAIL_ADDRESS']
