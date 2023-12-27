@@ -214,7 +214,7 @@ def get_a_booking():
     if not res:
         abort(400)
     if 'was_new_customer' in res:
-        val = {"was_new_customer": } 
+        val = {"was_new_customer": res['was_new_customer']} 
         return jsonify(val)
     return abort(400)
 
