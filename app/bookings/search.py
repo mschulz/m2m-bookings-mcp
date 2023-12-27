@@ -5,7 +5,7 @@ from datetime import datetime
 import pytz
 
 from flask import current_app, jsonify
-from app.daos import booking_dao
+from app.daos import booking_dao, reservation_dao
 from sqlalchemy import exc
 
 
@@ -14,7 +14,10 @@ def search_bookings(service_category, start_created, end_created, booking_status
     print(f'params: category={service_category} date={start_created},{end_created} booking_status={booking_status}')
     
     try:
-        res = booking_dao.get_by_date_range(service_category, booking_status, start_created, end_created)
+        if service_category == current_app.config['RESERVATION_CATEGORY']:
+            res = reservation_dao.get_by_date_range(service_category, booking_status, start_created, end_created)
+        else:
+            res = booking_dao.get_by_date_range(service_category, booking_status, start_created, end_created)
     except exc.OperationalError as e:
         msg = {
             'status': 'fail',

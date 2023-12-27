@@ -200,23 +200,6 @@ def search():
     return search_bookings(service_category, start_created, end_created, booking_status)
 
 
-@bookings_api.route('/booking/<int:booking_id>', methods=['GET'])
-@APIkey_required
-@catch_operational_errors
-def get_booking_via_id(booking_id):
-    '''
-        get details of booking through it booking_id.
-    '''
-    if not current_app.testing:
-        print('Search through bookings')
-
-    d = booking_dao.get_by_booking_id(booking_id)
-    
-    print(d)
-    
-    return d.to_json()
-
-
 @bookings_api.route('/booking/search', methods=['GET'])
 @APIkey_required
 @catch_operational_errors
