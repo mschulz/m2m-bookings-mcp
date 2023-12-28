@@ -213,10 +213,8 @@ def get_a_booking(booking_id):
     res = booking_dao.get_by_booking_id(booking_id)
     if not res:
         abort(400)
-    if 'was_new_customer' in res:
-        val = {"was_new_customer": res['was_new_customer']} 
-        return jsonify(val)
-    return abort(400)
+    val = {"was_new_customer": b.was_new_customer} 
+    return jsonify(val)
 
 
 @bookings_api.route('/booking/search', methods=['GET'])
