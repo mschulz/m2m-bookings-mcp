@@ -211,9 +211,11 @@ def get_a_booking(booking_id):
         print('Select one booking')
 
     res = booking_dao.get_by_booking_id(booking_id)
+    
+    print(f"get_a_booking: {booking_id} {res} {res.was_new_customer}")
     if not res:
         abort(400)
-    val = {"was_new_customer": b.was_new_customer} 
+    val = {"was_new_customer": res.was_new_customer} 
     return jsonify(val)
 
 
