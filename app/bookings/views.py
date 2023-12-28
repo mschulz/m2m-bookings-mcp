@@ -203,7 +203,7 @@ def search():
 @bookings_api.route('/booking/was_new_customer/<int:booking_id>', methods=['GET'])
 @APIkey_required
 @catch_operational_errors
-def get_a_booking():
+def get_a_booking(booking_id):
     '''
         search through bookings.
     '''
