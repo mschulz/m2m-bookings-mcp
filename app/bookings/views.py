@@ -213,10 +213,7 @@ def get_a_booking(booking_id):
     res = booking_dao.get_by_booking_id(booking_id)
     if not res:
         abort(400)
-    if hasattr(res, "was_new_customer")
-        val = {"was_new_customer": res.was_new_customer}
-    else:
-        val = {"was_new_customer": False}
+    val = {"was_new_customer": res.was_new_customer if hasattr(res, "was_new_customer") else False }
     return jsonify(val)
 
 
