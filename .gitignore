@@ -1,12 +1,5 @@
 venv
 UNUSED
 __pycache__
-.env*
 logs
-test.db
-.gitignore
-client_secret.json
-db_log*
-test_db
-*.csv
 
