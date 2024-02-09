@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 import pytz
 
-from flask import request, current_app, jsonify
+from flask import request, current_app, jsonify, abort
 from app.bookings import bookings_api
 from app.decorators import APIkey_required, catch_operational_errors
 from psycopg2.errors import UniqueViolation
@@ -212,8 +212,11 @@ def get_a_booking(booking_id):
 
     res = booking_dao.get_by_booking_id(booking_id)
     if not res:
-        abort(400)
-    val = {"was_new_customer": res.was_new_customer if hasattr(res, "was_new_customer") else False }
+        # If the customer is not in this table they are probably a reservation.
+        # Just drop the was_new_customer as False
+        val = {"was_new_customer": False }
+    else:
+        val = {"was_new_customer": res.was_new_customer if hasattr(res, "was_new_customer") else False }
     return jsonify(val)
 
 
