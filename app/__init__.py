@@ -36,8 +36,8 @@ def create_app():
     app.config.from_object(os.environ['APP_SETTINGS'])
 
     #ovrrd = app.config["OVERRIDE_EMAIL"]
-    if not app.config['TESTING']:
-        print(f'OVERRIDE_EMAIL: {app.config["OVERRIDE_EMAIL"]}')
+    #if not app.config['TESTING']:
+    #    print(f'OVERRIDE_EMAIL: {app.config["OVERRIDE_EMAIL"]}')
     # Determine date and time where based - servers are mostlikely in the US
     #local_date, local_time = get_local_date_time_now(app.config['TZ_LOCALTIME'], app.config['TZ_ISDST'])
 
@@ -45,7 +45,7 @@ def create_app():
     setup_logging(app)
     if not app.config['TESTING']:
         app.logger.info(f'{app.config["APP_NAME"]}: starting ...')
-        app.logger.info(f'database: {app.config["SQLALCHEMY_DATABASE_URI"]}')
+        #app.logger.info(f'database: {app.config["SQLALCHEMY_DATABASE_URI"]}')
 
     # Set up mail
     mail.init_app(app)
