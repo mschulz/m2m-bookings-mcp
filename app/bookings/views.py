@@ -125,7 +125,7 @@ def cancellation():
         return 'OK'
     
     #print(f"team_details:: {data['team_details']}")
-    #print(data)
+    #Customer data received:print(data)
     
     # In the rare case where Launch27 does not send out the booking via Zapier, this code has
     # no row on which to work.  To fix this, we will accept the data here and create the entry.
