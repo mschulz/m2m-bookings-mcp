@@ -104,8 +104,8 @@ def completed():
     if internal_meeting_booking(data):
         return 'OK'
     
-    print(f"team_details:: {data['team_details']}")
-    print(data)
+    #print(f"team_details:: {data['team_details']}")
+    #print(data)
     
     return update_table(data, status='COMPLETED')
 
@@ -124,8 +124,8 @@ def cancellation():
     if internal_meeting_booking(data):
         return 'OK'
     
-    print(f"team_details:: {data['team_details']}")
-    print(data)
+    #print(f"team_details:: {data['team_details']}")
+    #print(data)
     
     # In the rare case where Launch27 does not send out the booking via Zapier, this code has
     # no row on which to work.  To fix this, we will accept the data here and create the entry.
@@ -153,8 +153,8 @@ def updated():
     if internal_meeting_booking(data):
         return 'OK'
     
-    print(f"team_details:: {data['team_details']}")
-    print(data)
+    #print(f"team_details:: {data['team_details']}")
+    #print(data)
 
     return update_table(data, check_ndis_reservation=True)
 
@@ -173,8 +173,8 @@ def team_changed():
     if internal_meeting_booking(data):
         return 'OK'
     
-    print(f"team_details:: {data['team_details']}")
-    print(data)
+    #print(f"team_details:: {data['team_details']}")
+    #print(data)
 
     return update_table(data, is_restored=True)
 

@@ -18,7 +18,7 @@ def is_missing_booking(data):
         current_app.logger.error("booking has no booking_id - ignore this data")
         abort(422, description="booking has no booking_id - ignore this data")
     
-    current_app.logger.info(f'Booking data received: {data}')
+    #current_app.logger.info(f'Booking data received: {data}')
     
     # Check if we already have a booking under this id
     b = booking_dao.get_by_booking_id(booking_id)
