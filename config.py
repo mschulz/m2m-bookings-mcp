@@ -35,11 +35,17 @@ class Config(object):
     #SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', "postgresql://localhost/{DATABASE_TABLENAME}")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
+    # accessing our Launch27 proxy
+    L27_URL = os.environ.get('L27_URL')
+    L27_API_KEY = os.environ.get('L27_API_KEY')
+    
     # Email settings
     FROM_NAME = os.environ.get('FROM_NAME')
     FROM_ADDRESS = os.environ.get('FROM_ADDRESS')
     SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL')
     OVERRIDE_EMAIL = os.environ.get('OVERRIDE_EMAIL', 'True').lower() == 'true'
+    OVERRIDE_ADDR = os.environ.get('OVERRIDE_ADDR')
+    
 
     # Used in web page configuration to allow update of phone numbers
     PHONE_NUMBER = os.environ.get('PHONE_NUMBER')

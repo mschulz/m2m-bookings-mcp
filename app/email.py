@@ -99,6 +99,19 @@ def send_updated_locations_email(toaddr, number_locations, updated, missing, pos
         text_body = html2text.html2text(body)
         )
 
+def send_completed_bookings_email(toaddr, bookings_count, n_active, tz_name):
+    ''' Send support team an email detailing how many bookings were marked completed. '''
+    app_name = current_app.config["APP_NAME"]
+    body = render_template('completed.html', app_name=app_name, bookings_count=bookings_count, n_active=n_active, tz_name=tz_name)
+
+    send_email(
+        subject = f'{app_name}: {bookings_count} bookings marked completed',
+        sender=(current_app.config['FROM_NAME'], current_app.config["FROM_ADDRESS"]),
+        recipients = [toaddr],
+        html_body = body,
+        text_body = html2text.html2text(body)
+        )
+
 if __name__ == '__main__':
 
     import os
