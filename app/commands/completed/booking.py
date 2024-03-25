@@ -34,7 +34,6 @@ class Booking():
     def complete(self, id):
         if not current_app.config['TESTING']:
             url = f"{self.my_l27_url}/v1/staff/bookings/{id}/complete"
-            self.headers = self._headers('POST', url)
 
             r = requests.post(url, self.headers)
     
