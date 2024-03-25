@@ -47,17 +47,19 @@ with app.app_context():
     
     completed_count = tz_count = 0
     b = Booking()
-    booking_id_list = b.get_all_in_tz(today_date_string, tz_name)
+    booking_list = b.get_all_in_tz(today_date_string, tz_name)
+    # returns {"id_list": booking_list, "count": len(booking_list)})
     
-    #print(f"get_all_booking_ids: {booking_id_list}")
+    print(f"get_all_booking_ids: {booking_list}")
     
-    if booking_id_list is not None:
-        tz_count = len(booking_id_list)
+    tz_count = booking_list['count']
+    if tz_count > 0:
         
         # Complete each booking and increment completed_count, unless already completed
-        for i in booking_id_list:
-            completed_count += b.complete(i)
-            print(f'completed: {i}')
+        for i in booking_list['id_list']:
+            res = b.complete(i)
+            completed_count += res
+            print(f'completed: {i} used: {res}')
             
     msg = f'complete_bookings_today:: {completed_count} bookings marked as completed out of {tz_count}({tz_name})'
     app.logger.info(msg)

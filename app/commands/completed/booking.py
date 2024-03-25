@@ -36,15 +36,7 @@ class Booking():
             url = f"{self.my_l27_url}/v1/bookings/complete/{id}"
 
             r = requests.post(url, headers=self.headers)
-    
-            if r.status_code == 422:
-                current_app.logger.warning(f'IGNORED:: complete_booking:: booking already completed ({id}):')
-                return 0    #Fail - don't count this
-            elif r.status_code != 200:
-                current_app.logger.error(f'complete_booking:: status_code({r.status_code}) attempting to mark booking ({id}) complete\n * Error: {r.text}')
-                return 0    #Fail - don't count this
-
-        return 1    #Success - count this
+            return r.json()['res']
 
 #################################################
 
