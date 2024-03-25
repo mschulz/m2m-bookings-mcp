@@ -35,7 +35,7 @@ class Booking():
         if not current_app.config['TESTING']:
             url = f"{self.my_l27_url}/v1/bookings/complete/{id}"
 
-            r = requests.post(url, self.headers)
+            r = requests.post(url, headers=self.headers)
     
             if r.status_code == 422:
                 current_app.logger.warning(f'IGNORED:: complete_booking:: booking already completed ({id}):')
