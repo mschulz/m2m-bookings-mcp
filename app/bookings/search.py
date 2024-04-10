@@ -79,6 +79,29 @@ def search_completed_bookings_by_service_date(from_date_str, to_date_str):
     return jsonify(found)
 
 
+def get_booking_by_email_service_date(email, service_date):
+    row = booking_dao.get_by_booking_email_service_date_range(email, service_date)
+    if row:
+        res = {
+            'booking_id': row.booking_id,
+            'date_received': None,
+            'service_date': row.service_date,
+            'full_name': f"{row.first_name} {row.last_name}",
+            'email': row.email,
+            'rating': None,
+            'comment': '',
+            'postcode': row.postcode,
+            'location_name': row.location,
+            'team_assigned': row.teams_assigned,
+            'created_by': '',
+            'service_category': row.service_category,
+            'service': row.service,
+            'frequency': row.frequency,
+        }
+        return {'data': res, 'status': 'found'}
+    return {'data': {}, 'status': 'not found'}
+
+
 if __name__ == "__main__":
     from app import create_app
     import json
@@ -88,7 +111,13 @@ if __name__ == "__main__":
     print('Fixing bookings in range of dates ...')
     
     with app.app_context():
-        from_date_str = '2022-05-03'
+        """from_date_str = '2022-05-03'
         to_date_str = '2022-05-13'
         res = search_completed_bookings_by_service_date(from_date_str, to_date_str)
-        print(f'Found bookings: {res}')
+        print(f'Found bookings: {res}')"""
+
+        print(' Get booking details from email and service_date')
+        email = 'jeromeadkins1954@icloud.com'
+        service_date = '2024-03-13'
+        res = get_booking_by_email_service_date(email, service_date)
+        print(f"{res=}")

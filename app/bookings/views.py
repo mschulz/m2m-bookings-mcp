@@ -12,7 +12,7 @@ from app.notify import is_completed, notify_cancelled_completed, is_missing_book
 from app.daos import booking_dao, customer_dao, reservation_dao
 from app.local_date_time import UTC_now
 from sqlalchemy import exc
-from app.bookings.search import search_bookings, search_completed_bookings_by_service_date
+from app.bookings.search import search_bookings, search_completed_bookings_by_service_date, get_booking_by_email_service_date
 
 
 def internal_meeting_booking(d):
@@ -248,4 +248,22 @@ def search_by_dates():
     end_date_str = request.args.get('to')
     
     return search_completed_bookings_by_service_date(start_date_str, end_date_str)
+
+
+@bookings_api.route('/booking/service_date', methods=['GET'])
+@APIkey_required
+@catch_operational_errors
+def search_by_service_date_and_email():
+    '''
+        search through bookings.
+    '''
+    if not current_app.testing:
+        print('Search through bookings within date range')
+
+    service_date = request.args.get('service_date')
+    email = request.args.get('email')
+    
+    res = get_booking_by_email_service_date(start_date_str, end_date_str)
+    return jsonify(res)
+
 

@@ -32,6 +32,41 @@ class BookingDAO:
 
     def get_by_booking_id(self, booking_id):
         return db.session.query(self.model).filter_by(booking_id = booking_id).first()
+
+    def get_by_booking_email_service_date_range(self, email, service_date):
+
+        def get_week_start_end(date_str):
+            """
+                Offsets: Current dow (Sunday offset. Saturday Offset)
+                Monday(0): (-1, 5)
+                Tuesday(1): (-2, 4)
+                Wednesday(2): (-3, 3)
+                Thursday(3): (-4, 2)
+                Friday(4): (-5, 1)
+                Saturday(5): (-6, 0)
+                Sunday(6): (0, 6)
+            """
+            dt = datetime.strptime(date_str, "%Y-%m-%d")
+            dow = dt.weekday()
+            offsets = (
+                (-1, 5),
+                (-2, 4),
+                (-3, 3),
+                (-4, 2),
+                (-5, 1),
+                (-6, 0),
+                (0, 6)
+            )
+            week_start = dt + timedelta(days= offsets[dow][0])
+            week_end = dt + timedelta(days= offsets[dow][1])
+            week_start_str = week_start.strftime("%Y-%m-%d")
+            week_end_str = week_end.strftime("%Y-%m-%d")
+            return (week_start_str, week_end_str)
+        week_start, week_end = get_week_start_end(service_date)
+        
+        return db.session.query(self.model) \
+        .filter_by(email = email) \
+        .filter(and_(self.model._service_date >= week_start, self.model._service_date <= week_end)).first()
     
     def create_update_booking(self, new_data):
         booking_id = new_data['id'] if 'id' in new_data else None
@@ -510,9 +545,9 @@ if __name__ == '__main__':
         year = 2021
         get_month_by_year(year)"""
 
-        print(f'Date: {start_str} -- looking at prior day')
+        """print(f'Date: {start_str} -- looking at prior day')
 
-        """date_start, date_end = booking_dao._find_dates_range(start_str, 1, True)
+        date_start, date_end = booking_dao._find_dates_range(start_str, 1, True)
         print(f'{date_start = }  {date_end = }')
         local_date_start = utc_to_local(date_start)
         local_date_end = utc_to_local(date_end)
@@ -527,7 +562,17 @@ if __name__ == '__main__':
         cancel_list = booking_dao.get_cancelled_list(start_str, period)
         print(f'Customers cancel list={cancel_list}')"""
 
-        start_date = datetime.strptime(start_str, "%Y-%m-%d").date()
+        """start_date = datetime.strptime(start_str, "%Y-%m-%d").date()
         
         items = booking_dao.completed_bookings_by_service_date(start_date, start_date)
-        print(items)
+        print(items)"""
+        
+        # Get booking details from email and service_date
+        # first_name='Jerome' email='jeromeadkins1954@icloud.com' service_date=datetime.datetime(2024, 3, 13, 0, 0) rating='5' comment='The cleaner is on time and is polite and and does a good job'
+        print(' Get booking details from email and service_date')
+        email = 'jeromeadkins1954@icloud.com'
+        service_date = '2024-03-13'
+        item = booking_dao.get_by_booking_email_service_date_range(email, service_date)
+        print(item)
+        if item:
+            print(item.to_dict())
