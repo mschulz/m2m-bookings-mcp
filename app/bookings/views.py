@@ -263,7 +263,7 @@ def search_by_service_date_and_email():
     service_date = request.args.get('service_date')
     email = request.args.get('email')
     
-    res = get_booking_by_email_service_date(service_date, email)
+    res = get_booking_by_email_service_date(email, service_date)
     return jsonify(res)
 
 
