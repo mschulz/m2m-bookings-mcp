@@ -499,19 +499,15 @@ def dollar_string_to_int(val):
         return int(str(val).replace('$','').replace('.','')) 
 
 def check_postcode(b, who, who_id):
-    # Errors have started creeping in with invalid postcode being entered into the database.  We need to alert staff
-    # to these errors so that this can be corrected ASAP
+    # Errors have started creeping in with invalid postcode being entered into the database.  We need to alert
+    # staff to these errors so that this can be corrected ASAP
     p = b['zip'] if 'zip' in b else None
-    if p:
-        if p.isnumeric():
+    if p and p.isnumeric():
         # OK. return the postcode string
-            return p
-        else:
-            # if it is not numeric then it is not a valid postcode
-            current_app.logger.error(f'({request.path}) Invalid postcode {b.zip} NOT entered for booking_id "{b.booking_id}"')
-    # if there is no postocde provided or an error
+        return p
+    # if it is not numeric then it is not a valid postcode
+    current_app.logger.error(f"({request.path}) Invalid postcode {p} NOT entered for booking_id {b['id']}")
     return None
-    
 
 
 def import_dict(d, b):
@@ -602,14 +598,6 @@ def import_dict(d, b):
     d.company_name = b['company_name'] if 'company_name' in b else None
 
     d.email = b['email'] if 'email' in b else None
-    # We are starting to see invalid email addresses creeping into the system.  This check if they are valid and sends
-    # an email alerting staff to the issue.
-    """if d.email:
-        if not validate_email(d.email, check_mx=True, debug=False, use_blacklist=False):
-            msg = f'({request.path}) Invalid email ({d.email}) entered for customer "{d.name}". Booking ID={d.booking_id}'
-            current_app.logger.error(msg)"""
-            
-    
     d.phone = b['phone'] if 'phone' in b else None
     d.postcode = check_postcode(b, "booking_id", b['id'])
     if d.postcode:
