@@ -94,7 +94,7 @@ if __name__ == '__main__':
                 print('Dropped History table')
             except exc.ProgrammingError:
                     pass # No table to delete
-            History.__table__.create(db.session.bind, checkfirst=True)
+            History.__table__.create(bind=db.engine, checkfirst=True)
             try:
                 db.session.query(History).delete()
                 db.session.commit()
