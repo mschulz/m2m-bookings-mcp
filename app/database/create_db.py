@@ -4,6 +4,7 @@ from .. import create_app
 from app import db
 from app.models import Booking, Customer
 from app.models_reservation import Reservation
+from app.models_sales_reservation import SalesReservation
 
 
 def main():

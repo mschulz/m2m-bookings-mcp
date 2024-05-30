@@ -9,7 +9,7 @@ from app.bookings import bookings_api
 from app.decorators import APIkey_required, catch_operational_errors
 from psycopg2.errors import UniqueViolation
 from app.notify import is_completed, notify_cancelled_completed, is_missing_booking
-from app.daos import booking_dao, customer_dao, reservation_dao
+from app.daos import booking_dao, customer_dao, reservation_dao, sales_reservation_dao
 from app.local_date_time import UTC_now
 from sqlalchemy import exc
 from app.bookings.search import search_bookings, search_completed_bookings_by_service_date, get_booking_by_email_service_date
@@ -35,8 +35,12 @@ def update_table(data, status=None, check_ndis_reservation=False, is_restored=Fa
         data["booking_status"] = status
     if data['service_category'] == current_app.config['RESERVATION_CATEGORY']:
         # Update Reservation table
-        print("Update Reservation table")
+        print("Update NDIS Reservation table")
         reservation_dao.create_update_booking(data)
+    elif data['service_category'] == current_app.config['SALES_RESERVATION_CATEGORY']:
+        # Update Reservation table
+        print("Update Sales Reservation table")
+        sales_reservation_dao.create_update_booking(data)
     else:
         # Update Booking table
         print("Update Booking table")
@@ -47,6 +51,11 @@ def update_table(data, status=None, check_ndis_reservation=False, is_restored=Fa
         """
         if check_ndis_reservation and reservation_dao.get_by_booking_id(booking_id):
             reservation_dao.mark_converted(booking_id)
+        if check_ndis_reservation:
+            if reservation_dao.get_by_booking_id(booking_id):
+                reservation_dao.mark_converted(booking_id)
+            elif sales_reservation_dao.get_by_booking_id(booking_id):
+                sales_reservation_dao.mark_converted(booking_id)
         booking_dao.create_update_booking(data)
         if not is_restored:
             customer_dao.create_or_update_customer(data['customer'])

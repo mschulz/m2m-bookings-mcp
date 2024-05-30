@@ -1,4 +1,4 @@
-# app/models-reservation
+# app/models_sales_reservation
 
 import json
 from datetime import datetime, date
@@ -14,12 +14,12 @@ from app.locations import get_location
 from app.local_date_time import utc_to_local
 
 
-class Reservation(db.Model):
+class SalesReservation(db.Model):
     '''
         Reservation class holds all the data for the current reservation. 
         Data could come from the database or from an incoming zap.
     '''
-    __tablename__ = 'reservations'
+    __tablename__ = 'sales_reservations'
     
     id = db.Column(db.Integer, primary_key=True)
     
@@ -773,9 +773,3 @@ def import_cancel_dict(d, b):
             
         
     return d
-
-# Sales Reservation Data:
-# Date	Time	First Name	Last Name	Full Name	Email	Address	City	State	
-# Postal Code	Location	Phone	Final Amount	Payment Method	Frequency	Discount Code	
-# Teams Assigned	Teams Assigned  (without IDs)	Date Created	Created By	Duration	
-# Services	Booking ID	Customer ID

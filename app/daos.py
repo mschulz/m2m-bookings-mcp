@@ -17,6 +17,7 @@ import pendulum as pdl
 from app import db
 from app.models import Booking, Customer, import_dict, import_customer, import_cancel_dict
 from app.models_reservation import Reservation
+from app.models_sales_reservation import SalesReservation
 from app.models_reservation import import_dict as res_import_dict
 from app.models_reservation import import_cancel_dict as res_import_cancel_dict
 from calendar import monthrange
@@ -362,7 +363,7 @@ class ReservationDAO:
             db.session.add(b)
         else:
             # Have seen the original booking - UPDATE it now
-            current_app.logger.info("have seen this reservation - UPDATING database")
+            current_app.logger.info("have seen this NDIS reservation - UPDATING table")
     
             res_import_cancel_dict(b, new_data)
     
@@ -372,10 +373,10 @@ class ReservationDAO:
             db.session.commit()
             #info(f'reservation loaded into database: {b.to_dict()}')
         except exc.DataError as e:
-            abort(422, description=f'reservation loaded into database: {b.to_dict()}')
+            abort(422, description=f'NDIS reservation loaded into table: {b.to_dict()}')
         except exc.IntegrityError as e:
             db.session.rollback()
-            current_app.logger.info(f'reservation already loaded into database: {b.to_dict()}')
+            current_app.logger.info(f'NDIS reservation already loaded into table: {b.to_dict()}')
         except exc.OperationalError as e:
             db.session.rollback()
             current_app.logger.info(f'SSL connection has been closed unexpectedly')
@@ -383,7 +384,7 @@ class ReservationDAO:
     def update_booking(self, new_data):
         booking_id = new_data['booking_id'] if 'booking_id' in new_data else None
         b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
-        current_app.logger.info("have seen this booking - UPDATING database")
+        current_app.logger.info("have seen this NDIS reservation - UPDATING table")
 
         res_import_cancel_dict(b, new_data)
 
@@ -393,10 +394,10 @@ class ReservationDAO:
             db.session.commit()
             #current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
         except exc.DataError as e:
-            abort(422, description=f'Data loaded into database: {b.to_dict()}')
+            abort(422, description=f'Data loaded into table: {b.to_dict()}')
         except exc.IntegrityError as e:
             db.session.rollback()
-            current_app.logger.info(f'Data already loaded into database: {b.to_dict()}')
+            current_app.logger.info(f'Data already loaded into table: {b.to_dict()}')
         except exc.OperationalError as e:
             db.session.rollback()
             current_app.logger.info(f'SSL connection has been closed unexpectedly')
@@ -408,12 +409,12 @@ class ReservationDAO:
         b = db.session.query(self.model).filter_by(booking_id = booking_id).delete()
         try:
             db.session.commit()
-            current_app.logger.info(f'Reservation deleted from database: {booking_id}')
+            current_app.logger.info(f'NDIS Reservation deleted from table: {booking_id}')
         except exc.DataError as e:
             abort(422, description=f'Reservation data error: {new_data}')
         except exc.IntegrityError as e:
             db.session.rollback()
-            current_app.logger.info(f'Reservation Inegrity error: {new_data}')
+            current_app.logger.info(f'NDIS Reservation Inegrity error: {new_data}')
         except exc.OperationalError as e:
             db.session.rollback()
             current_app.logger.info(f'SSL connection has been closed unexpectedly')
@@ -422,22 +423,126 @@ class ReservationDAO:
         if booking_id is None:
             return
         b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
-        current_app.logger.info("mark this booking as CONVETED in database")
+        current_app.logger.info("mark this booking as CONVERTED in database")
         b.booking_status = 'CONVERTED'
         try:
             db.session.commit()
-            current_app.logger.info(f'Reservation status changed to CONVERTED: {booking_id}')
+            current_app.logger.info(f'NDIS Reservation status changed to CONVERTED: {booking_id}')
         except exc.DataError as e:
-            abort(422, description=f'Reservation data error: {new_data}')
+            abort(422, description=f'NDIS Reservation data error: {new_data}')
         except exc.IntegrityError as e:
             db.session.rollback()
-            current_app.logger.info(f'Reservation Inegrity error: {new_data}')
+            current_app.logger.info(f'NDIS Reservation Inegrity error: {new_data}')
         except exc.OperationalError as e:
             db.session.rollback()
             current_app.logger.info(f'SSL connection has been closed unexpectedly')
         
 
 reservation_dao = ReservationDAO(Reservation)
+
+
+class SalesReservationDAO:
+    def __init__(self, model):
+        self.model = model
+
+    def get_by_booking_id(self, booking_id):
+        return db.session.query(self.model).filter_by(booking_id = booking_id).first()
+    
+    def create_update_booking(self, new_data):
+        booking_id = new_data['id'] if 'id' in new_data else None
+        if not booking_id:
+            # This is a malformed set of data (this test might be redundant)
+            current_app.logger.error("sales reservation has no booking_id - ignore this data")
+            abort(422, description="sales reservation has no booking_id - ignore this data")
+        
+        # Check if we already have a booking under this id
+        b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
+    
+        if b is None:
+            # Haven't seen the original booking - ADD it now
+            current_app.logger.info("haven't seen this sales reservation - ADDING to table")
+    
+            # Load the database table
+            b = SalesReservation()
+            res_import_dict(b, new_data)
+            db.session.add(b)
+        else:
+            # Have seen the original booking - UPDATE it now
+            current_app.logger.info("have seen this sales reservation - UPDATING table")
+    
+            res_import_cancel_dict(b, new_data)
+    
+            current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {b.booking_id}')
+    
+        try:
+            db.session.commit()
+            #info(f'reservation loaded into database: {b.to_dict()}')
+        except exc.DataError as e:
+            abort(422, description=f'sales reservation loaded into table: {b.to_dict()}')
+        except exc.IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.info(f'sales reservation already loaded into table: {b.to_dict()}')
+        except exc.OperationalError as e:
+            db.session.rollback()
+            current_app.logger.info(f'SSL connection has been closed unexpectedly')
+
+    def update_booking(self, new_data):
+        booking_id = new_data['booking_id'] if 'booking_id' in new_data else None
+        b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
+        current_app.logger.info("have seen this booking - UPDATING sales reservation table")
+
+        res_import_cancel_dict(b, new_data)
+
+        current_app.logger.info(f'Loading ... Name: "{b.name}" team: "{b.teams_assigned}" booking_id: {b.booking_id}')
+
+        try:
+            db.session.commit()
+            #current_app.logger.info(f'Data loaded into database: {b.to_dict()}')
+        except exc.DataError as e:
+            abort(422, description=f'Data loaded into table: {b.to_dict()}')
+        except exc.IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.info(f'Data already loaded into table: {b.to_dict()}')
+        except exc.OperationalError as e:
+            db.session.rollback()
+            current_app.logger.info(f'SSL connection has been closed unexpectedly')
+
+    def cancel_booking(self, new_data):
+        booking_id = new_data['id'] if 'id' in new_data else None
+        if booking_id is None:
+            return
+        b = db.session.query(self.model).filter_by(booking_id = booking_id).delete()
+        try:
+            db.session.commit()
+            current_app.logger.info(f'Sales Reservation deleted from table: {booking_id}')
+        except exc.DataError as e:
+            abort(422, description=f'Sales Reservation data error: {new_data}')
+        except exc.IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.info(f'Sales Reservation Inegrity error: {new_data}')
+        except exc.OperationalError as e:
+            db.session.rollback()
+            current_app.logger.info(f'SSL connection has been closed unexpectedly')
+
+    def mark_converted(self, booking_id):
+        if booking_id is None:
+            return
+        b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
+        current_app.logger.info("mark this booking as CONVERTED in table")
+        b.booking_status = 'CONVERTED'
+        try:
+            db.session.commit()
+            current_app.logger.info(f'Sales Reservation status changed to CONVERTED: {booking_id}')
+        except exc.DataError as e:
+            abort(422, description=f'Sales Reservation data error: {new_data}')
+        except exc.IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.info(f'Sales Reservation Inegrity error: {new_data}')
+        except exc.OperationalError as e:
+            db.session.rollback()
+            current_app.logger.info(f'SSL connection has been closed unexpectedly')
+
+sales_reservation_dao = SalesReservationDAO(SalesReservation)
 
 
 class CustomerDAO:
