@@ -49,8 +49,6 @@ def update_table(data, status=None, check_ndis_reservation=False, is_restored=Fa
         If this is an UPDATE (check_ndis_reservation is True)
         and there is an entry in the reservation table (isa_ndis_reservation(booking_id)) 
         """
-        if check_ndis_reservation and reservation_dao.get_by_booking_id(booking_id):
-            reservation_dao.mark_converted(booking_id)
         if check_ndis_reservation:
             if reservation_dao.get_by_booking_id(booking_id):
                 reservation_dao.mark_converted(booking_id)
@@ -220,6 +218,8 @@ def get_booking_details(booking_id):
         print('Select one booking')
 
     res = booking_dao.get_by_booking_id(booking_id)
+    if res is None:
+        return {}, 404
     return res.to_json()
 
 
@@ -233,13 +233,7 @@ def get_a_booking(booking_id):
     if not current_app.testing:
         print('Select one booking')
 
-    res = booking_dao.get_by_booking_id(booking_id)
-    if not res:
-        # If the customer is not in this table they are probably a reservation.
-        # Just drop the was_new_customer as False
-        val = {"was_new_customer": False }
-    else:
-        val = {"was_new_customer": res.was_new_customer if hasattr(res, "was_new_customer") else False }
+    val = check_was_new_customer(booking_id)
     return jsonify(val)
 
 
@@ -274,5 +268,19 @@ def search_by_service_date_and_email():
     
     res = get_booking_by_email_service_date(email, service_date)
     return jsonify(res)
+
+def check_was_new_customer(booking_id):
+    res = booking_dao.get_by_booking_id(booking_id)
+    if res is not None:
+        return {"was_new_customer": res.was_new_customer if hasattr(res, "was_new_customer") else False }
+        # If the customer is not in this table they are probably a reservation.
+    res = reservation_dao.get_by_booking_id(booking_id)
+    if res is not None:
+        return {"was_new_customer": res.was_new_customer if hasattr(res, "was_new_customer") else False }
+    res = sales_reservation_dao.get_by_booking_id(booking_id)
+    if res is not None:
+        return {"was_new_customer": res.was_new_customer if hasattr(res, "was_new_customer") else False }
+    # Should never get here as booking must be in one of the tables, however 'shit happens'
+    return {"was_new_customer": False }
 
 
