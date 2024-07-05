@@ -13,7 +13,7 @@ from app.daos import booking_dao, customer_dao, reservation_dao, sales_reservati
 from app.local_date_time import UTC_now
 from sqlalchemy import exc
 from app.bookings.search import search_bookings, search_completed_bookings_by_service_date, get_booking_by_email_service_date
-
+from app.klaviyo import notify_klaviyo
 
 def internal_meeting_booking(d):
     """
@@ -31,6 +31,8 @@ def internal_meeting_booking(d):
 
 
 def update_table(data, status=None, check_ndis_reservation=False, is_restored=False):
+    if internal_meeting_booking(data):
+        return 'OK'
     if status:
         data["booking_status"] = status
     if data['service_category'] == current_app.config['RESERVATION_CATEGORY']:
@@ -55,8 +57,14 @@ def update_table(data, status=None, check_ndis_reservation=False, is_restored=Fa
             elif sales_reservation_dao.get_by_booking_id(booking_id):
                 sales_reservation_dao.mark_converted(booking_id)
         booking_dao.create_update_booking(data)
+        # restoring a booking won't effect the customer data
         if not is_restored:
             customer_dao.create_or_update_customer(data['customer'])
+        # If this is a new booking: get Klaviyo to move profile from lead list to customer list
+        if data["is_new_customer"]:
+            print(f"Found new customer: send {data['email']} to Klaviyo with {data['service_category']}")
+            if data["service_category"] in ['Bond Clean', 'House Clean' ]:
+                notify_klaviyo(data["service_category"], data)
     return 'OK'
 
 @bookings_api.route('/', methods=['GET'])
@@ -73,8 +81,6 @@ def new():
         print('Processing a new booking ...')
     
     data = json.loads(request.data)
-    if internal_meeting_booking(data):
-        return 'OK'
     
     return update_table(data, status='NOT_COMPLETE')
 
@@ -91,8 +97,6 @@ def restored():
         print('Processing a RESTORED booking ...')
     
     data = json.loads(request.data)
-    if internal_meeting_booking(data):
-        return 'OK'
     
     return update_table(data, status='NOT_COMPLETE', is_restored=True)
 
@@ -108,8 +112,6 @@ def completed():
         print('Processing a completed booking')
     
     data = json.loads(request.data)
-    if internal_meeting_booking(data):
-        return 'OK'
     
     #print(f"team_details:: {data['team_details']}")
     #print(data)
@@ -157,11 +159,6 @@ def updated():
         print('Processing an updated booking')
 
     data = json.loads(request.data)
-    if internal_meeting_booking(data):
-        return 'OK'
-    
-    #print(f"team_details:: {data['team_details']}")
-    #print(data)
 
     return update_table(data, check_ndis_reservation=True)
 
@@ -177,12 +174,7 @@ def team_changed():
         print('Processing an team assignment changed')
     
     data = json.loads(request.data)
-    if internal_meeting_booking(data):
-        return 'OK'
     
-    #print(f"team_details:: {data['team_details']}")
-    #print(data)
-
     return update_table(data, is_restored=True)
 
 

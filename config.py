@@ -101,6 +101,10 @@ class Config(object):
     RESERVATION_CATEGORY = os.environ.get('RESERVATION_CATEGORY', 'NDIS Reservation')
     SALES_RESERVATION_CATEGORY = os.environ.get('SALES_RESERVATION_CATEGORY', 'Sales Reservation')
     
+    # Klaviyo updates
+    MY_KLAVIYO_URL = os.environ.get('MY_KLAVIYO_URL')
+    MY_KLAVIYO_API_KEY = os.environ.get('MY_KLAVIYO_API_KEY')
+     
     # Notification webhook
     NOTIFICATION_URL = os.environ.get('NOTIFICATION_URL')
     
