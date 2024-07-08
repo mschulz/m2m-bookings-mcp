@@ -53,7 +53,7 @@ class Klaviyo(object):
         """
             Post the data to the Klaviyo Bond Customer List.
         """
-        payload = self._get_payload(data)
+        payload = self._get_payload(payload)
         res = requests.post(f"{self.url}/bond/new", headers=self.headers, json=payload)
 
         if res.status_code != 201:
