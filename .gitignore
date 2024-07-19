@@ -2,4 +2,6 @@ venv
 UNUSED
 __pycache__
 logs
-
+.env*
+.git
+.gitignore

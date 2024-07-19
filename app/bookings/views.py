@@ -9,13 +9,18 @@ from app.bookings import bookings_api
 from app.decorators import APIkey_required, catch_operational_errors
 from psycopg2.errors import UniqueViolation
 from app.notify import is_completed, notify_cancelled_completed, is_missing_booking
-from app.daos import booking_dao, customer_dao, reservation_dao, sales_reservation_dao
+
+from app.daos.dao_booking import booking_dao
+from app.daos.dao_customer import customer_dao
+from app.daos.dao_reservation import reservation_dao
+from app.daos.dao_sales_reservation import sales_reservation_dao
+
 from app.local_date_time import UTC_now
 from sqlalchemy import exc
 from app.bookings.search import search_bookings, search_completed_bookings_by_service_date, get_booking_by_email_service_date
 from app.klaviyo import notify_klaviyo
 
-def internal_meeting_booking(d):
+def reject_booking(d):
     """
     reject outright any booking request for a meeting
     """
@@ -31,7 +36,7 @@ def internal_meeting_booking(d):
 
 
 def update_table(data, status=None, check_ndis_reservation=False, is_restored=False):
-    if internal_meeting_booking(data):
+    if reject_booking(data):
         return 'OK'
     if status:
         data["booking_status"] = status
@@ -130,7 +135,7 @@ def cancellation():
         print('Processing a cancelled booking')
     
     data = json.loads(request.data)
-    if internal_meeting_booking(data):
+    if reject_booking(data):
         return 'OK'
     
     #print(f"team_details:: {data['team_details']}")

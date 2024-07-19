@@ -5,7 +5,8 @@ from datetime import datetime
 import pytz
 
 from flask import current_app, jsonify
-from app.daos import booking_dao, reservation_dao
+from app.daos.dao_booking import booking_dao
+from app.daos.dao_reservation import reservation_dao
 from sqlalchemy import exc
 
 

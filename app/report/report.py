@@ -16,7 +16,7 @@ from datetime import datetime, date
 import pendulum as pdl
 
 from flask import current_app
-from app.daos import booking_dao
+from app.daos.dao_booking import booking_dao
 
 
 def create_report():

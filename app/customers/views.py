@@ -7,7 +7,7 @@ from flask import request, current_app, abort, jsonify
 from app import db
 from app.customers import customers_api
 from app.decorators import APIkey_required
-from app.daos import booking_dao
+from app.daos.dao_booking import booking_dao
 
 
 @customers_api.route('/customers/gain', methods=['GET'])

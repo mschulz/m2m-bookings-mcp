@@ -6,7 +6,8 @@ from datetime import datetime
 
 from flask import current_app, abort
 from app.email import send_warning_email
-from app.daos import booking_dao, customer_dao
+from app.daos.dao_booking import booking_dao
+from app.daos.dao_customer import customer_dao
 
 
 def is_missing_booking(data):
