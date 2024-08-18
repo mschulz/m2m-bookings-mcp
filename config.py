@@ -30,10 +30,10 @@ class Config(object):
     TZ_ISDST = os.environ.get('TZ_ISDST', None)
     
     # Database configuration
-    DATABASE_TABLENAME = 'test_db'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgres:///test').replace('postgres://', 'postgresql://')
-    #SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', "postgresql://localhost/{DATABASE_TABLENAME}")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = False
+    SQLALCHEMY_ENGINE_OPTIONS = { 'pool_pre_ping': True }
     
     # accessing our Launch27 proxy
     L27_URL = os.environ.get('L27_URL')
