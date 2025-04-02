@@ -86,9 +86,7 @@ def new():
         print('Processing a new booking ...')
     
     data = json.loads(request.data)
-    
-    print(f"input team_details = {request.data['team_details']}")
-    
+        
     return update_table(data, status='NOT_COMPLETE')
 
 
