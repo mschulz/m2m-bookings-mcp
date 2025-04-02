@@ -308,6 +308,7 @@ class BookingBase(db.Model):
 
     def get_team_list(self, val, key_str):
         if val:
+            print(f"{val=} type={type(val)}")
             # Convert the string into a dictionary
             #team_details = ast.literal_eval(val)
             team_details_list = [item[key_str] for item in val]
