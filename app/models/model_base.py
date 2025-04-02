@@ -309,7 +309,7 @@ class BookingBase(db.Model):
     def get_team_list(self, val, key_str):
         if val:
             # Convert the string into a dictionary
-            team_details = ast.literal_eval(val)
+            #team_details = ast.literal_eval(val)
             team_details_list = [item[key_str] for item in team_details]
             assigned_teams_string = ','.join(team_details_list)
             return assigned_teams_string

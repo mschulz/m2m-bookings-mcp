@@ -1,15 +1,11 @@
 # app/daos/dao_reservation.py
 
-from datetime import datetime, timedelta
-import pytz
-import pendulum as pdl
+from flask import abort, current_app
+from sqlalchemy import exc
 
 from app import db
 from app.daos.dao_base import BaseDAO
-
 from app.models.models_booking import Reservation
-from flask import current_app, abort
-from sqlalchemy import exc
 
 
 class ReservationDAO(BaseDAO):
@@ -26,14 +22,14 @@ class ReservationDAO(BaseDAO):
         try:
             db.session.commit()
             current_app.logger.info(f'NDIS Reservation status changed to CONVERTED: {booking_id}')
-        except exc.DataError as e:
+        except exc.DataError:
             abort(422, description=f'NDIS Reservation data error: {new_data}')
-        except exc.IntegrityError as e:
+        except exc.IntegrityError:
             db.session.rollback()
             current_app.logger.info(f'NDIS Reservation Inegrity error: {new_data}')
-        except exc.OperationalError as e:
+        except exc.OperationalError:
             db.session.rollback()
-            current_app.logger.info(f'SSL connection has been closed unexpectedly')
-        
+            current_app.logger.info('SSL connection has been closed unexpectedly')
+
 
 reservation_dao = ReservationDAO(Reservation)
