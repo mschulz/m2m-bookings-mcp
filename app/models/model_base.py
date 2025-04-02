@@ -308,7 +308,6 @@ class BookingBase(db.Model):
 
     def get_team_list(self, val, key_str):
         if val:
-            print(f"{val=} type={type(val)}")
             # Convert the string into a dictionary
             #team_details = ast.literal_eval(val)
             team_details_list = [item[key_str] for item in val]
@@ -323,6 +322,7 @@ class BookingBase(db.Model):
         # u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid',
         #  u'id': u'8447'}]", 
         if val is not None:
+            print(f"{val=} type={type(val)}")
             if isinstance(val, str):
                 val = json.loads(str)
             self._teams_assigned = self.get_team_list(val, 'title')
