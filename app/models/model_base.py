@@ -335,8 +335,6 @@ class BookingBase(db.Model):
         #  u'id': u'8447'}]", 
         if val is not None:
             print(f"{val=} type={type(val)}")
-            if isinstance(val, str):
-                val = json.loads(str)
             self._teams_assigned = self.get_team_list(val, 'title')
    
     @hybrid_property
