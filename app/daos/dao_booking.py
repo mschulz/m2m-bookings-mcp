@@ -267,6 +267,10 @@ class BookingDAO(BaseDAO):
         .filter_by(booking_status = 'CANCELLED')\
         .filter(self.model._cancellation_datetime != None)\
         .all()
+    
+    def get_bookings_missing_locations(self):
+        return db.session.query(self.model).filter(self.model.location == None).all()
+        
 
 
 booking_dao = BookingDAO(Booking)

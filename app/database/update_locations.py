@@ -5,7 +5,8 @@ import json
 from datetime import datetime
 from app import create_app, db
 from flask import  current_app
-from app.models import Booking
+from app.daos.dao_booking import booking_dao
+
 from app.locations import get_location
 from app.email import send_updated_locations_email
 
@@ -16,7 +17,7 @@ def main():
 
     with app.app_context():
         
-        res = db.session.query(Booking).filter(Booking.location == None).all()
+        res = booking_dao.get_bookings_missing_locations()
         number_locations = len(res)
         
         print(f'Bookings with no locations to update = {number_locations}')
