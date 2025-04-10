@@ -501,9 +501,6 @@ class BookingBase(db.Model):
         d.discount_from_code = b.get('discount_amount')
         d.giftcard_amount = b.get('giftcard_amount')
         if 'team_details' in b:
-            
-            print(f"team_details = {b['team_details']} type={type(b['team_details'])}")
-            
             d.teams_assigned = b['team_details']
             d.teams_assigned_ids = b['team_details']
         if 'team_share_amount' in b:
