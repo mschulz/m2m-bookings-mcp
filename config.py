@@ -60,6 +60,9 @@ class Config(object):
     MAIL_DEBUG = False
     MISSING_LOCATION_EMAIL=os.environ.get('MISSING_LOCATION_EMAIL')
     
+    SERVICE_ACCOUNT_CREDENTIALS = os.environ.get("SERVICE_ACCOUNT_CREDENTIALS")
+    GMAIL_SERVICE_ACCOUNT_CREDENTIALS = os.environ.get("GMAIL_SERVICE_ACCOUNT_CREDENTIALS")
+    
     # SendinBlue configuration
     SMTP_KEY = 'REDACTED_SMTP_KEY'
     SMTP_SERVER = 'smtp-relay.sendinblue.com'
@@ -113,6 +116,8 @@ class Config(object):
     
     # new-bond-agent-calls Zapier URL
     NEW_BOND_AGENT_CALLS = os.environ.get('NEW_BOND_AGENT_CALLS', None)
+    
+    SERVICE_ACCOUNT_CREDENTIALS = os.environ.get("SERVICE_ACCOUNT_CREDENTIALS")
 
 class ProductionConfig(Config):
     DEBUG = False  

@@ -3,21 +3,53 @@ from flask import current_app, render_template, request, has_request_context
 from flask_mail import Message
 from app import mail
 import html2text
-import smtplib
+from email.mime.text import MIMEText
+import base64
+import json
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
 
+
+def get_gmail_service():
+    credentials = service_account.Credentials.from_service_account_info(
+        json.loads(current_app.config['GMAIL_SERVICE_ACCOUNT_CREDENTIALS']),
+        scopes=['https://www.googleapis.com/auth/gmail.send'],
+        subject=current_app.config['FROM_ADDRESS']
+    )
+    service = build('gmail', 'v1', credentials=credentials)
+    return service
+
+
+# Converts a Flask-Mail Message to Gmail API format
+def flask_message_to_gmail_raw(message: Message) -> dict:
+    mime = MIMEText(message.body)
+    mime['to'] = ', '.join(message.recipients)
+    mime['subject'] = message.subject
+    mime['from'] = message.sender or current_app.config['FROM_ADDRESS']
+
+    raw = base64.urlsafe_b64encode(mime.as_bytes()).decode()
+    return {'raw': raw}
 
 def send_async_email(app, msg, subject, recipients):
     with app.app_context():
         try:
-            mail.send(msg)
+            service = get_gmail_service()
+            raw_msg = flask_message_to_gmail_raw(msg)
+
+            result = service.users().messages().send(userId='me', body=raw_msg).execute()
+            
             current_app.logger.info(f'Email subject "{subject}" sent to {recipients}')
-        except smtplib.SMTPAuthenticationError as e:
+        except Exception as e:
             current_app.logger.error(f'Failed to send email to {recipients}\nReason: {e}')
 
 def send_email(subject, sender, recipients, text_body, html_body):
-    msg = Message(subject, sender=sender, recipients=recipients)
-    msg.body = text_body
-    msg.html = html_body
+    msg = Message(
+            subject,
+            sender=sender,
+            recipients=recipients,
+            body=text_body,
+            html=html_body
+    )
     Thread(target=send_async_email, args=(current_app._get_current_object(), msg, subject, recipients)).start()
      
 def send_error_email(toaddr, error_msg):
@@ -112,26 +144,14 @@ def send_completed_bookings_email(toaddr, bookings_count, n_active, tz_name):
         text_body = html2text.html2text(body)
         )
 
-if __name__ == '__main__':
 
-    import os
-    from flask import Flask
-
-    #from urllib.parse import urlparse
-    from flask_mail import Mail
-    from app.logger import setup_logging
-
-    mail = Mail()
-
-    app = Flask(__name__, instance_relative_config=True, static_url_path='')
-    app.config.from_object(os.environ['APP_SETTINGS'])
-
-    #initialise the logger
-    setup_logging(app)
-
-    # Set up mail
-    mail.init_app(app)
-
-    # This is meant to FAIL, and so force an email rep[orting the error
+if __name__ == "__main__":
+    from app import create_app
+    
+    app = create_app()
+    
     with app.app_context():
-        send_success_email("mark.f.schulz@gmail.com")
+        send_error_email('mark.f.schulz@gmail.com', 'Hope this is NOT an error for {current_app.config["APP_NAME"]}')
+        # This should generate an error email from the logger
+        send_error_email('mark.f.schulz', 'Hope this IS an err')
+        

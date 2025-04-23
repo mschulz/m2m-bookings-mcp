@@ -5,3 +5,5 @@ logs
 .env*
 .git
 .gitignore
+.ropeproject
+.DS_Store

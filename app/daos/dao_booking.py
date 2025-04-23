@@ -73,6 +73,13 @@ class BookingDAO(BaseDAO):
             .filter(and_(self.model._created_at >= start_created, self.model._created_at <= end_created)) \
             .all()
 
+    def all_bookings_by_created_at_dates(self, from_date_str, to_date_str):
+    
+        return db.session.query(self.model) \
+            .filter_by(was_new_customer=True, was_first_recurring=True) \
+            .filter(and_(self.model._created_at >= from_date_str, self.model._created_at <= to_date_str)) \
+            .all()
+
     def completed_bookings_by_service_date(self, from_date, to_date):
     
         #print(f'params: from={from_date} to={to_date}')
@@ -81,9 +88,6 @@ class BookingDAO(BaseDAO):
             .filter_by(booking_status='COMPLETED') \
             .filter(and_(self.model._service_date >= from_date, self.model._service_date <=to_date)) \
             .all()
-        """return db.session.query(self.model) \
-            .filter_by(_service_date = from_date) \
-            .all()"""
         
     def date_to_UTC_date(self, date_str):
         local = pytz.timezone(Config.TZ_LOCALTIME)
