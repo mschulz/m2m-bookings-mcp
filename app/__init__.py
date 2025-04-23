@@ -9,15 +9,12 @@ the services used.
 import os
 from flask import Flask
 
-#from urllib.parse import urlparse
 from flask_sqlalchemy import SQLAlchemy
-from flask_mail import Mail
 from app.logger import setup_logging
 from app.local_date_time import get_local_date_time_now
 
 # Set up the database
 db = SQLAlchemy()
-mail = Mail()
 
 def create_app():
     '''
@@ -46,9 +43,6 @@ def create_app():
     if not app.config['TESTING']:
         app.logger.info(f'{app.config["APP_NAME"]}: starting ...')
         #app.logger.info(f'database: {app.config["SQLALCHEMY_DATABASE_URI"]}')
-
-    # Set up mail
-    mail.init_app(app)
 
     # Set up the SQL database
     db.init_app(app)
