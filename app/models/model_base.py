@@ -1,6 +1,5 @@
 # app/models/madel/base.py
 
-import json
 from datetime import datetime, date
 import dateutil.parser
 import ast
@@ -10,7 +9,6 @@ from app import db
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from flask import request, current_app
-from app.email import send_error_email
 from app.locations import get_location
 from app.local_date_time import utc_to_local
 
@@ -320,7 +318,8 @@ class BookingBase(db.Model):
         
         if val:
             # Convert the string into a dictionary
-            fixed_json = fix_single_quotes(val)
+            # fixed_json = fix_single_quotes(val)
+            fixed_json = val
             json_val = ast.literal_eval(fixed_json)
             team_details_list = [item[key_str] for item in json_val]
             assigned_teams_string = ','.join(team_details_list)
