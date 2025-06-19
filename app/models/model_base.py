@@ -4,6 +4,7 @@ from datetime import datetime, date
 import dateutil.parser
 import ast
 import re
+import json
 
 from app import db
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -306,24 +307,32 @@ class BookingBase(db.Model):
         return self._teams_assigned
 
     def get_team_list(self, val, key_str):
+        # Fix single quotes inside values (e.g., O'Keefe → O\\'Keefe)
         def fix_single_quotes(json_like_str):
-            """
-            Convert improperly formatted single-quoted JSON-like string 
-            to properly formatted double-quoted JSON string.
-            """
-            # Replace outer single quotes with double quotes
-            # leave nested single quotes alone
-            fixed_str = re.sub(r"(?<!\w)'(.*?)'(?!\w)", r'"\1"', json_like_str)
-            return fixed_str
+                """
+                Convert improperly formatted single-quoted JSON-like string
+                to properly formatted double-quoted JSON string.
+                """
+                # Replace outer single quotes with double quotes
+                # leave nested single quotes alone
+                fixed_str = re.sub(r"(?<!\w)'(.*?)'(?!\w)", r'"\1"', json_like_str)
+                return fixed_str  
         
         if val:
             # Convert the string into a dictionary
-            # fixed_json = fix_single_quotes(val)
-            fixed_json = val
-            json_val = ast.literal_eval(fixed_json)
+            try:
+                json_val = ast.literal_eval(val)
+                print(f"{json_val=}")
+            except Exception:
+                try:
+                    fixed_json = fix_single_quotes(val)
+                    json_val = ast.literal_eval(fixed_json)
+                except SyntaxError as e:
+                    print("Still broken:", e)
+                    raise ValueError("Failed to sanitize input string") from e
+            # Extract the team titles
             team_details_list = [item[key_str] for item in json_val]
-            assigned_teams_string = ','.join(team_details_list)
-            return assigned_teams_string
+            return ','.join(team_details_list)
         else:
             return ''
 
