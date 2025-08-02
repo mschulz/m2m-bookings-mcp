@@ -1,7 +1,12 @@
 #app/email.py
 
 from threading import Thread
-from flask import current_app, render_template, has_request_context
+from flask import (
+    current_app,
+    render_template,
+    request,
+    has_request_context
+)
 from app.send_mail import send_email
 
 

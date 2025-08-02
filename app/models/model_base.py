@@ -1,15 +1,21 @@
 # app/models/madel/base.py
 
-from datetime import datetime, date
+from datetime import (
+    datetime,
+    date
+)
 import dateutil.parser
 import ast
 import re
 import json
 
+from flask import (
+    request,
+    current_app
+)
+
 from app import db
 from sqlalchemy.ext.hybrid import hybrid_property
-
-from flask import request, current_app
 from app.locations import get_location
 from app.local_date_time import utc_to_local
 
@@ -322,7 +328,6 @@ class BookingBase(db.Model):
             # Convert the string into a dictionary
             try:
                 json_val = ast.literal_eval(val)
-                print(f"{json_val=}")
             except Exception:
                 try:
                     fixed_json = fix_single_quotes(val)
@@ -342,7 +347,6 @@ class BookingBase(db.Model):
         # u'last_name': u'', u'image_url': u'', u'name': u'Irene & Yong', u'title': u'Team Euclid',
         #  u'id': u'8447'}]", 
         if val is not None:
-            print(f"{val=} type={type(val)}")
             self._teams_assigned = self.get_team_list(val, 'title')
    
     @hybrid_property
