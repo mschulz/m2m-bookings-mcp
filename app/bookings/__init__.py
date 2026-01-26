@@ -2,6 +2,6 @@
 
 from flask import Blueprint
 
-bookings_api = Blueprint('booking', __name__)
+bookings_api = Blueprint("booking", __name__)
 
 from . import views

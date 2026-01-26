@@ -16,20 +16,22 @@ class ReservationDAO(BaseDAO):
     def mark_converted(self, booking_id):
         if booking_id is None:
             return
-        b = db.session.query(self.model).filter_by(booking_id = booking_id).first()
+        b = db.session.query(self.model).filter_by(booking_id=booking_id).first()
         current_app.logger.info("mark this booking as CONVERTED in database")
-        b.booking_status = 'CONVERTED'
+        b.booking_status = "CONVERTED"
         try:
             db.session.commit()
-            current_app.logger.info(f'NDIS Reservation status changed to CONVERTED: {booking_id}')
+            current_app.logger.info(
+                f"NDIS Reservation status changed to CONVERTED: {booking_id=}"
+            )
         except exc.DataError:
-            abort(422, description=f'NDIS Reservation data error: {new_data}')
+            abort(422, description=f"NDIS Reservation data error: {booking_id=}")
         except exc.IntegrityError:
             db.session.rollback()
-            current_app.logger.info(f'NDIS Reservation Inegrity error: {new_data}')
+            current_app.logger.info(f"NDIS Reservation Inegrity error: {booking_id=}")
         except exc.OperationalError:
             db.session.rollback()
-            current_app.logger.info('SSL connection has been closed unexpectedly')
+            current_app.logger.info("SSL connection has been closed unexpectedly")
 
 
 reservation_dao = ReservationDAO(Reservation)
