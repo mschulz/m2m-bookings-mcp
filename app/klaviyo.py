@@ -3,8 +3,11 @@
 Send data to the appropriate Klaviyo lists
 """
 
+import logging
 import requests
 from flask import current_app
+
+logger = logging.getLogger(__name__)
 
 
 class Klaviyo:
@@ -62,8 +65,11 @@ class Klaviyo:
 
 
 def notify_klaviyo(service_category, data):
-    k = Klaviyo()
-    if service_category == "House Clean":
-        k.post_home_data(data)
-    else:
-        k.post_bond_data(data)
+    try:
+        k = Klaviyo()
+        if service_category == "House Clean":
+            k.post_home_data(data)
+        else:
+            k.post_bond_data(data)
+    except requests.exceptions.RequestException as e:
+        logger.error("Klaviyo notification failed for %s: %s", data.get("email"), e)
