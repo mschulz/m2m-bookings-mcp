@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi_mcp import FastApiMCP
 from sqlalchemy import exc
 
 from app.logging_config import setup_logging
@@ -43,7 +44,6 @@ app.include_router(health.router)
 app.include_router(bookings.router)
 
 # Mount MCP server
-from fastapi_mcp import FastApiMCP
 
 mcp = FastApiMCP(
     app,
