@@ -1,9 +1,35 @@
-venv
-UNUSED
-__pycache__
-logs
-.env*
-.git
-.gitignore
-.ropeproject
+# Environment
+.env
+.env-*
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+
+# Logs
+logs/
+
+# macOS
 .DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.ropeproject/
+
+# Claude Code
+.claude/
+
+# Misc
+UNUSED/
