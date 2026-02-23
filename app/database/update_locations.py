@@ -1,18 +1,16 @@
 # app/database/update_locations.py
 
-from app import create_app, db
-from flask import current_app
-from app.daos.dao_booking import booking_dao
-
-from app.locations import get_location
-from app.email import send_updated_locations_email
+from app.database import SessionLocal
+from app.daos.booking import booking_dao
+from app.services.locations import get_location
+from app.services.email_service import send_updated_locations_email
+from config import get_settings
 
 
 def main():
-    app = create_app()
-
-    with app.app_context():
-        res = booking_dao.get_bookings_missing_locations()
+    db = SessionLocal()
+    try:
+        res = booking_dao.get_bookings_missing_locations(db)
         number_locations = len(res)
 
         print(f"Bookings with no locations to update = {number_locations}")
@@ -33,14 +31,17 @@ def main():
                 else:
                     updated += 1
                     item.location = location
-                    db.session.commit()
+                    db.commit()
         print(
-            f"Locations to update:{number_locations} Missing locations={missing} Updated={updated}"
+            f"Locations to update:{number_locations} Missing={missing} Updated={updated}"
         )
-        to_addr = current_app.config["MISSING_LOCATION_EMAIL"]
+        settings = get_settings()
+        to_addr = settings.MISSING_LOCATION_EMAIL
         send_updated_locations_email(
             to_addr, number_locations, updated, missing, len(postcodes_missing)
         )
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":

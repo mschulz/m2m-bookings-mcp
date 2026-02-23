@@ -1,16 +1,14 @@
 # app/database/update_all_locations.py
 
-
-from app import create_app, db
-from app.models import Booking
-from app.locations import get_location
+from app.database import SessionLocal
+from app.models.booking import Booking
+from app.services.locations import get_location
 
 
 def main():
-    app = create_app()
-
-    with app.app_context():
-        res = db.session.query(Booking).all()
+    db = SessionLocal()
+    try:
+        res = db.query(Booking).all()
 
         print(f"booking ids to sort out = {len(res)}")
 
@@ -21,7 +19,9 @@ def main():
             print(f"{postcode} => {location}")
 
             item.location = location
-            db.session.commit()
+            db.commit()
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":

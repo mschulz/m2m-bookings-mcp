@@ -1,49 +1,48 @@
-# app/launch27/booking.py
+# app/commands/completed/booking.py
 
-import requests
+import logging
 
-from flask import current_app
+import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+from config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class Booking:
     def __init__(self):
-        self.my_l27_url = current_app.config["L27_URL"]
-        self.my_l27_apikey = current_app.config["L27_API_KEY"]
+        settings = get_settings()
+        self.proxy_url = settings.PROXY_URL
         self.headers = {
-            "authorization": f"Bearer {self.my_l27_apikey}",
-            "content_type": "application/json",
+            "Authorization": f"Bearer {settings.PROXY_API_KEY}",
+            "Content-Type": "application/json",
         }
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(min=1, max=10),
+        retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
+    )
     def get_all_in_tz(self, today_date_string, tz_name):
-        url = f"{self.my_l27_url}/v1/bookings/tocomplete/{today_date_string}"
-
-        print(f"{url=}")
-
-        params = {"tzname": tz_name}
-        r = requests.get(url, headers=self.headers, params=params)
-        print(r)
-        print(r.json())
+        url = f"{self.proxy_url}/v1/staff/bookings/tocomplete/{today_date_string}"
+        params = {"tz_name": tz_name}
+        with httpx.Client(timeout=30) as client:
+            r = client.get(url, headers=self.headers, params=params)
+            r.raise_for_status()
         return r.json()
 
-    def complete(self, id):
-        if not current_app.config["TESTING"]:
-            url = f"{self.my_l27_url}/v1/bookings/complete/{id}"
-
-            r = requests.post(url, headers=self.headers)
-            return r.json()["res"]
-
-
-#################################################
-
-if __name__ == "__main__":
-    from app import create_app
-
-    app = create_app()
-
-    with app.app_context():
-        date_string = "2024-03-22"
-        tz_name = "AEST"
-
-        b = Booking()
-        res = b.get_all_in_tz(date_string, tz_name)
-        print(res)
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(min=1, max=10),
+        retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
+    )
+    def complete(self, booking_id):
+        settings = get_settings()
+        if settings.testing:
+            return 0
+        url = f"{self.proxy_url}/v1/staff/bookings/{booking_id}/complete"
+        with httpx.Client(timeout=30) as client:
+            r = client.post(url, headers=self.headers)
+            r.raise_for_status()
+        return r.json().get("res", 0)

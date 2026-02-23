@@ -1,30 +1,35 @@
-# /app/database/model.py
+# app/commands/model.py
 
 """
-A run-once program to calculate historical data and store in a table in the database.
-        date, today gain, today loss, today nett, recurring count
+A History model for storing historical gain/loss data.
 """
 
-from app import db
 from datetime import datetime
+
 import pendulum as pdl
+from sqlalchemy import Column, Integer, Date, Boolean
+
+from app.database import Base
 
 
-class History(db.Model):
+class History(Base):
     __tablename__ = "history"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
 
-    day_date = db.Column(db.Date, index=False, unique=False)
-    gain = db.Column(db.Integer, index=False, unique=False)
-    loss = db.Column(db.Integer, index=False, unique=False)
-    nett = db.Column(db.Integer, index=False, unique=False)
-    recurring = db.Column(db.Integer, index=False, unique=False)
-    is_saturday = db.Column(db.Boolean, index=False, unique=False)
-    is_eom = db.Column(db.Boolean, index=False, unique=False)
+    day_date = Column(Date)
+    gain = Column(Integer)
+    loss = Column(Integer)
+    nett = Column(Integer)
+    recurring = Column(Integer)
+    is_saturday = Column(Boolean)
+    is_eom = Column(Boolean)
 
     def __repr__(self):
-        return f"<History {self.day_date=} {self.gain=} {self.loss=} {self.nett=} {self.recurring=} {self.is_saturday=} {self.is_eom=}>"
+        return (
+            f"<History {self.day_date=} {self.gain=} {self.loss=} "
+            f"{self.nett=} {self.recurring=} {self.is_saturday=} {self.is_eom=}>"
+        )
 
     def to_json(self):
         return {
