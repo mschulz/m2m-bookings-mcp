@@ -93,10 +93,6 @@ class Settings(BaseSettings):
     # Zapier bond agent calls
     NEW_BOND_AGENT_CALLS: str | None = None
 
-    # Slack (moved from hardcoded values)
-    SLACK_WEBHOOK_URL: str = ""
-    SLACK_BOT_TOKEN: str = ""
-
     @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
