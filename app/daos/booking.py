@@ -13,9 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class BookingDAO(BaseDAO):
-    def __init__(self, model):
-        super().__init__(model)
-
     def get_by_booking_email_service_date_range(self, db: Session, email, service_date):
         def get_week_start_end(date_str):
             dt = datetime.strptime(date_str, "%Y-%m-%d")

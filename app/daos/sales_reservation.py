@@ -5,8 +5,7 @@ from app.models.booking import SalesReservation
 
 
 class SalesReservationDAO(BaseDAO):
-    def __init__(self, model):
-        super().__init__(model)
+    pass
 
 
 sales_reservation_dao = SalesReservationDAO(SalesReservation)

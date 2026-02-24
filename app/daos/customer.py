@@ -40,7 +40,7 @@ class CustomerDAO:
             db.rollback()
             raise HTTPException(
                 status_code=422, detail=f"Customer error in model data: {e}"
-            )
+            ) from e
         except exc.OperationalError:
             db.rollback()
             logger.info("SSL connection has been closed unexpectedly")

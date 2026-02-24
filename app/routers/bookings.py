@@ -99,8 +99,8 @@ def search_bookings(
             res = booking_dao.get_by_date_range(
                 db, service_category, booking_status, start_created, end_created
             )
-    except exc.OperationalError:
-        raise HTTPException(status_code=503, detail="Database temporarily unavailable")
+    except exc.OperationalError as e:
+        raise HTTPException(status_code=503, detail="Database temporarily unavailable") from e
 
     return [
         {
@@ -119,8 +119,8 @@ def search_completed_bookings_by_service_date(db: Session, from_date_str, to_dat
 
     try:
         res = booking_dao.completed_bookings_by_service_date(db, start_date, end_date)
-    except exc.OperationalError:
-        raise HTTPException(status_code=503, detail="Database temporarily unavailable")
+    except exc.OperationalError as e:
+        raise HTTPException(status_code=503, detail="Database temporarily unavailable") from e
 
     return [
         {

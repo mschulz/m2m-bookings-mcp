@@ -42,11 +42,11 @@ class BaseDAO:
 
         try:
             db.commit()
-        except exc.DataError:
+        except exc.DataError as e:
             db.rollback()
             raise HTTPException(
                 status_code=422, detail=f"Data error for booking: {b.to_dict()}"
-            )
+            ) from e
         except exc.IntegrityError:
             db.rollback()
             logger.info("Data already loaded into database: %s", b.to_dict())
@@ -68,11 +68,11 @@ class BaseDAO:
 
         try:
             db.commit()
-        except exc.DataError:
+        except exc.DataError as e:
             db.rollback()
             raise HTTPException(
                 status_code=422, detail=f"Data error for booking: {b.to_dict()}"
-            )
+            ) from e
         except exc.IntegrityError:
             db.rollback()
             logger.info("Data already loaded into database: %s", b.to_dict())
@@ -88,11 +88,11 @@ class BaseDAO:
         try:
             db.commit()
             logger.info("Booking deleted from table: %s", booking_id)
-        except exc.DataError:
+        except exc.DataError as e:
             db.rollback()
             raise HTTPException(
                 status_code=422, detail=f"Data error: {new_data}"
-            )
+            ) from e
         except exc.IntegrityError:
             db.rollback()
             logger.info("Integrity error: %s", new_data)
@@ -112,12 +112,12 @@ class BaseDAO:
             logger.info(
                 "Reservation status changed to CONVERTED: booking_id=%s", booking_id
             )
-        except exc.DataError:
+        except exc.DataError as e:
             db.rollback()
             raise HTTPException(
                 status_code=422,
                 detail=f"Reservation data error: booking_id={booking_id}",
-            )
+            ) from e
         except exc.IntegrityError:
             db.rollback()
             logger.info("Reservation integrity error: booking_id=%s", booking_id)
