@@ -1,4 +1,4 @@
-# app/services/zapier.py
+"""Zapier webhook integration for outbound event notifications."""
 
 import json
 import logging
@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
     before_sleep=before_sleep_log(logger, logging.WARNING),
 )
 def post_to_zapier(url, data):
+    """POST JSON data to a Zapier webhook URL with retry."""
     headers = {"content-type": "application/json"}
     with httpx.Client(timeout=10) as client:
         r = client.post(url, headers=headers, content=data)
@@ -33,6 +34,7 @@ def post_to_zapier(url, data):
 
 
 def post_new_bond_agent_calls(d):
+    """Send new bond agent call data to the configured Zapier webhook."""
     settings = get_settings()
     url = settings.NEW_BOND_AGENT_CALLS
     if not url:

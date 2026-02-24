@@ -1,4 +1,4 @@
-# app/schemas/booking.py
+"""Pydantic schemas for booking webhook payloads and API responses."""
 
 from datetime import date, datetime
 from typing import Any
@@ -106,6 +106,8 @@ class BookingWebhookPayload(BaseModel):
 
 
 class BookingResponse(BaseModel):
+    """Summary response returned for individual booking lookups."""
+
     booking_id: int | None = None
     name: str | None = None
     email: str | None = None
@@ -123,6 +125,8 @@ class BookingResponse(BaseModel):
 
 
 class BookingSearchResult(BaseModel):
+    """Compact result item returned by booking search endpoints."""
+
     category: str | None = None
     name: str | None = None
     location: str | None = None

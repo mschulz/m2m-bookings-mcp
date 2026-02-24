@@ -1,4 +1,4 @@
-# app/models/customer.py
+"""Customer model with import logic for webhook customer data."""
 
 import logging
 from datetime import datetime
@@ -43,6 +43,7 @@ class Customer(Base):
         return f"<Customer {self.id}>"
 
     def to_dict(self):
+        """Return all column values as a dictionary."""
         return {col.name: getattr(self, col.name) for col in self.__table__.columns}
 
     @hybrid_property
@@ -77,6 +78,7 @@ class Customer(Base):
 
     @staticmethod
     def import_customer(c, d):
+        """Populate customer instance *c* from webhook data dict *d*."""
         cid = d.get("id")
         c.customer_id = d.get("id")
         c.created_at = d.get("created_at")

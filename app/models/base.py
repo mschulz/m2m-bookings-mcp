@@ -1,4 +1,4 @@
-# app/models/base.py
+"""Base booking model with all shared columns, hybrid properties, and import logic."""
 
 import ast
 import re
@@ -119,9 +119,11 @@ class BookingBase(Base):
         return f"<Booking {self.id}>"
 
     def to_dict(self):
+        """Return all column values as a dictionary."""
         return {col.name: getattr(self, col.name) for col in self.__table__.columns}
 
     def to_json(self):
+        """Return all column values as a JSON-serialisable dictionary."""
         def json_serial(obj):
             if isinstance(obj, (datetime, date)):
                 return obj.isoformat()
@@ -136,6 +138,7 @@ class BookingBase(Base):
 
     @staticmethod
     def _unmangle_datetime(val):
+        """Parse a datetime string in any of the expected inbound formats."""
         try:
             if "Z" in val:
                 return dateutil.parser.isoparse(val)
@@ -271,6 +274,7 @@ class BookingBase(Base):
         return self._teams_assigned
 
     def get_team_list(self, val, key_str):
+        """Extract a comma-separated string of values from a stringified list of dicts."""
         def fix_single_quotes(json_like_str):
             fixed_str = re.sub(r"(?<!\w)'(.*?)'(?!\w)", r'"\1"', json_like_str)
             return fixed_str
@@ -427,6 +431,7 @@ class BookingBase(Base):
 
     @staticmethod
     def import_dict(d, b):
+        """Populate model instance *d* from webhook data dict *b*."""
         settings = get_settings()
         bid = b.get("id")
 
@@ -515,6 +520,7 @@ class BookingBase(Base):
 
 
 def process_custom_fields(d, b_cf, record_id=None):
+    """Map webhook custom_fields dict onto model custom-field columns."""
     settings = get_settings()
 
     if settings.CUSTOM_SOURCE and settings.CUSTOM_SOURCE in b_cf:

@@ -1,4 +1,4 @@
-# app/logging_config.py
+"""Logging configuration with optional Gmail error handler for production."""
 
 import logging
 import logging.config
@@ -8,6 +8,7 @@ from app.gmail_handler import GmailOAuth2Handler
 
 
 def setup_logging():
+    """Configure root logger and attach a Gmail error handler in production."""
     settings = get_settings()
 
     log_level = "DEBUG" if settings.debug else "INFO"

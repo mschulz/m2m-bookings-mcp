@@ -1,4 +1,4 @@
-# app/services/email_service.py
+"""Gmail API email service for error alerts and operational notifications."""
 
 import base64
 import json
@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_gmail_service():
+    """Build an authenticated Gmail API service client from service account credentials."""
     settings = get_settings()
     credentials = service_account.Credentials.from_service_account_info(
         json.loads(settings.GMAIL_SERVICE_ACCOUNT_CREDENTIALS),
@@ -63,6 +64,7 @@ def send_error_email(toaddr, error_msg):
 
 
 def send_missing_location_email(toaddr, error_msg, locations, postcodes):
+    """Send an alert email about bookings with missing location data."""
     settings = get_settings()
     body = (
         f"<h1>{settings.COMPANY_NAME}: Missing Location Information</h1>"
@@ -79,6 +81,7 @@ def send_missing_location_email(toaddr, error_msg, locations, postcodes):
 
 
 def send_updated_locations_email(toaddr, number_locations, updated, missing, postcodes):
+    """Send a summary email after a bulk location update run."""
     settings = get_settings()
     body = (
         f"<h1>{settings.APP_NAME}: Updated Booking Locations</h1>"
@@ -95,6 +98,7 @@ def send_updated_locations_email(toaddr, number_locations, updated, missing, pos
 
 
 def send_completed_bookings_email(toaddr, bookings_count, n_active, tz_name):
+    """Send a summary email after marking bookings as completed."""
     settings = get_settings()
     body = (
         f"<h1>{settings.APP_NAME}: Completed Bookings</h1>"

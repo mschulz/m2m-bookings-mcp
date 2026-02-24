@@ -1,4 +1,4 @@
-# app/services/locations.py
+"""Postcode-to-location lookup with TTL caching and retry logic."""
 
 import logging
 
@@ -26,6 +26,7 @@ location_cache: TTLCache = TTLCache(maxsize=1000, ttl=3600)
     before_sleep=before_sleep_log(logger, logging.WARNING),
 )
 def _fetch_location(postcode: str) -> str | None:
+    """Call the zip2location API to resolve a postcode to a location name."""
     settings = get_settings()
     with httpx.Client(timeout=10) as client:
         res = client.get(f"{settings.ZIP2LOCATION_URL}?postcode={postcode}")

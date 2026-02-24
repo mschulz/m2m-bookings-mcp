@@ -1,4 +1,4 @@
-# run.py
+"""Local development server entry point."""
 
 import uvicorn
 

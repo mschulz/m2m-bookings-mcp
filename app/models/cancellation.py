@@ -1,10 +1,11 @@
-# app/models/cancellation.py
+"""Cancellation data import helper for updating existing booking records."""
 
 from app.utils.validation import check_postcode, truncate_field
 from app.models.base import process_custom_fields
 
 
 def import_cancel_dict(d, b):
+    """Apply cancellation-specific fields from webhook data *b* onto model *d*."""
     bid = b.get("booking_id")
     d.booking_id = b["booking_id"]
     d.updated_at = b.get("updated_at")

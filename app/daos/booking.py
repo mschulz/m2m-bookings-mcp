@@ -1,4 +1,4 @@
-# app/daos/booking.py
+"""Booking DAO with date-range and search query methods."""
 
 import logging
 from datetime import datetime, timedelta
@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class BookingDAO(BaseDAO):
     def get_by_booking_email_service_date_range(self, db: Session, email, service_date):
+        """Find a booking by email within the same Mon-Sun week as service_date."""
         def get_week_start_end(date_str):
             dt = datetime.strptime(date_str, "%Y-%m-%d")
             dow = dt.weekday()
@@ -39,6 +40,7 @@ class BookingDAO(BaseDAO):
     def get_by_date_range(
         self, db: Session, service_category, booking_status, start_created, end_created
     ):
+        """Query bookings by category, status, and created_at date range."""
         logger.debug(
             "params: category=%s date=%s,%s booking_status=%s",
             service_category, start_created, end_created, booking_status,
@@ -57,6 +59,7 @@ class BookingDAO(BaseDAO):
         )
 
     def completed_bookings_by_service_date(self, db: Session, from_date, to_date):
+        """Return all COMPLETED bookings within a service date range."""
         return (
             db.query(self.model)
             .filter_by(booking_status="COMPLETED")
@@ -70,9 +73,11 @@ class BookingDAO(BaseDAO):
         )
 
     def get_bookings_missing_locations(self, db: Session):
+        """Return all bookings that have no location set."""
         return db.query(self.model).filter(self.model.location.is_(None)).all()
 
     def get_all_bookings_after_service_date(self, db: Session, date_start):
+        """Return all bookings with a service date on or after date_start."""
         return db.query(self.model).filter(self.model._service_date >= date_start).all()
 
 

@@ -1,4 +1,4 @@
-# app/services/klaviyo.py
+"""Klaviyo CRM integration for notifying new house and bond customers."""
 
 import logging
 
@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 class Klaviyo:
+    """HTTP client for the Klaviyo customer notification API."""
+
     def __init__(self):
         settings = get_settings()
         self.url = settings.MY_KLAVIYO_URL
@@ -26,6 +28,7 @@ class Klaviyo:
         }
 
     def _get_payload(self, data):
+        """Build the Klaviyo API payload from booking data."""
         return {
             "email": data["email"],
             "first_name": data["first_name"],
@@ -41,6 +44,7 @@ class Klaviyo:
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
     def post_home_data(self, data):
+        """Send a new house-clean customer to Klaviyo."""
         url = f"{self.url}/house/new"
         payload = self._get_payload(data)
         logger.debug("Klaviyo house POST: url=%s payload=%s", url, payload)
@@ -61,6 +65,7 @@ class Klaviyo:
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
     def post_bond_data(self, data):
+        """Send a new bond-clean customer to Klaviyo."""
         payload = self._get_payload(data)
 
         with httpx.Client(timeout=10) as client:
@@ -76,6 +81,7 @@ class Klaviyo:
 
 
 def notify_klaviyo(service_category, data):
+    """Dispatch a new-customer notification to the appropriate Klaviyo list."""
     try:
         k = Klaviyo()
         if service_category == "House Clean":

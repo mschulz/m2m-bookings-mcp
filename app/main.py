@@ -1,4 +1,4 @@
-# app/main.py
+"""FastAPI application setup, lifespan management, and exception handlers."""
 
 import logging
 from contextlib import asynccontextmanager
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Manage application startup (logging, tables) and shutdown (engine disposal)."""
     # Startup
     setup_logging()
     settings = get_settings()
@@ -58,6 +59,7 @@ mcp.mount_http()
 
 @app.exception_handler(exc.OperationalError)
 async def sqlalchemy_operational_error_handler(request: Request, e: exc.OperationalError):
+    """Return 503 when the database is unreachable or a connection drops."""
     logger.error("Database operational error: %s", e)
     return JSONResponse(
         status_code=503,
@@ -67,6 +69,7 @@ async def sqlalchemy_operational_error_handler(request: Request, e: exc.Operatio
 
 @app.exception_handler(exc.DataError)
 async def sqlalchemy_data_error_handler(request: Request, e: exc.DataError):
+    """Return 422 when SQLAlchemy detects invalid data (e.g. type mismatch)."""
     logger.error("Database data error: %s", e)
     return JSONResponse(
         status_code=422,
@@ -76,6 +79,7 @@ async def sqlalchemy_data_error_handler(request: Request, e: exc.DataError):
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, e: Exception):
+    """Catch-all handler that logs the error and sends an alert email."""
     logger.error("Unhandled exception on %s: %s", request.url.path, e, exc_info=True)
 
     settings = get_settings()

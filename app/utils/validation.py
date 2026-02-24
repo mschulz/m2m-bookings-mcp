@@ -1,4 +1,4 @@
-# app/utils/validation.py
+"""Field validation and coercion helpers for booking and customer data."""
 
 import logging
 from typing import Any
@@ -22,12 +22,14 @@ def truncate_field(
 
 
 def string_to_boolean(val) -> bool:
+    """Convert a string like 'true', 'yes', or '1' to a boolean."""
     if isinstance(val, bool):
         return val
     return val.lower() in ["true", "yes", "1"]
 
 
 def dollar_string_to_int(val) -> int:
+    """Convert a dollar string like '$67.64' to an integer in cents (6764)."""
     if val is None or val == "None":
         return 0
     if isinstance(val, str):

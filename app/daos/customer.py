@@ -1,4 +1,4 @@
-# app/daos/customer.py
+"""Customer DAO for creating and updating customer records."""
 
 import logging
 
@@ -16,9 +16,11 @@ class CustomerDAO:
         self.model = model
 
     def get_by_customer_id(self, db: Session, customer_id):
+        """Look up a customer by their external customer_id."""
         return db.query(self.model).filter_by(customer_id=customer_id).first()
 
     def create_or_update_customer(self, db: Session, data):
+        """Upsert a customer record, skipping commit if data is unchanged."""
         c = db.query(self.model).filter_by(customer_id=data["id"]).first()
         if c is None:
             c = Customer()

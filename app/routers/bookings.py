@@ -1,4 +1,4 @@
-# app/routers/bookings.py
+"""Booking webhook endpoints and search routes."""
 
 import logging
 from datetime import datetime
@@ -50,6 +50,7 @@ def update_table(
     check_ndis_reservation: bool = False,
     is_restored: bool = False,
 ):
+    """Route webhook data to the correct DAO based on service_category."""
     settings = get_settings()
 
     if reject_booking(data):
@@ -89,6 +90,7 @@ def update_table(
 def search_bookings(
     db: Session, service_category, start_created, end_created, booking_status
 ):
+    """Query bookings or reservations by category, status, and date range."""
     settings = get_settings()
     try:
         if service_category == settings.RESERVATION_CATEGORY:
@@ -114,6 +116,7 @@ def search_bookings(
 
 
 def search_completed_bookings_by_service_date(db: Session, from_date_str, to_date_str):
+    """Return completed bookings within a service date range as dicts."""
     start_date = datetime.strptime(from_date_str, "%Y-%m-%d").date()
     end_date = datetime.strptime(to_date_str, "%Y-%m-%d").date()
 
@@ -142,6 +145,7 @@ def search_completed_bookings_by_service_date(db: Session, from_date_str, to_dat
 
 
 def get_booking_by_email_service_date(db: Session, email, service_date):
+    """Look up a booking by customer email and service date week."""
     row = booking_dao.get_by_booking_email_service_date_range(db, email, service_date)
     if row:
         return {

@@ -1,4 +1,4 @@
-# app/daos/base.py
+"""Base DAO with shared CRUD operations for all booking types."""
 
 import logging
 
@@ -16,9 +16,11 @@ class BaseDAO:
         self.model = model
 
     def get_by_booking_id(self, db: Session, booking_id):
+        """Look up a single record by its external booking_id."""
         return db.query(self.model).filter_by(booking_id=booking_id).first()
 
     def create_update_booking(self, db: Session, new_data):
+        """Upsert a booking record: insert if new, update if existing."""
         booking_id = new_data.get("id")
         if not booking_id:
             logger.error("booking has no booking_id - ignore this data")
@@ -55,6 +57,7 @@ class BaseDAO:
             logger.info("SSL connection has been closed unexpectedly")
 
     def update_booking(self, db: Session, new_data):
+        """Apply cancellation-specific updates to an existing booking."""
         booking_id = new_data.get("booking_id")
         b = db.query(self.model).filter_by(booking_id=booking_id).first()
         logger.info("have seen this booking - UPDATING database")
@@ -81,6 +84,7 @@ class BaseDAO:
             logger.info("SSL connection has been closed unexpectedly")
 
     def cancel_booking(self, db: Session, new_data):
+        """Delete a booking record by its external booking_id."""
         booking_id = new_data.get("id")
         if booking_id is None:
             return

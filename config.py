@@ -1,4 +1,4 @@
-# config.py
+"""Application settings loaded from environment variables and .env file."""
 
 from enum import Enum
 from functools import lru_cache
@@ -116,4 +116,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return the cached application settings singleton."""
     return Settings()

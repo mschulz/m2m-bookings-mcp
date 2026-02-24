@@ -1,4 +1,4 @@
-# app/gmail_handler.py
+"""Custom logging handler that sends error-level log entries via Gmail API."""
 
 import logging
 import json
@@ -10,6 +10,8 @@ from googleapiclient.discovery import build
 
 
 class GmailOAuth2Handler(logging.Handler):
+    """Logging handler that emails error records using a Gmail service account."""
+
     def __init__(
         self,
         credentials_json: str,
@@ -34,6 +36,7 @@ class GmailOAuth2Handler(logging.Handler):
         self.gmail_service = self._get_gmail_service()
 
     def _get_gmail_service(self):
+        """Build and return an authenticated Gmail API service client."""
         creds = service_account.Credentials.from_service_account_info(
             self.credentials_info,
             scopes=["https://www.googleapis.com/auth/gmail.send"],
@@ -42,6 +45,7 @@ class GmailOAuth2Handler(logging.Handler):
         return build("gmail", "v1", credentials=creds)
 
     def emit(self, record):
+        """Format the log record and send it as an email."""
         try:
             log_entry = self.format(record)
 

@@ -1,4 +1,4 @@
-# app/services/notifications.py
+"""Booking status checks and cancellation notification webhook."""
 
 import json
 import logging

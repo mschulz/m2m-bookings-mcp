@@ -1,4 +1,4 @@
-# app/local_date_time.py
+"""Timezone conversion utilities for local-to-UTC datetime handling."""
 
 from datetime import datetime
 
@@ -8,6 +8,7 @@ from config import get_settings
 
 
 def local_to_utc(local_dt):
+    """Convert a naive local datetime to UTC using the configured timezone."""
     settings = get_settings()
     local_tz = pytz.timezone(settings.TZ_LOCALTIME)
     local_dt = local_tz.localize(local_dt, is_dst=settings.TZ_ISDST)
@@ -16,4 +17,5 @@ def local_to_utc(local_dt):
 
 
 def UTC_now():
+    """Return the current UTC datetime."""
     return datetime.utcnow()

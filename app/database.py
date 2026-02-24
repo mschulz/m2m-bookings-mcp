@@ -1,4 +1,4 @@
-# app/database.py
+"""SQLAlchemy engine, session factory, and FastAPI database dependency."""
 
 from collections.abc import Generator
 
