@@ -84,7 +84,6 @@ app/
 │   ├── notifications.py # Webhook notifications (tenacity)
 │   ├── locations.py     # Location lookup (TTLCache + tenacity)
 │   ├── zapier.py        # Zapier webhooks (tenacity)
-│   ├── slack.py         # Slack notifications (tenacity, URLs from config)
 │   └── email_service.py # Gmail API email sending (consolidated)
 ├── database/            # Utility scripts (create_db, update_durations, etc.)
 ├── commands/            # Scheduled command scripts
