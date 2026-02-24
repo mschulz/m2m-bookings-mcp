@@ -90,9 +90,6 @@ class Settings(BaseSettings):
     # zip2location URL
     ZIP2LOCATION_URL: str = ""
 
-    # Zapier bond agent calls
-    NEW_BOND_AGENT_CALLS: str | None = None
-
     @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:

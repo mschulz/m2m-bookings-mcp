@@ -1,6 +1,6 @@
 # M2M Bookings MCP
 
-FastAPI server that collects booking data from Launch27 via Zapier webhooks. It communicates with [m2m-proxy](../m2m-proxy) (a FastAPI proxy) instead of Launch27 directly, stores bookings in PostgreSQL, and integrates with Gmail, Klaviyo, and Zapier for notifications and CRM.
+FastAPI server that collects booking data from Launch27 via Zapier webhooks. It communicates with [m2m-proxy](../m2m-proxy) (a FastAPI proxy) instead of Launch27 directly, stores bookings in PostgreSQL, and integrates with Gmail and Klaviyo for notifications and CRM.
 
 Includes MCP (Model Context Protocol) support so AI assistants like Claude Desktop can query the booking database directly.
 
@@ -150,7 +150,6 @@ app/
 │   ├── klaviyo.py       # Klaviyo CRM integration
 │   ├── notifications.py # Webhook notifications
 │   ├── locations.py     # Location lookup with caching
-│   ├── zapier.py        # Zapier webhook calls
 │   └── email_service.py # Gmail API email sending
 ├── database/            # Utility scripts (create_db, update_durations, etc.)
 ├── commands/            # Scheduled command scripts
