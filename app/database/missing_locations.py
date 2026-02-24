@@ -2,7 +2,7 @@
 
 from app.database import SessionLocal
 from app.daos.booking import booking_dao
-from app.services.email_service import send_missing_location_email
+from app.utils.email_service import send_missing_location_email
 from config import get_settings
 
 

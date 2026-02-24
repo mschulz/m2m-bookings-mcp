@@ -2,7 +2,7 @@
 
 from app.database import SessionLocal
 from app.models.booking import Booking
-from app.services.locations import get_location
+from app.utils.locations import get_location
 
 
 def main():

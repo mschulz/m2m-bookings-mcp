@@ -85,7 +85,7 @@ async def generic_exception_handler(request: Request, e: Exception):
     settings = get_settings()
     if not settings.testing:
         try:
-            from app.services.email_service import send_error_email
+            from app.utils.email_service import send_error_email
             m = settings.SUPPORT_EMAIL.split("@")
             to_addr = f"{m[0]}+error@{m[1]}"
             send_error_email(to_addr, f"({request.url.path}) {str(e)}")

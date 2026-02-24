@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import verify_api_key
 from app.database import get_db
-from app.local_date_time import UTC_now, local_to_utc
+from app.utils.local_date_time import UTC_now, local_to_utc
 from config import get_settings
 
 from app.daos.booking import booking_dao
@@ -17,8 +17,8 @@ from app.daos.customer import customer_dao
 from app.daos.reservation import reservation_dao
 from app.daos.sales_reservation import sales_reservation_dao
 
-from app.services.klaviyo import notify_klaviyo
-from app.services.notifications import (
+from app.utils.klaviyo import notify_klaviyo
+from app.utils.notifications import (
     is_missing_booking,
     is_completed,
     notify_cancelled_completed,

@@ -95,7 +95,7 @@ class Customer(Base):
         c.company_name = truncate_field(d.get("company_name"), 64, "company_name", cid)
         c.postcode = check_postcode(d, "customer_id", d.get("id"))
         if c.postcode:
-            from app.services.locations import get_location
+            from app.utils.locations import get_location
             c.location = truncate_field(
                 d.get("location", get_location(c.postcode)),
                 64, "location", cid,

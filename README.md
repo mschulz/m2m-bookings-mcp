@@ -128,9 +128,14 @@ app/
 ├── database.py          # SQLAlchemy engine, sessionmaker, get_db()
 ├── auth.py              # Bearer token authentication
 ├── logging_config.py    # Logging setup with Gmail error handler
-├── gmail_handler.py     # Gmail OAuth2 handler for error emails
-├── local_date_time.py   # Timezone utilities
-├── utils/validation.py  # Field truncation, type coercion, postcode checks
+├── utils/
+│   ├── validation.py    # Field truncation, type coercion, postcode checks
+│   ├── email_service.py # Gmail API email sending
+│   ├── gmail_handler.py # Gmail OAuth2 handler for error emails
+│   ├── klaviyo.py       # Klaviyo CRM integration
+│   ├── local_date_time.py # Timezone utilities
+│   ├── locations.py     # Location lookup with caching
+│   └── notifications.py # Webhook notifications
 ├── models/
 │   ├── base.py          # BookingBase with all columns and hybrid properties
 │   ├── booking.py       # Booking, Reservation, SalesReservation models
@@ -146,11 +151,6 @@ app/
 ├── routers/
 │   ├── bookings.py      # /booking/* endpoints
 │   └── health.py        # Health check
-├── services/
-│   ├── klaviyo.py       # Klaviyo CRM integration
-│   ├── notifications.py # Webhook notifications
-│   ├── locations.py     # Location lookup with caching
-│   └── email_service.py # Gmail API email sending
 ├── database/            # Utility scripts (create_db, update_durations, etc.)
 ├── commands/            # Scheduled command scripts
 └── templates/           # HTML email templates

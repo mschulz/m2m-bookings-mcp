@@ -508,7 +508,7 @@ class BookingBase(Base):
         d.phone = truncate_field(b.get("phone"), 64, "phone", bid)
         d.postcode = check_postcode(b, "booking_id", b.get("id"))
         if d.postcode:
-            from app.services.locations import get_location
+            from app.utils.locations import get_location
             d.location = truncate_field(
                 b.get("location", get_location(d.postcode)),
                 64, "location", bid,

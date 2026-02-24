@@ -2,8 +2,8 @@
 
 from app.database import SessionLocal
 from app.daos.booking import booking_dao
-from app.services.locations import get_location
-from app.services.email_service import send_updated_locations_email
+from app.utils.locations import get_location
+from app.utils.email_service import send_updated_locations_email
 from config import get_settings
 
 

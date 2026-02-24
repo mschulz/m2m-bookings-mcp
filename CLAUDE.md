@@ -45,7 +45,7 @@ All inherit from `BookingBase` in `app/models/base.py`, which defines all column
 
 ### Key Patterns
 - **Prices** stored as integers (cents). `dollar_string_to_int()` in `app/utils/validation.py` strips `$` and `.` from strings like `"$67.64"` → `6764`.
-- **Dates** stored as UTC in DB. `app/local_date_time.py` handles conversion. Multiple inbound date formats handled by `_unmangle_datetime()` in `BookingBase`.
+- **Dates** stored as UTC in DB. `app/utils/local_date_time.py` handles conversion. Multiple inbound date formats handled by `_unmangle_datetime()` in `BookingBase`.
 - **Private columns** with hybrid properties: columns like `_created_at`, `_final_price` have `@hybrid_property` getters/setters that handle type coercion and timezone conversion.
 - **Custom fields** mapped via config keys (`CUSTOM_SOURCE`, `CUSTOM_BOOKED_BY`, etc.) and processed in `app/models/base.py:process_custom_fields()`.
 - **Team assignment** parsing: `team_details` arrives as a stringified list of dicts, parsed via `ast.literal_eval` in `get_team_list()`.
@@ -61,9 +61,14 @@ app/
 ├── database.py          # SQLAlchemy engine, sessionmaker, get_db() dependency
 ├── auth.py              # verify_api_key FastAPI dependency (HTTPBearer)
 ├── logging_config.py    # dictConfig logging setup + Gmail error handler
-├── gmail_handler.py     # GmailOAuth2Handler for error emails
-├── local_date_time.py   # Timezone utilities
-├── utils/validation.py  # truncate_field, string_to_boolean, dollar_string_to_int, check_postcode
+├── utils/
+│   ├── validation.py    # truncate_field, string_to_boolean, dollar_string_to_int, check_postcode
+│   ├── email_service.py # Gmail API email sending (consolidated)
+│   ├── gmail_handler.py # GmailOAuth2Handler for error emails
+│   ├── klaviyo.py       # Klaviyo CRM integration (httpx + tenacity)
+│   ├── local_date_time.py # Timezone utilities
+│   ├── locations.py     # Location lookup (TTLCache + tenacity)
+│   └── notifications.py # Webhook notifications (tenacity)
 ├── models/
 │   ├── base.py          # BookingBase (DeclarativeBase) with all columns/hybrid properties
 │   ├── booking.py       # Booking, Reservation, SalesReservation
@@ -79,12 +84,6 @@ app/
 ├── routers/
 │   ├── bookings.py      # /booking/* endpoints with update_table() logic
 │   └── health.py        # GET / health check
-├── services/
-│   ├── klaviyo.py       # Klaviyo CRM integration (httpx + tenacity)
-│   ├── notifications.py # Webhook notifications (tenacity)
-│   ├── locations.py     # Location lookup (TTLCache + tenacity)
-│   ├── zapier.py        # Zapier webhooks (tenacity)
-│   └── email_service.py # Gmail API email sending (consolidated)
 ├── database/            # Utility scripts (create_db, update_durations, etc.)
 ├── commands/            # Scheduled command scripts
 └── templates/           # HTML email templates

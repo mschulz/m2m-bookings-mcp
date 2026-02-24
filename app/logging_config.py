@@ -4,7 +4,7 @@ import logging
 import logging.config
 
 from config import get_settings
-from app.gmail_handler import GmailOAuth2Handler
+from app.utils.gmail_handler import GmailOAuth2Handler
 
 
 def setup_logging():
