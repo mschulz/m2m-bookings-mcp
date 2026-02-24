@@ -81,8 +81,10 @@ app/
 │   ├── customer.py      # CustomerDAO
 │   ├── reservation.py   # ReservationDAO (thin subclass)
 │   └── sales_reservation.py  # SalesReservationDAO (thin subclass)
+├── services/
+│   └── bookings.py      # Booking business logic (update_table, search helpers)
 ├── routers/
-│   ├── bookings.py      # /booking/* endpoints with update_table() logic
+│   ├── bookings.py      # /booking/* endpoints (thin routes)
 │   └── health.py        # GET / health check
 ├── database/            # Utility scripts (create_db, update_durations, etc.)
 ├── commands/            # Scheduled command scripts

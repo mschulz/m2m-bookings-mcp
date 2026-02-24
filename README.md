@@ -37,7 +37,7 @@ Key variables:
 To generate a new API key:
 
 ```bash
-python generate_key.py
+python app/commands/generate_key.py
 ```
 
 ### Run the server
@@ -148,8 +148,10 @@ app/
 │   ├── customer.py      # CustomerDAO
 │   ├── reservation.py   # ReservationDAO
 │   └── sales_reservation.py
+├── services/
+│   └── bookings.py      # Booking business logic (update_table, search helpers)
 ├── routers/
-│   ├── bookings.py      # /booking/* endpoints
+│   ├── bookings.py      # /booking/* endpoints (thin routes)
 │   └── health.py        # Health check
 ├── database/            # Utility scripts (create_db, update_durations, etc.)
 ├── commands/            # Scheduled command scripts
