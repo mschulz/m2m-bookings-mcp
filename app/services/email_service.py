@@ -62,19 +62,6 @@ def send_error_email(toaddr, error_msg):
     )
 
 
-def send_warning_email(toaddr, error_msg):
-    """Send developer email when a warning has occurred."""
-    settings = get_settings()
-    body = f"<h1>{settings.APP_NAME}: Warning</h1><p>{error_msg}</p>"
-
-    send_email(
-        subject=f"{settings.APP_NAME}: Warning has occurred",
-        sender=(settings.FROM_NAME, settings.FROM_ADDRESS),
-        recipients=toaddr if isinstance(toaddr, list) else [toaddr],
-        html_body=body,
-    )
-
-
 def send_missing_location_email(toaddr, error_msg, locations, postcodes):
     settings = get_settings()
     body = (
