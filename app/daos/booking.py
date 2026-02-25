@@ -30,8 +30,8 @@ class BookingDAO(BaseDAO):
             .filter_by(email=email)
             .filter(
                 and_(
-                    self.model._service_date >= week_start,
-                    self.model._service_date <= week_end,
+                    self.model.service_date >= week_start,
+                    self.model.service_date <= week_end,
                 )
             )
             .first()
@@ -51,8 +51,8 @@ class BookingDAO(BaseDAO):
             .filter_by(service_category=service_category, booking_status=booking_status)
             .filter(
                 and_(
-                    self.model._created_at >= start_created,
-                    self.model._created_at <= end_created,
+                    self.model.created_at >= start_created,
+                    self.model.created_at <= end_created,
                 )
             )
             .all()
@@ -65,8 +65,8 @@ class BookingDAO(BaseDAO):
             .filter_by(booking_status="COMPLETED")
             .filter(
                 and_(
-                    self.model._service_date >= from_date,
-                    self.model._service_date <= to_date,
+                    self.model.service_date >= from_date,
+                    self.model.service_date <= to_date,
                 )
             )
             .all()
@@ -78,7 +78,7 @@ class BookingDAO(BaseDAO):
 
     def get_all_bookings_after_service_date(self, db: Session, date_start):
         """Return all bookings with a service date on or after date_start."""
-        return db.query(self.model).filter(self.model._service_date >= date_start).all()
+        return db.query(self.model).filter(self.model.service_date >= date_start).all()
 
 
 booking_dao = BookingDAO(Booking)

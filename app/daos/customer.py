@@ -23,13 +23,12 @@ class CustomerDAO:
         """Upsert a customer record, skipping commit if data is unchanged."""
         c = db.query(self.model).filter_by(customer_id=data["id"]).first()
         if c is None:
-            c = Customer()
-            c.import_customer(c, data)
+            c = Customer.from_webhook(data)
             db.add(c)
             logger.info("Create row for new customer data")
         else:
             stored_update_time = c.updated_at
-            c.import_customer(c, data)
+            c.update_from_webhook(data)
             new_update_time = c.updated_at
 
             if stored_update_time == new_update_time:

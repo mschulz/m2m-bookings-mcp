@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
-from app.models.cancellation import import_cancel_dict
+from app.models.cancellation import apply_cancellation_data
 
 logger = logging.getLogger(__name__)
 
@@ -30,13 +30,11 @@ class BaseDAO:
 
         if b is None:
             logger.info("haven't seen this booking - ADDING to database")
-            b = self.model()
-            b.import_dict(b, new_data)
+            b = self.model.from_webhook(new_data)
             db.add(b)
         else:
             logger.info("have seen this booking - UPDATING database")
-            bb = self.model()
-            bb.import_dict(b, new_data)
+            b.update_from_webhook(new_data)
             logger.info(
                 'Loading ... Name: "%s" team: "%s" booking_id: %s',
                 b.name, b.teams_assigned, b.booking_id,
@@ -47,11 +45,11 @@ class BaseDAO:
         except exc.DataError as e:
             db.rollback()
             raise HTTPException(
-                status_code=422, detail=f"Data error for booking: {b.to_dict()}"
+                status_code=422, detail=f"Data error for booking: {b.model_dump()}"
             ) from e
         except exc.IntegrityError:
             db.rollback()
-            logger.info("Data already loaded into database: %s", b.to_dict())
+            logger.info("Data already loaded into database: %s", b.model_dump())
         except exc.OperationalError:
             db.rollback()
             logger.info("SSL connection has been closed unexpectedly")
@@ -62,7 +60,7 @@ class BaseDAO:
         b = db.query(self.model).filter_by(booking_id=booking_id).first()
         logger.info("have seen this booking - UPDATING database")
 
-        import_cancel_dict(b, new_data)
+        apply_cancellation_data(b, new_data)
 
         logger.info(
             'Loading ... Name: "%s" team: "%s" booking_id: %s',
@@ -74,11 +72,11 @@ class BaseDAO:
         except exc.DataError as e:
             db.rollback()
             raise HTTPException(
-                status_code=422, detail=f"Data error for booking: {b.to_dict()}"
+                status_code=422, detail=f"Data error for booking: {b.model_dump()}"
             ) from e
         except exc.IntegrityError:
             db.rollback()
-            logger.info("Data already loaded into database: %s", b.to_dict())
+            logger.info("Data already loaded into database: %s", b.model_dump())
         except exc.OperationalError:
             db.rollback()
             logger.info("SSL connection has been closed unexpectedly")

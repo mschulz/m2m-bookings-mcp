@@ -33,23 +33,32 @@ Production uses Uvicorn: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 2. `verify_api_key` FastAPI dependency validates Bearer token
 3. FastAPI exception handlers catch DB connection drops (503) and data errors (422)
 4. Route parses JSON body, calls `update_table()` which routes to the correct DAO based on `service_category`
-5. DAO's `create_update_booking()` does upsert by `booking_id`
+5. DAO's `create_update_booking()` does upsert via `Model.from_webhook(data)` (create) or `instance.update_from_webhook(data)` (update)
 6. Customer data synced, Klaviyo notified for new customers
+
+### SQLModel (unified ORM + Pydantic)
+Models use **SQLModel** — one class defines both the DB table and Pydantic validation. This replaces the previous separate SQLAlchemy models + Pydantic schemas.
+
+- `BookingBase(SQLModel)` in `app/models/base.py` defines all shared columns
+- Concrete models (`Booking`, `Reservation`, `SalesReservation`) inherit from `BookingBase` with `table=True`
+- DB column names with underscore prefixes (`_created_at`, `_final_price`) are mapped using `sa_column_kwargs={"name": "_created_at"}` so Python uses clean names (`created_at`, `final_price`)
+- `model_dump(mode="json")` replaces the old `to_json()` method
+- Webhook data import uses `from_webhook()` / `update_from_webhook()` classmethods with explicit coercion via standalone parsing functions
 
 ### Three Booking Types (separate DB tables, same base model)
 - **Booking** (`app/models/booking.py`) — regular bookings
 - **Reservation** — NDIS reservations (category from `RESERVATION_CATEGORY` config)
 - **SalesReservation** — sales reservations (category from `SALES_RESERVATION_CATEGORY` config)
 
-All inherit from `BookingBase` in `app/models/base.py`, which defines all columns and hybrid properties.
+All inherit from `BookingBase` in `app/models/base.py`.
 
 ### Key Patterns
 - **Prices** stored as integers (cents). `dollar_string_to_int()` in `app/utils/validation.py` strips `$` and `.` from strings like `"$67.64"` → `6764`.
-- **Dates** stored as UTC in DB. `app/utils/local_date_time.py` handles conversion. Multiple inbound date formats handled by `_unmangle_datetime()` in `BookingBase`.
-- **Private columns** with hybrid properties: columns like `_created_at`, `_final_price` have `@hybrid_property` getters/setters that handle type coercion and timezone conversion.
+- **Dates** stored as UTC in DB. `app/utils/local_date_time.py` handles conversion. Multiple inbound date formats handled by `parse_datetime()` and `parse_date()` in `app/utils/validation.py`.
+- **Column name mapping**: DB columns like `_created_at` are accessed as `created_at` in Python via `sa_column_kwargs={"name": "..."}`. API responses use clean names.
 - **Custom fields** mapped via config keys (`CUSTOM_SOURCE`, `CUSTOM_BOOKED_BY`, etc.) and processed in `app/models/base.py:process_custom_fields()`.
-- **Team assignment** parsing: `team_details` arrives as a stringified list of dicts, parsed via `ast.literal_eval` in `get_team_list()`.
-- **String truncation**: `truncate_field()` in `app/utils/validation.py` truncates and logs warnings on overflow, applied in all model `import_dict()` methods.
+- **Team assignment** parsing: `team_details` arrives as a stringified list of dicts, parsed via `parse_team_list()` in `app/utils/validation.py`.
+- **String truncation**: `truncate_field()` in `app/utils/validation.py` truncates and logs warnings on overflow, applied in webhook import methods.
 - **Retries**: All external HTTP calls use `tenacity` `@retry` with exponential backoff.
 - **Caching**: Location lookups use `cachetools.TTLCache(maxsize=1000, ttl=3600)`.
 - **HTTP client**: `httpx` for all external HTTP calls (consistent with m2m-proxy).
@@ -58,11 +67,11 @@ All inherit from `BookingBase` in `app/models/base.py`, which defines all column
 ```
 app/
 ├── main.py              # FastAPI app, lifespan, exception handlers
-├── database.py          # SQLAlchemy engine, sessionmaker, get_db() dependency
+├── database.py          # SQLModel engine, Session, get_db() dependency
 ├── auth.py              # verify_api_key FastAPI dependency (HTTPBearer)
 ├── logging_config.py    # dictConfig logging setup + Gmail error handler
 ├── utils/
-│   ├── validation.py    # truncate_field, string_to_boolean, dollar_string_to_int, check_postcode
+│   ├── validation.py    # Parsing (parse_datetime, parse_date, parse_team_list, etc.) + truncation + coercion
 │   ├── email_service.py # Gmail API email sending (consolidated)
 │   ├── gmail_handler.py # GmailOAuth2Handler for error emails
 │   ├── klaviyo.py       # Klaviyo CRM integration (httpx + tenacity)
@@ -70,11 +79,11 @@ app/
 │   ├── locations.py     # Location lookup (TTLCache + tenacity)
 │   └── notifications.py # Webhook notifications (tenacity)
 ├── models/
-│   ├── base.py          # BookingBase (DeclarativeBase) with all columns/hybrid properties
-│   ├── booking.py       # Booking, Reservation, SalesReservation
-│   ├── customer.py      # Customer
-│   └── cancellation.py  # import_cancel_dict helper
-├── schemas/booking.py   # Pydantic models: BookingWebhookPayload, BookingResponse, etc.
+│   ├── base.py          # BookingBase(SQLModel) with all columns + from_webhook/update_from_webhook
+│   ├── booking.py       # Booking, Reservation, SalesReservation (table=True subclasses)
+│   ├── customer.py      # Customer(SQLModel, table=True)
+│   └── cancellation.py  # apply_cancellation_data helper
+├── schemas/booking.py   # Pydantic response models: BookingResponse, BookingSearchResult
 ├── daos/
 │   ├── base.py          # BaseDAO with mark_converted(), create_update_booking()
 │   ├── booking.py       # BookingDAO (search, date range queries)
@@ -86,7 +95,7 @@ app/
 ├── routers/
 │   ├── bookings.py      # /booking/* endpoints (thin routes)
 │   └── health.py        # GET / health check
-├── database/            # Utility scripts (create_db, update_durations, etc.)
+├── database/            # Utility scripts (create_db)
 ├── commands/            # Scheduled command scripts
 └── templates/           # HTML email templates
 ```
@@ -97,12 +106,10 @@ app/
 
 ### Database Scripts (`app/database/`)
 - `create_db.py` — Initialize database tables
-- `upload_booking_csv.py` — Bulk import from CSV
-- `update_durations.py`, `update_locations.py`, `update_status.py` — Data backfill utilities
 
 ## Dependencies
 
-Python 3.12, FastAPI, Uvicorn, Pydantic 2.9+, SQLAlchemy 2.0+, PostgreSQL (psycopg2), httpx, tenacity, cachetools, pendulum. Full list in `requirements.txt`.
+Python 3.12, FastAPI, Uvicorn, SQLModel 0.0.22+, Pydantic 2.9+, SQLAlchemy 2.0+, PostgreSQL (psycopg2), httpx, tenacity, cachetools, pendulum. Full list in `requirements.txt`.
 
 ## Deployment
 

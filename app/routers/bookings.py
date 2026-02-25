@@ -117,7 +117,7 @@ def get_booking_details(booking_id: int, db: Session = Depends(get_db)):
     res = booking_dao.get_by_booking_id(db, booking_id)
     if res is None:
         raise HTTPException(status_code=404, detail="Booking not found")
-    return res.to_json()
+    return res.model_dump(mode="json")
 
 
 @router.get("/was_new_customer/{booking_id}", operation_id="check_was_new_customer")

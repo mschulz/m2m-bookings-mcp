@@ -9,7 +9,9 @@ from fastapi_mcp import FastApiMCP
 from sqlalchemy import exc
 
 from app.logging_config import setup_logging
-from app.database import engine, Base
+from sqlmodel import SQLModel
+
+from app.database import engine
 from app.routers import bookings, health
 from config import get_settings
 
@@ -25,7 +27,7 @@ async def lifespan(app: FastAPI):
     logger.info("%s: starting ...", settings.APP_NAME)
 
     # Ensure tables exist (optional - usually handled by migrations)
-    Base.metadata.create_all(bind=engine)
+    SQLModel.metadata.create_all(bind=engine)
 
     yield
 

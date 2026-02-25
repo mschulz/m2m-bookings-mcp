@@ -1,15 +1,11 @@
-"""SQLAlchemy engine, session factory, and FastAPI database dependency."""
+"""SQLModel engine, session factory, and FastAPI database dependency."""
 
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
+from sqlmodel import Session
 
 from config import get_settings
-
-
-class Base(DeclarativeBase):
-    pass
 
 
 engine = create_engine(
@@ -17,13 +13,8 @@ engine = create_engine(
     pool_pre_ping=True,
 )
 
-SessionLocal = sessionmaker(bind=engine)
-
 
 def get_db() -> Generator[Session, None, None]:
     """FastAPI dependency that yields a database session."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    with Session(engine) as session:
+        yield session

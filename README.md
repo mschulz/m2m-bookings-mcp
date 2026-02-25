@@ -112,6 +112,10 @@ npx @modelcontextprotocol/inspector http://localhost:8000/mcp
 
 ## Architecture
 
+### SQLModel (unified ORM + Pydantic)
+
+Models use **SQLModel** — one class defines both the DB table and Pydantic validation. DB columns with underscore prefixes (`_created_at`) are mapped to clean Python names (`created_at`) via `sa_column_kwargs`.
+
 ### Booking types (separate DB tables, shared base model)
 
 - **Booking** — regular cleaning bookings
@@ -125,11 +129,11 @@ All inherit from `BookingBase` in `app/models/base.py`.
 ```
 app/
 ├── main.py              # FastAPI app, MCP mount, lifespan, exception handlers
-├── database.py          # SQLAlchemy engine, sessionmaker, get_db()
+├── database.py          # SQLModel engine, Session, get_db()
 ├── auth.py              # Bearer token authentication
 ├── logging_config.py    # Logging setup with Gmail error handler
 ├── utils/
-│   ├── validation.py    # Field truncation, type coercion, postcode checks
+│   ├── validation.py    # Parsing, truncation, type coercion helpers
 │   ├── email_service.py # Gmail API email sending
 │   ├── gmail_handler.py # Gmail OAuth2 handler for error emails
 │   ├── klaviyo.py       # Klaviyo CRM integration
@@ -137,11 +141,11 @@ app/
 │   ├── locations.py     # Location lookup with caching
 │   └── notifications.py # Webhook notifications
 ├── models/
-│   ├── base.py          # BookingBase with all columns and hybrid properties
+│   ├── base.py          # BookingBase(SQLModel) with columns + webhook methods
 │   ├── booking.py       # Booking, Reservation, SalesReservation models
 │   ├── customer.py      # Customer model
-│   └── cancellation.py  # Cancellation import helper
-├── schemas/booking.py   # Pydantic request/response models
+│   └── cancellation.py  # Cancellation data helper
+├── schemas/booking.py   # Pydantic response models
 ├── daos/
 │   ├── base.py          # BaseDAO (upsert, cancel, mark converted)
 │   ├── booking.py       # BookingDAO (search, date range queries)
@@ -153,7 +157,7 @@ app/
 ├── routers/
 │   ├── bookings.py      # /booking/* endpoints (thin routes)
 │   └── health.py        # Health check
-├── database/            # Utility scripts (create_db, update_durations, etc.)
+├── database/            # Utility scripts (create_db)
 ├── commands/            # Scheduled command scripts
 └── templates/           # HTML email templates
 ```
@@ -170,4 +174,4 @@ The `DATABASE_URL` env var is provided by Heroku Postgres (the app auto-corrects
 
 ## Dependencies
 
-FastAPI, Uvicorn, Pydantic 2.9+, SQLAlchemy 2.0+, PostgreSQL (psycopg2), httpx, tenacity, cachetools, pendulum, fastapi-mcp. Full list in `requirements.txt`.
+FastAPI, Uvicorn, SQLModel 0.0.22+, Pydantic 2.9+, SQLAlchemy 2.0+, PostgreSQL (psycopg2), httpx, tenacity, cachetools, pendulum, fastapi-mcp. Full list in `requirements.txt`.
