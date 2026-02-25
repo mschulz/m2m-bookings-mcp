@@ -45,8 +45,6 @@ class Settings(BaseSettings):
     # Proxy (was Launch27)
     PROXY_URL: str = ""
     PROXY_API_KEY: str = ""
-    PROXY_USERNAME: str = ""
-    PROXY_PASSWORD: str = ""
 
     # Email settings
     FROM_NAME: str = ""
@@ -54,8 +52,6 @@ class Settings(BaseSettings):
     SUPPORT_EMAIL: str = ""
     OVERRIDE_EMAIL: bool = True
     OVERRIDE_ADDR: str = ""
-    PHONE_NUMBER: str = ""
-    MISSING_LOCATION_EMAIL: str = ""
 
     # Gmail OAuth service account credentials (JSON string)
     SERVICE_ACCOUNT_CREDENTIALS: str = ""
