@@ -35,7 +35,7 @@ class Klaviyo:
             "first_name": data.get("first_name"),
             "phone": _normalize_phone(data.get("phone")),
             "postcode": data.get("postcode", data.get("zip", "")),
-            "quote": data.get("final_price"),
+            "quote": _clean_price(data.get("final_price")),
         }
 
     @retry(
@@ -99,6 +99,13 @@ def _normalize_phone(phone):
     if len(digits) == 9 and digits[0] in "2345789":
         return f"+61{digits}"
     return phone
+
+
+def _clean_price(value):
+    """Strip '$' from a price string (e.g. '$143.02' → '143.02')."""
+    if not value:
+        return value
+    return str(value).replace("$", "").strip()
 
 
 def notify_klaviyo(service_category, data):
