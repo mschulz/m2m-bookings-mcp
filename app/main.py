@@ -12,7 +12,7 @@ from app.logging_config import setup_logging
 from sqlmodel import SQLModel
 
 from app.database import engine
-from app.routers import bookings, health
+from app.routers import bookings, customers, health
 from config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -45,6 +45,7 @@ app = FastAPI(
 # Include routers
 app.include_router(health.router)
 app.include_router(bookings.router)
+app.include_router(customers.router)
 
 # Mount MCP server
 
