@@ -73,8 +73,6 @@ class Settings(BaseSettings):
 
     # Booking type categories
     SERVICE_CATEGORY_DEFAULT: str = "House Clean"
-    RESERVATION_CATEGORY: str = "NDIS Reservation"
-    SALES_RESERVATION_CATEGORY: str = "Sales Reservation"
 
     # Klaviyo
     MY_KLAVIYO_URL: str = ""

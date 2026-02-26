@@ -52,7 +52,7 @@ app.include_router(customers.router)
 mcp = FastApiMCP(
     app,
     name="M2M Bookings MCP",
-    description="M2M Bookings database - query and manage cleaning bookings, customers, and reservations",
+    description="M2M Bookings database - query and manage cleaning bookings and customers",
 )
 mcp.mount_http()
 

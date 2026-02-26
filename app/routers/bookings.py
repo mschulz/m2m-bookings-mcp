@@ -11,8 +11,6 @@ from app.database import get_db
 from app.utils.local_date_time import UTC_now, local_to_utc
 
 from app.daos.booking import booking_dao
-from app.daos.reservation import reservation_dao
-from app.daos.sales_reservation import sales_reservation_dao
 
 from app.utils.notifications import (
     is_missing_booking,
@@ -78,9 +76,9 @@ def cancellation(data: dict, db: Session = Depends(get_db)):
 
 @router.post("/updated", operation_id="update_booking")
 def updated(data: dict, db: Session = Depends(get_db)):
-    """Receive an updated booking webhook from Zapier. Updates existing booking data and checks for NDIS reservation conversion."""
+    """Receive an updated booking webhook from Zapier. Updates existing booking data."""
     logger.info("Processing an updated booking")
-    return update_table(data, db, check_ndis_reservation=True)
+    return update_table(data, db)
 
 
 @router.post("/team_changed", operation_id="change_booking_team")
@@ -122,22 +120,8 @@ def get_booking_details(booking_id: int, db: Session = Depends(get_db)):
 
 @router.get("/was_new_customer/{booking_id}", operation_id="check_was_new_customer")
 def get_was_new_customer(booking_id: int, db: Session = Depends(get_db)):
-    """Check whether a booking was from a new customer. Searches across bookings, NDIS reservations, and sales reservations."""
+    """Check whether a booking was from a new customer."""
     res = booking_dao.get_by_booking_id(db, booking_id)
-    if res is not None:
-        return {
-            "was_new_customer": res.was_new_customer
-            if hasattr(res, "was_new_customer")
-            else False
-        }
-    res = reservation_dao.get_by_booking_id(db, booking_id)
-    if res is not None:
-        return {
-            "was_new_customer": res.was_new_customer
-            if hasattr(res, "was_new_customer")
-            else False
-        }
-    res = sales_reservation_dao.get_by_booking_id(db, booking_id)
     if res is not None:
         return {
             "was_new_customer": res.was_new_customer

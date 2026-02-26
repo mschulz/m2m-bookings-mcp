@@ -7,12 +7,8 @@ from fastapi import HTTPException
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
-from config import get_settings
-
 from app.daos.booking import booking_dao
 from app.daos.customer import customer_dao
-from app.daos.reservation import reservation_dao
-from app.daos.sales_reservation import sales_reservation_dao
 
 from app.utils.klaviyo import notify_klaviyo
 
@@ -33,40 +29,25 @@ def update_table(
     data: dict,
     db: Session,
     status: str | None = None,
-    check_ndis_reservation: bool = False,
     is_restored: bool = False,
 ):
-    """Route webhook data to the correct DAO based on service_category."""
-    settings = get_settings()
-
+    """Route webhook data to the booking DAO."""
     if reject_booking(data):
         return "OK"
     if status:
         data["booking_status"] = status
-    if data.get("service_category") == settings.RESERVATION_CATEGORY:
-        logger.debug("Update NDIS Reservation table")
-        reservation_dao.create_update_booking(db, data)
-    elif data.get("service_category") == settings.SALES_RESERVATION_CATEGORY:
-        logger.debug("Update Sales Reservation table")
-        sales_reservation_dao.create_update_booking(db, data)
-    else:
-        logger.debug("Update Booking table")
-        booking_id = data.get("id")
-        if check_ndis_reservation:
-            if reservation_dao.get_by_booking_id(db, booking_id):
-                reservation_dao.mark_converted(db, booking_id)
-            elif sales_reservation_dao.get_by_booking_id(db, booking_id):
-                sales_reservation_dao.mark_converted(db, booking_id)
-        booking_dao.create_update_booking(db, data)
-        if not is_restored:
-            customer_dao.create_or_update_customer(db, data["customer"])
-        if data.get("is_new_customer"):
-            logger.debug(
-                "New customer: send %s to Klaviyo with %s",
-                data.get("email"), data.get("service_category"),
-            )
-            if data.get("service_category") in ["Bond Clean", "House Clean"]:
-                notify_klaviyo(data["service_category"], data)
+
+    logger.debug("Update Booking table")
+    booking_dao.create_update_booking(db, data)
+    if not is_restored:
+        customer_dao.create_or_update_customer(db, data["customer"])
+    if data.get("is_new_customer"):
+        logger.debug(
+            "New customer: send %s to Klaviyo with %s",
+            data.get("email"), data.get("service_category"),
+        )
+        if data.get("service_category") in ["Bond Clean", "House Clean"]:
+            notify_klaviyo(data["service_category"], data)
     return "OK"
 
 
@@ -76,17 +57,11 @@ def update_table(
 def search_bookings(
     db: Session, service_category, start_created, end_created, booking_status
 ):
-    """Query bookings or reservations by category, status, and date range."""
-    settings = get_settings()
+    """Query bookings by category, status, and date range."""
     try:
-        if service_category == settings.RESERVATION_CATEGORY:
-            res = reservation_dao.get_by_date_range(
-                db, service_category, booking_status, start_created, end_created
-            )
-        else:
-            res = booking_dao.get_by_date_range(
-                db, service_category, booking_status, start_created, end_created
-            )
+        res = booking_dao.get_by_date_range(
+            db, service_category, booking_status, start_created, end_created
+        )
     except exc.OperationalError as e:
         raise HTTPException(status_code=503, detail="Database temporarily unavailable") from e
 

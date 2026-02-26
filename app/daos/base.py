@@ -102,27 +102,3 @@ class BaseDAO:
             db.rollback()
             logger.info("SSL connection has been closed unexpectedly")
 
-    def mark_converted(self, db: Session, booking_id):
-        """Mark a reservation as CONVERTED. Shared by Reservation and SalesReservation DAOs."""
-        if booking_id is None:
-            return
-        b = db.query(self.model).filter_by(booking_id=booking_id).first()
-        logger.info("mark this booking as CONVERTED in database")
-        b.booking_status = "CONVERTED"
-        try:
-            db.commit()
-            logger.info(
-                "Reservation status changed to CONVERTED: booking_id=%s", booking_id
-            )
-        except exc.DataError as e:
-            db.rollback()
-            raise HTTPException(
-                status_code=422,
-                detail=f"Reservation data error: booking_id={booking_id}",
-            ) from e
-        except exc.IntegrityError:
-            db.rollback()
-            logger.info("Reservation integrity error: booking_id=%s", booking_id)
-        except exc.OperationalError:
-            db.rollback()
-            logger.info("SSL connection has been closed unexpectedly")
