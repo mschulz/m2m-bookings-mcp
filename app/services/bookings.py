@@ -31,7 +31,11 @@ def update_table(
     status: str | None = None,
     is_restored: bool = False,
 ):
-    """Route webhook data to the booking DAO."""
+    """Route webhook data to the booking DAO.
+
+    Returns the data dict so callers can trigger post-DB work (e.g. Klaviyo)
+    after the DB session is released.
+    """
     if reject_booking(data):
         return "OK"
     if status:
@@ -41,6 +45,13 @@ def update_table(
     booking_dao.create_update_booking(db, data)
     if not is_restored:
         customer_dao.create_or_update_customer(db, data["customer"])
+    return data
+
+
+def maybe_notify_klaviyo(data):
+    """Send a Klaviyo notification if the booking is from a new customer."""
+    if not isinstance(data, dict):
+        return
     if data.get("is_new_customer"):
         logger.debug(
             "New customer: send %s to Klaviyo with %s",
@@ -48,7 +59,6 @@ def update_table(
         )
         if data.get("service_category") in ["Bond Clean", "House Clean"]:
             notify_klaviyo(data["service_category"], data)
-    return "OK"
 
 
 # --- Search helpers ---

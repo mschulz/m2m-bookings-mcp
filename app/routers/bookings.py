@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.auth import verify_api_key
@@ -21,6 +21,7 @@ from app.utils.notifications import (
 from app.services.bookings import (
     reject_booking,
     update_table,
+    maybe_notify_klaviyo,
     search_bookings,
     search_completed_bookings_by_service_date,
     get_booking_by_email_service_date,
@@ -39,24 +40,28 @@ router = APIRouter(
 
 
 @router.post("/new", operation_id="create_new_booking")
-def new(data: dict, db: Session = Depends(get_db)):
+def new(data: dict, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Receive a new booking webhook from Zapier. Creates or updates the booking record."""
     logger.info("Processing a new booking ...")
-    return update_table(data, db, status="NOT_COMPLETE")
+    result = update_table(data, db, status="NOT_COMPLETE")
+    background_tasks.add_task(maybe_notify_klaviyo, result)
+    return "OK"
 
 
 @router.post("/restored", operation_id="restore_booking")
 def restored(data: dict, db: Session = Depends(get_db)):
     """Receive a restored booking webhook from Zapier. Re-activates a previously cancelled booking."""
     logger.info("Processing a RESTORED booking ...")
-    return update_table(data, db, status="NOT_COMPLETE", is_restored=True)
+    update_table(data, db, status="NOT_COMPLETE", is_restored=True)
+    return "OK"
 
 
 @router.post("/completed", operation_id="complete_booking")
 def completed(data: dict, db: Session = Depends(get_db)):
     """Receive a completed booking webhook from Zapier. Marks the booking as completed."""
     logger.info("Processing a completed booking")
-    return update_table(data, db, status="COMPLETED")
+    update_table(data, db, status="COMPLETED")
+    return "OK"
 
 
 @router.post("/cancellation", operation_id="cancel_booking")
@@ -71,21 +76,25 @@ def cancellation(data: dict, db: Session = Depends(get_db)):
             notify_cancelled_completed(data)
 
     data["_cancellation_datetime"] = UTC_now()
-    return update_table(data, db, status="CANCELLED")
+    update_table(data, db, status="CANCELLED")
+    return "OK"
 
 
 @router.post("/updated", operation_id="update_booking")
-def updated(data: dict, db: Session = Depends(get_db)):
+def updated(data: dict, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Receive an updated booking webhook from Zapier. Updates existing booking data."""
     logger.info("Processing an updated booking")
-    return update_table(data, db)
+    result = update_table(data, db)
+    background_tasks.add_task(maybe_notify_klaviyo, result)
+    return "OK"
 
 
 @router.post("/team_changed", operation_id="change_booking_team")
 def team_changed(data: dict, db: Session = Depends(get_db)):
     """Receive a team change webhook from Zapier. Updates the team assigned to a booking."""
     logger.info("Processing a team assignment change")
-    return update_table(data, db, is_restored=True)
+    update_table(data, db, is_restored=True)
+    return "OK"
 
 
 # --- GET endpoints ---
