@@ -1,6 +1,7 @@
 """Klaviyo CRM integration for notifying new house and bond customers."""
 
 import logging
+import re
 
 import httpx
 from tenacity import (
@@ -32,7 +33,7 @@ class Klaviyo:
         return {
             "email": data.get("email"),
             "first_name": data.get("first_name"),
-            "phone": data.get("phone"),
+            "phone": _normalize_phone(data.get("phone")),
             "postcode": data.get("postcode", data.get("zip", "")),
             "quote": data.get("final_price"),
         }
@@ -78,6 +79,18 @@ class Klaviyo:
                 "Failed (%d) to update bond customer list for %s: %s | payload=%s",
                 res.status_code, payload.get("email"), res.text, payload,
             )
+
+
+def _normalize_phone(phone):
+    """Normalize an Australian phone number to E.164 format (+61...)."""
+    if not phone:
+        return phone
+    digits = re.sub(r"\D", "", phone)
+    if digits.startswith("61") and len(digits) == 11:
+        return f"+{digits}"
+    if digits.startswith("0") and len(digits) == 10:
+        return f"+61{digits[1:]}"
+    return phone
 
 
 def notify_klaviyo(service_category, data):
