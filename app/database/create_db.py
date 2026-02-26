@@ -2,7 +2,7 @@
 
 from sqlmodel import SQLModel
 
-from app.database import engine
+from app.core.database import engine
 
 # Import all models so they are registered with SQLModel.metadata
 from app.models.booking import Booking  # noqa: F401

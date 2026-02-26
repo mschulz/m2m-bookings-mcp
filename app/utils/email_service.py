@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
-from config import get_settings
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 

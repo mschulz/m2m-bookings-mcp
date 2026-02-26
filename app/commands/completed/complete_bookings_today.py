@@ -6,8 +6,8 @@ import logging
 
 import pytz
 
-from config import get_settings
-from app.logging_config import setup_logging
+from app.core.config import get_settings
+from app.core.logging_config import setup_logging
 from app.utils.email_service import send_completed_bookings_email
 from app.commands.completed.booking import Booking
 

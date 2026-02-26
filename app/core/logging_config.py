@@ -3,7 +3,7 @@
 import logging
 import logging.config
 
-from config import get_settings
+from app.core.config import get_settings
 from app.utils.gmail_handler import GmailOAuth2Handler
 
 

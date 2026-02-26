@@ -17,7 +17,7 @@ from app.utils.validation import (
     parse_team_share,
     safe_int,
 )
-from config import get_settings
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 

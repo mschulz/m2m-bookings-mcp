@@ -16,7 +16,7 @@ Production uses Uvicorn: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
 ## Configuration
 
-- Uses `pydantic_settings.BaseSettings` in `config.py` with `.env` file
+- Uses `pydantic_settings.BaseSettings` in `app/core/config.py` with `.env` file
 - `ENVIRONMENT` field (development/staging/production/testing) controls behavior
 - Computed properties: `debug`, `testing`, `log_to_stdout` derived from `ENVIRONMENT`
 - `testing=True` suppresses email sending
@@ -60,9 +60,11 @@ Models use **SQLModel** — one class defines both the DB table and Pydantic val
 ```
 app/
 ├── main.py              # FastAPI app, MCP mount, lifespan, exception handlers
-├── database.py          # SQLModel engine, Session, get_db() dependency
-├── auth.py              # verify_api_key FastAPI dependency (HTTPBearer)
-├── logging_config.py    # dictConfig logging setup + Gmail error handler
+├── core/
+│   ├── config.py        # pydantic_settings.BaseSettings, get_settings()
+│   ├── auth.py          # verify_api_key FastAPI dependency (HTTPBearer)
+│   ├── database.py      # SQLModel engine, Session, get_db() dependency
+│   └── logging_config.py # dictConfig logging setup + Gmail error handler
 ├── utils/
 │   ├── validation.py    # Parsing (parse_datetime, parse_date, parse_team_list, etc.) + truncation + coercion
 │   ├── email_service.py # Gmail API email sending (consolidated)

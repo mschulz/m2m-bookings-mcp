@@ -5,8 +5,8 @@ import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.auth import verify_api_key
-from app.database import get_db
+from app.core.auth import verify_api_key
+from app.core.database import get_db
 from app.services.customers import create_or_update_customer
 
 logger = logging.getLogger(__name__)

@@ -6,8 +6,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
-from app.auth import verify_api_key
-from app.database import get_db
+from app.core.auth import verify_api_key
+from app.core.database import get_db
 from app.utils.local_date_time import UTC_now, local_to_utc
 
 from app.daos.booking import booking_dao

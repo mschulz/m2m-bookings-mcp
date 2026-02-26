@@ -20,7 +20,7 @@ pip install -r requirements.txt
 
 ### Configuration
 
-Configuration is managed via environment variables loaded from a `.env` file using `pydantic_settings.BaseSettings` (see `config.py`).
+Configuration is managed via environment variables loaded from a `.env` file using `pydantic_settings.BaseSettings` (see `app/core/config.py`).
 
 Key variables:
 
@@ -130,9 +130,11 @@ All bookings (regular, NDIS, sales) are stored in a single `bookings` table. The
 ```
 app/
 ├── main.py              # FastAPI app, MCP mount, lifespan, exception handlers
-├── database.py          # SQLModel engine, Session, get_db()
-├── auth.py              # Bearer token authentication
-├── logging_config.py    # Logging setup with Gmail error handler
+├── core/
+│   ├── config.py        # pydantic_settings.BaseSettings, get_settings()
+│   ├── auth.py          # Bearer token authentication
+│   ├── database.py      # SQLModel engine, Session, get_db()
+│   └── logging_config.py # Logging setup with Gmail error handler
 ├── utils/
 │   ├── validation.py    # Parsing, truncation, type coercion helpers
 │   ├── email_service.py # Gmail API email sending

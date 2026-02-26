@@ -5,7 +5,7 @@ from collections.abc import Generator
 from sqlalchemy import create_engine
 from sqlmodel import Session
 
-from config import get_settings
+from app.core.config import get_settings
 
 
 engine = create_engine(

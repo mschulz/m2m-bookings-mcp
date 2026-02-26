@@ -5,7 +5,7 @@ import logging
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from config import get_settings
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 

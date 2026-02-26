@@ -8,12 +8,12 @@ from fastapi.responses import JSONResponse
 from fastapi_mcp import FastApiMCP
 from sqlalchemy import exc
 
-from app.logging_config import setup_logging
+from app.core.logging_config import setup_logging
 from sqlmodel import SQLModel
 
-from app.database import engine
+from app.core.database import engine
 from app.routers import bookings, customers, health
-from config import get_settings
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pytz
 
-from config import get_settings
+from app.core.config import get_settings
 
 
 def local_to_utc(local_dt):
