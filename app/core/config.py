@@ -79,9 +79,6 @@ class Settings(BaseSettings):
     MY_KLAVIYO_URL: str = ""
     MY_KLAVIYO_API_KEY: str = ""
 
-    # Notification webhook
-    NOTIFICATION_URL: str = ""
-
     # zip2location URL
     ZIP2LOCATION_URL: str = ""
 

@@ -12,12 +12,6 @@ from app.utils.local_date_time import UTC_now, local_to_utc
 
 from app.daos.booking import booking_dao
 
-from app.utils.notifications import (
-    is_missing_booking,
-    is_completed,
-    notify_cancelled_completed,
-)
-
 from app.services.bookings import (
     reject_booking,
     update_table,
@@ -70,10 +64,6 @@ def cancellation(data: dict, db: Session = Depends(get_db)):
     logger.info("Processing a cancelled booking")
     if reject_booking(data):
         return "OK"
-
-    if not is_missing_booking(data, db, booking_dao):
-        if is_completed(data, db, booking_dao):
-            notify_cancelled_completed(data)
 
     data["_cancellation_datetime"] = UTC_now()
     update_table(data, db, status="CANCELLED")
