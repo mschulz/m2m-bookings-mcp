@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class BookingBase(SQLModel):
-    """BookingBase is the template for bookings, reservations, and sales_reservations."""
+    """BookingBase defines all shared columns for the bookings table."""
 
     booking_id: int | None = Field(default=None, sa_column_kwargs={"index": True, "unique": True})
 
