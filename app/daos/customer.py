@@ -25,26 +25,33 @@ class CustomerDAO:
         )
         return result.scalars().first()
 
-    async def create_or_update_customer(self, db: AsyncSession, data):
-        """Upsert a customer record, skipping commit if data is unchanged."""
-        result = await db.execute(
-            select(self.model).where(self.model.customer_id == safe_int(data["id"]))
-        )
-        c = result.scalars().first()
-        if c is None:
-            c = Customer.from_webhook(data)
-            await _resolve_location(c, data)
-            db.add(c)
-            logger.info("Create row for new customer data")
-        else:
-            stored_update_time = c.updated_at
-            c.update_from_webhook(data)
-            await _resolve_location(c, data)
-            new_update_time = c.updated_at
+    async def create_customer(self, db: AsyncSession, data):
+        """Create a new customer record from webhook data."""
+        c = Customer.from_webhook(data)
+        await _resolve_location(c, data)
+        db.add(c)
+        logger.info("Create row for new customer data")
+        try:
+            await db.commit()
+            logger.info("Committed new Customer data")
+        except exc.DataError as e:
+            await db.rollback()
+            raise HTTPException(
+                status_code=422, detail=f"Customer error in model data: {e}"
+            ) from e
+        except exc.OperationalError:
+            await db.rollback()
+            logger.info("SSL connection has been closed unexpectedly")
 
-            if stored_update_time == new_update_time:
-                logger.info("No change to customer data")
-                return
+    async def update_customer(self, db: AsyncSession, customer: Customer, data):
+        """Update an existing customer record. Skips commit if data is unchanged."""
+        stored_update_time = customer.updated_at
+        customer.update_from_webhook(data)
+        await _resolve_location(customer, data)
+
+        if stored_update_time == customer.updated_at:
+            logger.info("No change to customer data")
+            return
         try:
             await db.commit()
             logger.info("Updated Customer data")
@@ -56,6 +63,17 @@ class CustomerDAO:
         except exc.OperationalError:
             await db.rollback()
             logger.info("SSL connection has been closed unexpectedly")
+
+    async def create_or_update_customer(self, db: AsyncSession, data):
+        """Upsert a customer record."""
+        result = await db.execute(
+            select(self.model).where(self.model.customer_id == safe_int(data["id"]))
+        )
+        c = result.scalars().first()
+        if c is None:
+            await self.create_customer(db, data)
+        else:
+            await self.update_customer(db, c, data)
 
 
 customer_dao = CustomerDAO(Customer)
