@@ -86,10 +86,18 @@ def _normalize_phone(phone):
     if not phone:
         return phone
     digits = re.sub(r"\D", "", phone)
+    # 0061… international dial prefix (strip leading 00)
+    if digits.startswith("0061") and len(digits) == 13:
+        return f"+{digits[2:]}"
+    # 61… already international (just missing +)
     if digits.startswith("61") and len(digits) == 11:
         return f"+{digits}"
+    # 0X… standard Australian local format
     if digits.startswith("0") and len(digits) == 10:
         return f"+61{digits[1:]}"
+    # 9 digits — area code without leading 0 (e.g. 3 5272 2221)
+    if len(digits) == 9 and digits[0] in "2345789":
+        return f"+61{digits}"
     return phone
 
 
