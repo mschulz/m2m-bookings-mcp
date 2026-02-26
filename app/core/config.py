@@ -75,6 +75,7 @@ class Settings(BaseSettings):
     SERVICE_CATEGORY_DEFAULT: str = "House Clean"
 
     # Klaviyo
+    KLAVIYO_ENABLED: bool = True
     MY_KLAVIYO_URL: str = ""
     MY_KLAVIYO_API_KEY: str = ""
 

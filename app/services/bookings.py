@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.daos.booking import booking_dao
 from app.daos.customer import customer_dao
 
@@ -51,6 +52,8 @@ def update_table(
 def maybe_notify_klaviyo(data):
     """Send a Klaviyo notification if the booking is from a new customer."""
     if not isinstance(data, dict):
+        return
+    if not get_settings().KLAVIYO_ENABLED:
         return
     if data.get("is_new_customer"):
         logger.debug(
