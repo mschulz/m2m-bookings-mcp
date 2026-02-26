@@ -102,10 +102,13 @@ def _normalize_phone(phone):
 
 
 def _clean_price(value):
-    """Strip '$' from a price string (e.g. '$143.02' → '143.02')."""
+    """Convert a price string to a float (e.g. '$143.02' → 143.02)."""
     if not value:
         return value
-    return str(value).replace("$", "").strip()
+    try:
+        return float(str(value).replace("$", "").strip())
+    except ValueError:
+        return value
 
 
 def notify_klaviyo(service_category, data):
