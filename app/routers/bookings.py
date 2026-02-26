@@ -15,11 +15,11 @@ from app.daos.booking import booking_dao
 from app.services.bookings import (
     reject_booking,
     update_table,
-    maybe_notify_klaviyo,
     search_bookings,
     search_completed_bookings_by_service_date,
     get_booking_by_email_service_date,
 )
+from app.utils.klaviyo import process_with_klaviyo, WebhookRoute
 
 logger = logging.getLogger(__name__)
 
@@ -38,35 +38,38 @@ async def new(data: dict, background_tasks: BackgroundTasks, db: AsyncSession = 
     """Receive a new booking webhook from Zapier. Creates or updates the booking record."""
     logger.info("Processing a new booking ...")
     result = await update_table(data, db, status="NOT_COMPLETE")
-    background_tasks.add_task(maybe_notify_klaviyo, result)
+    background_tasks.add_task(process_with_klaviyo, result, WebhookRoute.BOOKING_NEW)
     return "OK"
 
 
 @router.post("/restored", operation_id="restore_booking")
-async def restored(data: dict, db: AsyncSession = Depends(get_db)):
+async def restored(data: dict, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     """Receive a restored booking webhook from Zapier. Re-activates a previously cancelled booking."""
     logger.info("Processing a RESTORED booking ...")
-    await update_table(data, db, status="NOT_COMPLETE", is_restored=True)
+    result = await update_table(data, db, status="NOT_COMPLETE", is_restored=True)
+    background_tasks.add_task(process_with_klaviyo, result, WebhookRoute.BOOKING_RESTORED)
     return "OK"
 
 
 @router.post("/completed", operation_id="complete_booking")
-async def completed(data: dict, db: AsyncSession = Depends(get_db)):
+async def completed(data: dict, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     """Receive a completed booking webhook from Zapier. Marks the booking as completed."""
     logger.info("Processing a completed booking")
-    await update_table(data, db, status="COMPLETED")
+    result = await update_table(data, db, status="COMPLETED")
+    background_tasks.add_task(process_with_klaviyo, result, WebhookRoute.BOOKING_COMPLETED)
     return "OK"
 
 
 @router.post("/cancellation", operation_id="cancel_booking")
-async def cancellation(data: dict, db: AsyncSession = Depends(get_db)):
+async def cancellation(data: dict, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     """Receive a cancellation webhook from Zapier. Marks the booking as cancelled and records the cancellation time."""
     logger.info("Processing a cancelled booking")
     if reject_booking(data):
         return "OK"
 
     data["_cancellation_datetime"] = UTC_now()
-    await update_table(data, db, status="CANCELLED")
+    result = await update_table(data, db, status="CANCELLED")
+    background_tasks.add_task(process_with_klaviyo, result, WebhookRoute.BOOKING_CANCELLATION)
     return "OK"
 
 
@@ -75,15 +78,16 @@ async def updated(data: dict, background_tasks: BackgroundTasks, db: AsyncSessio
     """Receive an updated booking webhook from Zapier. Updates existing booking data."""
     logger.info("Processing an updated booking")
     result = await update_table(data, db)
-    background_tasks.add_task(maybe_notify_klaviyo, result)
+    background_tasks.add_task(process_with_klaviyo, result, WebhookRoute.BOOKING_UPDATED)
     return "OK"
 
 
 @router.post("/team_changed", operation_id="change_booking_team")
-async def team_changed(data: dict, db: AsyncSession = Depends(get_db)):
+async def team_changed(data: dict, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     """Receive a team change webhook from Zapier. Updates the team assigned to a booking."""
     logger.info("Processing a team assignment change")
-    await update_table(data, db, is_restored=True)
+    result = await update_table(data, db, is_restored=True)
+    background_tasks.add_task(process_with_klaviyo, result, WebhookRoute.BOOKING_TEAM_CHANGED)
     return "OK"
 
 

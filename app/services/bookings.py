@@ -7,11 +7,8 @@ from fastapi import HTTPException
 from sqlalchemy import exc
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.daos.booking import booking_dao
 from app.daos.customer import customer_dao
-
-from app.utils.klaviyo import notify_klaviyo
 
 logger = logging.getLogger(__name__)
 
@@ -47,21 +44,6 @@ async def update_table(
     if not is_restored:
         await customer_dao.create_or_update_customer(db, data["customer"])
     return data
-
-
-async def maybe_notify_klaviyo(data):
-    """Send a Klaviyo notification if the booking is from a new customer."""
-    if not isinstance(data, dict):
-        return
-    if not get_settings().KLAVIYO_ENABLED:
-        return
-    if data.get("is_new_customer"):
-        logger.debug(
-            "New customer: send %s to Klaviyo with %s",
-            data.get("email"), data.get("service_category"),
-        )
-        if data.get("service_category") in ["Bond Clean", "House Clean"]:
-            await notify_klaviyo(data["service_category"], data)
 
 
 # --- Search helpers ---

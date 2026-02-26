@@ -2,6 +2,7 @@
 
 import logging
 import re
+from enum import StrEnum
 
 import httpx
 from tenacity import (
@@ -135,6 +136,17 @@ def _clean_price(value):
         return value
 
 
+class WebhookRoute(StrEnum):
+    BOOKING_NEW = "booking_new"
+    BOOKING_UPDATED = "booking_updated"
+    BOOKING_RESTORED = "booking_restored"
+    BOOKING_COMPLETED = "booking_completed"
+    BOOKING_CANCELLATION = "booking_cancellation"
+    BOOKING_TEAM_CHANGED = "booking_team_changed"
+    CUSTOMER_NEW = "customer_new"
+    CUSTOMER_UPDATED = "customer_updated"
+
+
 async def notify_klaviyo(service_category, data):
     """Dispatch a new-customer notification to the appropriate Klaviyo list."""
     try:
@@ -145,6 +157,29 @@ async def notify_klaviyo(service_category, data):
             await k.post_bond_data(data)
     except Exception as e:
         logger.error("Klaviyo notification failed for %s: %s", data.get("email"), e)
+
+
+async def process_with_klaviyo(data, route: WebhookRoute):
+    """Central Klaviyo hook called by all POST routes via BackgroundTasks.
+
+    Only booking_new and booking_updated routes trigger notifications,
+    and only when the booking is from a new customer in a qualifying category.
+    """
+    if not isinstance(data, dict):
+        return
+    if not get_settings().KLAVIYO_ENABLED:
+        return
+    if route not in (WebhookRoute.BOOKING_NEW, WebhookRoute.BOOKING_UPDATED):
+        return
+    if not data.get("is_new_customer"):
+        return
+    service_category = data.get("service_category")
+    if service_category in ("Bond Clean", "House Clean"):
+        logger.debug(
+            "New customer: send %s to Klaviyo with %s",
+            data.get("email"), service_category,
+        )
+        await notify_klaviyo(service_category, data)
 
 
 async def check_klaviyo_profile(email):
