@@ -4,7 +4,8 @@ import logging
 from datetime import datetime, timedelta
 
 from sqlalchemy import and_
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from app.daos.base import BaseDAO
 from app.models.booking import Booking
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class BookingDAO(BaseDAO):
-    def get_by_booking_email_service_date_range(self, db: Session, email, service_date):
+    async def get_by_booking_email_service_date_range(self, db: AsyncSession, email, service_date):
         """Find a booking by email within the same Mon-Sun week as service_date."""
         def get_week_start_end(date_str):
             dt = datetime.strptime(date_str, "%Y-%m-%d")
@@ -25,20 +26,20 @@ class BookingDAO(BaseDAO):
 
         week_start, week_end = get_week_start_end(service_date)
 
-        return (
-            db.query(self.model)
-            .filter_by(email=email)
-            .filter(
+        result = await db.execute(
+            select(self.model)
+            .where(self.model.email == email)
+            .where(
                 and_(
                     self.model.service_date >= week_start,
                     self.model.service_date <= week_end,
                 )
             )
-            .first()
         )
+        return result.scalars().first()
 
-    def get_by_date_range(
-        self, db: Session, service_category, booking_status, start_created, end_created
+    async def get_by_date_range(
+        self, db: AsyncSession, service_category, booking_status, start_created, end_created
     ):
         """Query bookings by category, status, and created_at date range."""
         logger.debug(
@@ -46,39 +47,48 @@ class BookingDAO(BaseDAO):
             service_category, start_created, end_created, booking_status,
         )
 
-        return (
-            db.query(self.model)
-            .filter_by(service_category=service_category, booking_status=booking_status)
-            .filter(
+        result = await db.execute(
+            select(self.model)
+            .where(
+                self.model.service_category == service_category,
+                self.model.booking_status == booking_status,
+            )
+            .where(
                 and_(
                     self.model.created_at >= start_created,
                     self.model.created_at <= end_created,
                 )
             )
-            .all()
         )
+        return result.scalars().all()
 
-    def completed_bookings_by_service_date(self, db: Session, from_date, to_date):
+    async def completed_bookings_by_service_date(self, db: AsyncSession, from_date, to_date):
         """Return all COMPLETED bookings within a service date range."""
-        return (
-            db.query(self.model)
-            .filter_by(booking_status="COMPLETED")
-            .filter(
+        result = await db.execute(
+            select(self.model)
+            .where(self.model.booking_status == "COMPLETED")
+            .where(
                 and_(
                     self.model.service_date >= from_date,
                     self.model.service_date <= to_date,
                 )
             )
-            .all()
         )
+        return result.scalars().all()
 
-    def get_bookings_missing_locations(self, db: Session):
+    async def get_bookings_missing_locations(self, db: AsyncSession):
         """Return all bookings that have no location set."""
-        return db.query(self.model).filter(self.model.location.is_(None)).all()
+        result = await db.execute(
+            select(self.model).where(self.model.location.is_(None))
+        )
+        return result.scalars().all()
 
-    def get_all_bookings_after_service_date(self, db: Session, date_start):
+    async def get_all_bookings_after_service_date(self, db: AsyncSession, date_start):
         """Return all bookings with a service date on or after date_start."""
-        return db.query(self.model).filter(self.model.service_date >= date_start).all()
+        result = await db.execute(
+            select(self.model).where(self.model.service_date >= date_start)
+        )
+        return result.scalars().all()
 
 
 booking_dao = BookingDAO(Booking)

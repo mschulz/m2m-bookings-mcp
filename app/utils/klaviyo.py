@@ -44,14 +44,14 @@ class Klaviyo:
         retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-    def post_home_data(self, data):
+    async def post_home_data(self, data):
         """Send a new house-clean customer to Klaviyo."""
         url = f"{self.url}/house/new"
         payload = self._get_payload(data)
         logger.debug("Klaviyo house POST: url=%s payload=%s", url, payload)
 
-        with httpx.Client(timeout=10) as client:
-            res = client.post(url, headers=self.headers, json=payload)
+        async with httpx.AsyncClient(timeout=10) as client:
+            res = await client.post(url, headers=self.headers, json=payload)
 
         if res.status_code != 201:
             logger.error(
@@ -65,12 +65,12 @@ class Klaviyo:
         retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-    def post_bond_data(self, data):
+    async def post_bond_data(self, data):
         """Send a new bond-clean customer to Klaviyo."""
         payload = self._get_payload(data)
 
-        with httpx.Client(timeout=10) as client:
-            res = client.post(
+        async with httpx.AsyncClient(timeout=10) as client:
+            res = await client.post(
                 f"{self.url}/bond/new", headers=self.headers, json=payload,
             )
 
@@ -111,13 +111,13 @@ def _clean_price(value):
         return value
 
 
-def notify_klaviyo(service_category, data):
+async def notify_klaviyo(service_category, data):
     """Dispatch a new-customer notification to the appropriate Klaviyo list."""
     try:
         k = Klaviyo()
         if service_category == "House Clean":
-            k.post_home_data(data)
+            await k.post_home_data(data)
         else:
-            k.post_bond_data(data)
+            await k.post_bond_data(data)
     except Exception as e:
         logger.error("Klaviyo notification failed for %s: %s", data.get("email"), e)

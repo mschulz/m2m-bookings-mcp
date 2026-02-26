@@ -25,11 +25,11 @@ location_cache: TTLCache = TTLCache(maxsize=1000, ttl=3600)
     retry=retry_if_exception_type((httpx.RequestError,)),
     before_sleep=before_sleep_log(logger, logging.WARNING),
 )
-def _fetch_location(postcode: str) -> str | None:
+async def _fetch_location(postcode: str) -> str | None:
     """Call the zip2location API to resolve a postcode to a location name."""
     settings = get_settings()
-    with httpx.Client(timeout=10) as client:
-        res = client.get(f"{settings.ZIP2LOCATION_URL}?postcode={postcode}")
+    async with httpx.AsyncClient(timeout=10) as client:
+        res = await client.get(f"{settings.ZIP2LOCATION_URL}?postcode={postcode}")
 
     if res.status_code != 200:
         logger.debug("postcode %s not recognized", postcode)
@@ -39,7 +39,7 @@ def _fetch_location(postcode: str) -> str | None:
     return data.get("title")
 
 
-def get_location(postcode) -> str | None:
+async def get_location(postcode) -> str | None:
     """Given a postcode, return the location name. Uses TTL cache."""
     if postcode is None:
         return None
@@ -51,7 +51,7 @@ def get_location(postcode) -> str | None:
         return location_cache[postcode]
 
     try:
-        title = _fetch_location(postcode)
+        title = await _fetch_location(postcode)
     except Exception as e:
         logger.error("Failed to fetch location for postcode %s: %s", postcode, e)
         return None

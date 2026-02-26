@@ -5,7 +5,7 @@ from datetime import datetime
 
 from fastapi import HTTPException
 from sqlalchemy import exc
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.daos.booking import booking_dao
@@ -26,9 +26,9 @@ def reject_booking(d: dict) -> bool:
     return postcode.lower() in ["tbc", "tba"]
 
 
-def update_table(
+async def update_table(
     data: dict,
-    db: Session,
+    db: AsyncSession,
     status: str | None = None,
     is_restored: bool = False,
 ):
@@ -43,13 +43,13 @@ def update_table(
         data["booking_status"] = status
 
     logger.debug("Update Booking table")
-    booking_dao.create_update_booking(db, data)
+    await booking_dao.create_update_booking(db, data)
     if not is_restored:
-        customer_dao.create_or_update_customer(db, data["customer"])
+        await customer_dao.create_or_update_customer(db, data["customer"])
     return data
 
 
-def maybe_notify_klaviyo(data):
+async def maybe_notify_klaviyo(data):
     """Send a Klaviyo notification if the booking is from a new customer."""
     if not isinstance(data, dict):
         return
@@ -61,18 +61,18 @@ def maybe_notify_klaviyo(data):
             data.get("email"), data.get("service_category"),
         )
         if data.get("service_category") in ["Bond Clean", "House Clean"]:
-            notify_klaviyo(data["service_category"], data)
+            await notify_klaviyo(data["service_category"], data)
 
 
 # --- Search helpers ---
 
 
-def search_bookings(
-    db: Session, service_category, start_created, end_created, booking_status
+async def search_bookings(
+    db: AsyncSession, service_category, start_created, end_created, booking_status
 ):
     """Query bookings by category, status, and date range."""
     try:
-        res = booking_dao.get_by_date_range(
+        res = await booking_dao.get_by_date_range(
             db, service_category, booking_status, start_created, end_created
         )
     except exc.OperationalError as e:
@@ -89,13 +89,13 @@ def search_bookings(
     ]
 
 
-def search_completed_bookings_by_service_date(db: Session, from_date_str, to_date_str):
+async def search_completed_bookings_by_service_date(db: AsyncSession, from_date_str, to_date_str):
     """Return completed bookings within a service date range as dicts."""
     start_date = datetime.strptime(from_date_str, "%Y-%m-%d").date()
     end_date = datetime.strptime(to_date_str, "%Y-%m-%d").date()
 
     try:
-        res = booking_dao.completed_bookings_by_service_date(db, start_date, end_date)
+        res = await booking_dao.completed_bookings_by_service_date(db, start_date, end_date)
     except exc.OperationalError as e:
         raise HTTPException(status_code=503, detail="Database temporarily unavailable") from e
 
@@ -118,9 +118,9 @@ def search_completed_bookings_by_service_date(db: Session, from_date_str, to_dat
     ]
 
 
-def get_booking_by_email_service_date(db: Session, email, service_date):
+async def get_booking_by_email_service_date(db: AsyncSession, email, service_date):
     """Look up a booking by customer email and service date week."""
-    row = booking_dao.get_by_booking_email_service_date_range(db, email, service_date)
+    row = await booking_dao.get_by_booking_email_service_date_range(db, email, service_date)
     if row:
         return {
             "data": {

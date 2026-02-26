@@ -9,6 +9,7 @@ from app.utils.validation import (
     check_postcode,
     truncate_field,
     parse_datetime,
+    safe_int,
 )
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ class Customer(SQLModel, table=True):
 def _apply_customer_data(c, d: dict) -> None:
     """Apply webhook dict to a Customer instance with explicit coercion."""
     cid = d.get("id")
-    c.customer_id = d.get("id")
+    c.customer_id = safe_int(d.get("id"))
     c.created_at = parse_datetime(d.get("created_at"))
     c.updated_at = parse_datetime(d.get("updated_at"))
     c.title = truncate_field(d.get("title"), 16, "title", cid)
@@ -73,12 +74,8 @@ def _apply_customer_data(c, d: dict) -> None:
     c.state = truncate_field(d.get("state"), 32, "state", cid)
     c.company_name = truncate_field(d.get("company_name"), 64, "company_name", cid)
     c.postcode = check_postcode(d, "customer_id", d.get("id"))
-    if c.postcode:
-        from app.utils.locations import get_location
-        c.location = truncate_field(
-            d.get("location", get_location(c.postcode)),
-            64, "location", cid,
-        )
+    if d.get("location"):
+        c.location = truncate_field(d["location"], 64, "location", cid)
     c.notes = d.get("notes")
     if "tags" in d:
         c.tags = truncate_field(d.get("tags"), 256, "tags", cid)

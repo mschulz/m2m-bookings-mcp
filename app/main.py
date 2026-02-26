@@ -4,6 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from fastapi_mcp import FastApiMCP
 from sqlalchemy import exc
@@ -27,12 +28,13 @@ async def lifespan(app: FastAPI):
     logger.info("%s: starting ...", settings.APP_NAME)
 
     # Ensure tables exist (optional - usually handled by migrations)
-    SQLModel.metadata.create_all(bind=engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
 
     yield
 
     # Shutdown
-    engine.dispose()
+    await engine.dispose()
     logger.info("%s: shutting down ...", settings.APP_NAME)
 
 
@@ -91,7 +93,7 @@ async def generic_exception_handler(request: Request, e: Exception):
             from app.utils.email_service import send_error_email
             m = settings.SUPPORT_EMAIL.split("@")
             to_addr = f"{m[0]}+error@{m[1]}"
-            send_error_email(to_addr, f"({request.url.path}) {str(e)}")
+            await run_in_threadpool(send_error_email, to_addr, f"({request.url.path}) {str(e)}")
         except Exception as email_err:
             logger.error("Failed to send error email: %s", email_err)
 

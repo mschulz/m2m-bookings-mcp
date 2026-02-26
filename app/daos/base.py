@@ -4,63 +4,87 @@ import logging
 
 from fastapi import HTTPException
 from sqlalchemy import exc
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from app.models.cancellation import apply_cancellation_data
+from app.utils.locations import get_location
+from app.utils.validation import truncate_field, safe_int
 
 logger = logging.getLogger(__name__)
+
+
+async def _resolve_location(instance, data: dict, id_field: str = "id"):
+    """Look up location from postcode if not provided in webhook data."""
+    if instance.postcode and not data.get("location"):
+        bid = data.get(id_field)
+        location = await get_location(instance.postcode)
+        if location:
+            instance.location = truncate_field(location, 64, "location", bid)
 
 
 class BaseDAO:
     def __init__(self, model):
         self.model = model
 
-    def get_by_booking_id(self, db: Session, booking_id):
+    async def get_by_booking_id(self, db: AsyncSession, booking_id):
         """Look up a single record by its external booking_id."""
-        return db.query(self.model).filter_by(booking_id=booking_id).first()
+        result = await db.execute(
+            select(self.model).where(self.model.booking_id == booking_id)
+        )
+        return result.scalars().first()
 
-    def create_update_booking(self, db: Session, new_data):
+    async def create_update_booking(self, db: AsyncSession, new_data):
         """Upsert a booking record: insert if new, update if existing."""
-        booking_id = new_data.get("id")
+        booking_id = safe_int(new_data.get("id"))
         if not booking_id:
             logger.error("booking has no booking_id - ignore this data")
             raise HTTPException(status_code=422, detail="booking has no booking_id")
 
-        b = db.query(self.model).filter_by(booking_id=booking_id).first()
+        result = await db.execute(
+            select(self.model).where(self.model.booking_id == booking_id)
+        )
+        b = result.scalars().first()
 
         if b is None:
             logger.info("haven't seen this booking - ADDING to database")
             b = self.model.from_webhook(new_data)
+            await _resolve_location(b, new_data)
             db.add(b)
         else:
             logger.info("have seen this booking - UPDATING database")
             b.update_from_webhook(new_data)
+            await _resolve_location(b, new_data)
             logger.info(
                 'Loading ... Name: "%s" team: "%s" booking_id: %s',
                 b.name, b.teams_assigned, b.booking_id,
             )
 
         try:
-            db.commit()
+            await db.commit()
         except exc.DataError as e:
-            db.rollback()
+            await db.rollback()
             raise HTTPException(
                 status_code=422, detail=f"Data error for booking: {b.model_dump()}"
             ) from e
         except exc.IntegrityError:
-            db.rollback()
+            await db.rollback()
             logger.info("Data already loaded into database: %s", b.model_dump())
         except exc.OperationalError:
-            db.rollback()
+            await db.rollback()
             logger.info("SSL connection has been closed unexpectedly")
 
-    def update_booking(self, db: Session, new_data):
+    async def update_booking(self, db: AsyncSession, new_data):
         """Apply cancellation-specific updates to an existing booking."""
-        booking_id = new_data.get("booking_id")
-        b = db.query(self.model).filter_by(booking_id=booking_id).first()
+        booking_id = safe_int(new_data.get("booking_id"))
+        result = await db.execute(
+            select(self.model).where(self.model.booking_id == booking_id)
+        )
+        b = result.scalars().first()
         logger.info("have seen this booking - UPDATING database")
 
         apply_cancellation_data(b, new_data)
+        await _resolve_location(b, new_data, id_field="booking_id")
 
         logger.info(
             'Loading ... Name: "%s" team: "%s" booking_id: %s',
@@ -68,37 +92,41 @@ class BaseDAO:
         )
 
         try:
-            db.commit()
+            await db.commit()
         except exc.DataError as e:
-            db.rollback()
+            await db.rollback()
             raise HTTPException(
                 status_code=422, detail=f"Data error for booking: {b.model_dump()}"
             ) from e
         except exc.IntegrityError:
-            db.rollback()
+            await db.rollback()
             logger.info("Data already loaded into database: %s", b.model_dump())
         except exc.OperationalError:
-            db.rollback()
+            await db.rollback()
             logger.info("SSL connection has been closed unexpectedly")
 
-    def cancel_booking(self, db: Session, new_data):
+    async def cancel_booking(self, db: AsyncSession, new_data):
         """Delete a booking record by its external booking_id."""
-        booking_id = new_data.get("id")
+        booking_id = safe_int(new_data.get("id"))
         if booking_id is None:
             return
-        db.query(self.model).filter_by(booking_id=booking_id).delete()
+        result = await db.execute(
+            select(self.model).where(self.model.booking_id == booking_id)
+        )
+        row = result.scalars().first()
+        if row:
+            await db.delete(row)
         try:
-            db.commit()
+            await db.commit()
             logger.info("Booking deleted from table: %s", booking_id)
         except exc.DataError as e:
-            db.rollback()
+            await db.rollback()
             raise HTTPException(
                 status_code=422, detail=f"Data error: {new_data}"
             ) from e
         except exc.IntegrityError:
-            db.rollback()
+            await db.rollback()
             logger.info("Integrity error: %s", new_data)
         except exc.OperationalError:
-            db.rollback()
+            await db.rollback()
             logger.info("SSL connection has been closed unexpectedly")
-

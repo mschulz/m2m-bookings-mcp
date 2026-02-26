@@ -132,7 +132,7 @@ def _apply_webhook_data(d, b: dict) -> None:
     bid = b.get("id")
 
     if "id" in b:
-        d.booking_id = b["id"]
+        d.booking_id = safe_int(b["id"])
     d.created_at = parse_datetime(b.get("created_at"))
     d.updated_at = parse_datetime(b.get("updated_at"))
     d.service_time = truncate_field(b.get("service_time"), 64, "service_time", bid)
@@ -203,12 +203,8 @@ def _apply_webhook_data(d, b: dict) -> None:
     d.email = truncate_field(b.get("email"), 64, "email", bid)
     d.phone = truncate_field(b.get("phone"), 64, "phone", bid)
     d.postcode = check_postcode(b, "booking_id", b.get("id"))
-    if d.postcode:
-        from app.utils.locations import get_location
-        d.location = truncate_field(
-            b.get("location", get_location(d.postcode)),
-            64, "location", bid,
-        )
+    if b.get("location"):
+        d.location = truncate_field(b["location"], 64, "location", bid)
 
     # Custom field data
     if "custom_fields" in b:

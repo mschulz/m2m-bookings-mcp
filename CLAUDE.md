@@ -27,14 +27,16 @@ Production uses Uvicorn: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
 ## Architecture
 
-**DAO Pattern:** Routes stay thin, calling DAO methods directly. DAOs are module-level singletons. All DAO methods accept a `db: Session` parameter injected via FastAPI's `Depends(get_db)`.
+**Fully async/await.** Routes, services, DAOs, and HTTP clients all use `async def` with `await`. The DB driver is `asyncpg` via `create_async_engine` and `AsyncSession`.
+
+**DAO Pattern:** Routes stay thin, calling DAO methods directly. DAOs are module-level singletons. All DAO methods are async and accept a `db: AsyncSession` parameter injected via FastAPI's `Depends(get_db)`.
 
 ### Request Flow (webhook from Zapier)
 1. POST hits route (e.g., `/booking/new`)
 2. `verify_api_key` FastAPI dependency validates Bearer token
 3. FastAPI exception handlers catch DB connection drops (503) and data errors (422)
-4. Route parses JSON body, calls `update_table()` which calls the booking DAO
-5. DAO's `create_update_booking()` does upsert via `Model.from_webhook(data)` (create) or `instance.update_from_webhook(data)` (update)
+4. Route parses JSON body, calls `await update_table()` which calls the booking DAO
+5. DAO's `create_update_booking()` does upsert via `Model.from_webhook(data)` (create) or `instance.update_from_webhook(data)` (update), then resolves location via async `_resolve_location()`
 6. Customer data synced, Klaviyo notified for new customers
 
 ### SQLModel (unified ORM + Pydantic)
@@ -55,7 +57,9 @@ Models use **SQLModel** — one class defines both the DB table and Pydantic val
 - **String truncation**: `truncate_field()` in `app/utils/validation.py` truncates and logs warnings on overflow, applied in webhook import methods.
 - **Retries**: All external HTTP calls use `tenacity` `@retry` with exponential backoff.
 - **Caching**: Location lookups use `cachetools.TTLCache(maxsize=1000, ttl=3600)`.
-- **HTTP client**: `httpx` for all external HTTP calls (consistent with m2m-proxy).
+- **HTTP client**: `httpx.AsyncClient` for all external HTTP calls (consistent with m2m-proxy).
+- **Location resolution**: Models (`from_webhook`/`update_from_webhook`) only set `location` if provided in webhook data. The DAO layer resolves missing locations via async `_resolve_location()` → `get_location()` after applying webhook data.
+- **Sync Google API**: `email_service.py` and `gmail_handler.py` remain sync; called via `run_in_threadpool()` from the async exception handler.
 
 ### File Structure
 ```
@@ -64,15 +68,15 @@ app/
 ├── core/
 │   ├── config.py        # pydantic_settings.BaseSettings, get_settings()
 │   ├── auth.py          # verify_api_key FastAPI dependency (HTTPBearer)
-│   ├── database.py      # SQLModel engine, Session, get_db() dependency
+│   ├── database.py      # AsyncSession engine, async_sessionmaker, get_db() dependency
 │   └── logging_config.py # dictConfig logging setup + Gmail error handler
 ├── utils/
 │   ├── validation.py    # Parsing (parse_datetime, parse_date, parse_team_list, etc.) + truncation + coercion
 │   ├── email_service.py # Gmail API email sending (consolidated)
 │   ├── gmail_handler.py # GmailOAuth2Handler for error emails
-│   ├── klaviyo.py       # Klaviyo CRM integration (httpx + tenacity)
+│   ├── klaviyo.py       # Klaviyo CRM integration (async httpx + tenacity)
 │   ├── local_date_time.py # Timezone utilities
-│   └── locations.py     # Location lookup (TTLCache + tenacity)
+│   └── locations.py     # Location lookup (async httpx, TTLCache + tenacity)
 ├── models/
 │   ├── base.py          # BookingBase(SQLModel) with all columns + from_webhook/update_from_webhook
 │   ├── booking.py       # Booking model (single table for all booking types)
@@ -80,7 +84,7 @@ app/
 │   └── cancellation.py  # apply_cancellation_data helper
 ├── schemas/booking.py   # Pydantic response models: BookingResponse, BookingSearchResult
 ├── daos/
-│   ├── base.py          # BaseDAO with mark_converted(), create_update_booking()
+│   ├── base.py          # BaseDAO with create_update_booking(), _resolve_location()
 │   ├── booking.py       # BookingDAO (search, date range queries)
 │   └── customer.py      # CustomerDAO
 ├── services/
@@ -103,8 +107,8 @@ scripts/
 
 ## Dependencies
 
-Python 3.12, FastAPI, Uvicorn, SQLModel 0.0.22+, Pydantic 2.9+, SQLAlchemy 2.0+, PostgreSQL (psycopg2), httpx, tenacity, cachetools, pendulum, fastapi-mcp. Full list in `requirements.txt`.
+Python 3.12, FastAPI, Uvicorn, SQLModel 0.0.22+, Pydantic 2.9+, SQLAlchemy 2.0+, PostgreSQL (asyncpg + psycopg2-binary for scripts), greenlet, httpx, tenacity, cachetools, pendulum, fastapi-mcp. Full list in `requirements.txt`.
 
 ## Deployment
 
-Heroku-based. `Procfile` runs `web: uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Database via `DATABASE_URL` env var (auto-corrects `postgres://` to `postgresql://` prefix).
+Heroku-based. `Procfile` runs `web: uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Database via `DATABASE_URL` env var (auto-corrects `postgres://` to `postgresql://` prefix, then to `postgresql+asyncpg://` at engine creation).
