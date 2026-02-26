@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FastAPI server that collects booking data via Zapier webhooks, communicating with m2m-proxy (a FastAPI proxy at `../m2m-proxy`) instead of Launch27 directly. It stores bookings in PostgreSQL and integrates with Gmail, Slack, Klaviyo, and Zapier for notifications and CRM.
+FastAPI server that collects booking and customer data via Zapier webhooks, communicating with m2m-proxy (a FastAPI proxy at `../m2m-proxy`) instead of Launch27 directly. It stores data in PostgreSQL and integrates with Gmail, Klaviyo, and Zapier for notifications and CRM.
 
 ## Running the Application
 
@@ -21,7 +21,7 @@ Production uses Uvicorn: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 - Computed properties: `debug`, `testing`, `log_to_stdout` derived from `ENVIRONMENT`
 - `testing=True` suppresses email sending
 - API authentication via Bearer token in Authorization header, validated against `API_KEY`
-- Proxy config: `PROXY_URL`, `PROXY_API_KEY`, `PROXY_USERNAME`, `PROXY_PASSWORD`
+- Proxy config: `PROXY_URL`, `PROXY_API_KEY`
 - Settings singleton via `@lru_cache` on `get_settings()`
 
 ## Architecture
@@ -32,7 +32,7 @@ Production uses Uvicorn: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 1. POST hits route (e.g., `/booking/new`)
 2. `verify_api_key` FastAPI dependency validates Bearer token
 3. FastAPI exception handlers catch DB connection drops (503) and data errors (422)
-4. Route parses JSON body, calls `update_table()` which routes to the correct DAO based on `service_category`
+4. Route parses JSON body, calls `update_table()` which calls the booking DAO
 5. DAO's `create_update_booking()` does upsert via `Model.from_webhook(data)` (create) or `instance.update_from_webhook(data)` (update)
 6. Customer data synced, Klaviyo notified for new customers
 
@@ -40,17 +40,10 @@ Production uses Uvicorn: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 Models use **SQLModel** — one class defines both the DB table and Pydantic validation. This replaces the previous separate SQLAlchemy models + Pydantic schemas.
 
 - `BookingBase(SQLModel)` in `app/models/base.py` defines all shared columns
-- Concrete models (`Booking`, `Reservation`, `SalesReservation`) inherit from `BookingBase` with `table=True`
+- `Booking` inherits from `BookingBase` with `table=True` (single table for all booking types)
 - DB column names with underscore prefixes (`_created_at`, `_final_price`) are mapped using `sa_column_kwargs={"name": "_created_at"}` so Python uses clean names (`created_at`, `final_price`)
 - `model_dump(mode="json")` replaces the old `to_json()` method
 - Webhook data import uses `from_webhook()` / `update_from_webhook()` classmethods with explicit coercion via standalone parsing functions
-
-### Three Booking Types (separate DB tables, same base model)
-- **Booking** (`app/models/booking.py`) — regular bookings
-- **Reservation** — NDIS reservations (category from `RESERVATION_CATEGORY` config)
-- **SalesReservation** — sales reservations (category from `SALES_RESERVATION_CATEGORY` config)
-
-All inherit from `BookingBase` in `app/models/base.py`.
 
 ### Key Patterns
 - **Prices** stored as integers (cents). `dollar_string_to_int()` in `app/utils/validation.py` strips `$` and `.` from strings like `"$67.64"` → `6764`.
@@ -66,7 +59,7 @@ All inherit from `BookingBase` in `app/models/base.py`.
 ### File Structure
 ```
 app/
-├── main.py              # FastAPI app, lifespan, exception handlers
+├── main.py              # FastAPI app, MCP mount, lifespan, exception handlers
 ├── database.py          # SQLModel engine, Session, get_db() dependency
 ├── auth.py              # verify_api_key FastAPI dependency (HTTPBearer)
 ├── logging_config.py    # dictConfig logging setup + Gmail error handler
@@ -80,36 +73,35 @@ app/
 │   └── notifications.py # Webhook notifications (tenacity)
 ├── models/
 │   ├── base.py          # BookingBase(SQLModel) with all columns + from_webhook/update_from_webhook
-│   ├── booking.py       # Booking, Reservation, SalesReservation (table=True subclasses)
+│   ├── booking.py       # Booking model (single table for all booking types)
 │   ├── customer.py      # Customer(SQLModel, table=True)
 │   └── cancellation.py  # apply_cancellation_data helper
 ├── schemas/booking.py   # Pydantic response models: BookingResponse, BookingSearchResult
 ├── daos/
 │   ├── base.py          # BaseDAO with mark_converted(), create_update_booking()
 │   ├── booking.py       # BookingDAO (search, date range queries)
-│   ├── customer.py      # CustomerDAO
-│   ├── reservation.py   # ReservationDAO (thin subclass)
-│   └── sales_reservation.py  # SalesReservationDAO (thin subclass)
+│   └── customer.py      # CustomerDAO
 ├── services/
-│   └── bookings.py      # Booking business logic (update_table, search helpers)
+│   ├── bookings.py      # Booking business logic (update_table, search helpers)
+│   └── customers.py     # Customer business logic (create_or_update_customer)
 ├── routers/
 │   ├── bookings.py      # /booking/* endpoints (thin routes)
+│   ├── customers.py     # /customer/* endpoints (thin routes)
 │   └── health.py        # GET / health check
-├── database/            # Utility scripts (create_db)
 ├── commands/            # Scheduled command scripts
 └── templates/           # HTML email templates
+scripts/
+└── copy_old_db.py       # One-time migration: copy data from old DB to new DB
 ```
 
 ### Routers
 - `app/routers/bookings.py` — Booking CRUD, search, and webhook endpoints
+- `app/routers/customers.py` — Customer webhook endpoints
 - `app/routers/health.py` — Health check
-
-### Database Scripts (`app/database/`)
-- `create_db.py` — Initialize database tables
 
 ## Dependencies
 
-Python 3.12, FastAPI, Uvicorn, SQLModel 0.0.22+, Pydantic 2.9+, SQLAlchemy 2.0+, PostgreSQL (psycopg2), httpx, tenacity, cachetools, pendulum. Full list in `requirements.txt`.
+Python 3.12, FastAPI, Uvicorn, SQLModel 0.0.22+, Pydantic 2.9+, SQLAlchemy 2.0+, PostgreSQL (psycopg2), httpx, tenacity, cachetools, pendulum, fastapi-mcp. Full list in `requirements.txt`.
 
 ## Deployment
 
