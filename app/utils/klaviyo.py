@@ -30,11 +30,11 @@ class Klaviyo:
     def _get_payload(self, data):
         """Build the Klaviyo API payload from booking data."""
         return {
-            "email": data["email"],
-            "first_name": data["first_name"],
-            "phone": data["phone"],
+            "email": data.get("email"),
+            "first_name": data.get("first_name"),
+            "phone": data.get("phone"),
             "postcode": data.get("postcode", data.get("zip", "")),
-            "quote": data["final_price"],
+            "quote": data.get("final_price"),
         }
 
     @retry(
@@ -54,8 +54,8 @@ class Klaviyo:
 
         if res.status_code != 201:
             logger.error(
-                "Failed (%d) to update house customer list for %s",
-                res.status_code, payload["email"],
+                "Failed (%d) to update house customer list for %s: %s | payload=%s",
+                res.status_code, payload.get("email"), res.text, payload,
             )
 
     @retry(
@@ -75,8 +75,8 @@ class Klaviyo:
 
         if res.status_code != 201:
             logger.error(
-                "Failed (%d) to update bond customer list for %s",
-                res.status_code, payload["email"],
+                "Failed (%d) to update bond customer list for %s: %s | payload=%s",
+                res.status_code, payload.get("email"), res.text, payload,
             )
 
 
