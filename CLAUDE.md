@@ -22,6 +22,7 @@ Production uses Uvicorn: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 - `testing=True` suppresses email sending
 - API authentication via Bearer token in Authorization header, validated against `API_KEY`
 - Proxy config: `PROXY_URL`, `PROXY_API_KEY`
+- `KLAVIYO_ENABLED` (default `true`): set `false` to disable Klaviyo new-customer notifications
 - Settings singleton via `@lru_cache` on `get_settings()`
 
 ## Architecture
@@ -71,8 +72,7 @@ app/
 │   ├── gmail_handler.py # GmailOAuth2Handler for error emails
 │   ├── klaviyo.py       # Klaviyo CRM integration (httpx + tenacity)
 │   ├── local_date_time.py # Timezone utilities
-│   ├── locations.py     # Location lookup (TTLCache + tenacity)
-│   └── notifications.py # Webhook notifications (tenacity)
+│   └── locations.py     # Location lookup (TTLCache + tenacity)
 ├── models/
 │   ├── base.py          # BookingBase(SQLModel) with all columns + from_webhook/update_from_webhook
 │   ├── booking.py       # Booking model (single table for all booking types)

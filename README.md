@@ -141,8 +141,7 @@ app/
 │   ├── gmail_handler.py # Gmail OAuth2 handler for error emails
 │   ├── klaviyo.py       # Klaviyo CRM integration
 │   ├── local_date_time.py # Timezone utilities
-│   ├── locations.py     # Location lookup with caching
-│   └── notifications.py # Webhook notifications
+│   └── locations.py     # Location lookup with caching
 ├── models/
 │   ├── base.py          # BookingBase(SQLModel) with columns + webhook methods
 │   ├── booking.py       # Booking model (single table for all booking types)
