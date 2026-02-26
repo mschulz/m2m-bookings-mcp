@@ -1,6 +1,6 @@
 # M2M Bookings MCP
 
-FastAPI server that collects booking data from Launch27 via Zapier webhooks. It communicates with [m2m-proxy](../m2m-proxy) (a FastAPI proxy) instead of Launch27 directly, stores bookings in PostgreSQL, and integrates with Gmail and Klaviyo for notifications and CRM.
+FastAPI server that collects booking and customer data via Zapier webhooks. It communicates with [m2m-proxy](../m2m-proxy) (a FastAPI proxy) instead of Launch27 directly, stores data in PostgreSQL, and integrates with Gmail, Klaviyo, and Zapier for notifications and CRM.
 
 Includes MCP (Model Context Protocol) support so AI assistants like Claude Desktop can query the booking database directly.
 
@@ -31,8 +31,6 @@ Key variables:
 | `DATABASE_URL` | PostgreSQL connection string |
 | `PROXY_URL` | URL of the m2m-proxy server |
 | `PROXY_API_KEY` | API key for m2m-proxy |
-| `PROXY_USERNAME` | Proxy login username |
-| `PROXY_PASSWORD` | Proxy login password |
 
 To generate a new API key:
 
@@ -56,7 +54,7 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
 All booking endpoints require a Bearer token in the `Authorization` header.
 
-### Webhook endpoints (POST, called by Zapier)
+### Booking webhook endpoints (POST, called by Zapier)
 
 | Endpoint | Description |
 |---|---|
@@ -66,6 +64,13 @@ All booking endpoints require a Bearer token in the `Authorization` header.
 | `POST /booking/cancellation` | Booking cancelled |
 | `POST /booking/updated` | Booking details updated |
 | `POST /booking/team_changed` | Team assignment changed |
+
+### Customer webhook endpoints (POST, called by Zapier)
+
+| Endpoint | Description |
+|---|---|
+| `POST /customer/new` | New customer created |
+| `POST /customer/updated` | Customer details updated |
 
 ### Query endpoints (GET)
 
@@ -116,13 +121,9 @@ npx @modelcontextprotocol/inspector http://localhost:8000/mcp
 
 Models use **SQLModel** — one class defines both the DB table and Pydantic validation. DB columns with underscore prefixes (`_created_at`) are mapped to clean Python names (`created_at`) via `sa_column_kwargs`.
 
-### Booking types (separate DB tables, shared base model)
+### Booking model
 
-- **Booking** — regular cleaning bookings
-- **Reservation** — NDIS reservations
-- **SalesReservation** — sales reservations
-
-All inherit from `BookingBase` in `app/models/base.py`.
+All bookings (regular, NDIS, sales) are stored in a single `bookings` table. The `Booking` model inherits from `BookingBase` in `app/models/base.py`, which defines all shared columns and webhook import logic.
 
 ### Project structure
 
@@ -142,24 +143,25 @@ app/
 │   └── notifications.py # Webhook notifications
 ├── models/
 │   ├── base.py          # BookingBase(SQLModel) with columns + webhook methods
-│   ├── booking.py       # Booking, Reservation, SalesReservation models
+│   ├── booking.py       # Booking model (single table for all booking types)
 │   ├── customer.py      # Customer model
 │   └── cancellation.py  # Cancellation data helper
 ├── schemas/booking.py   # Pydantic response models
 ├── daos/
 │   ├── base.py          # BaseDAO (upsert, cancel, mark converted)
 │   ├── booking.py       # BookingDAO (search, date range queries)
-│   ├── customer.py      # CustomerDAO
-│   ├── reservation.py   # ReservationDAO
-│   └── sales_reservation.py
+│   └── customer.py      # CustomerDAO
 ├── services/
-│   └── bookings.py      # Booking business logic (update_table, search helpers)
+│   ├── bookings.py      # Booking business logic (update_table, search helpers)
+│   └── customers.py     # Customer business logic
 ├── routers/
-│   ├── bookings.py      # /booking/* endpoints (thin routes)
+│   ├── bookings.py      # /booking/* endpoints
+│   ├── customers.py     # /customer/* endpoints
 │   └── health.py        # Health check
-├── database/            # Utility scripts (create_db)
 ├── commands/            # Scheduled command scripts
 └── templates/           # HTML email templates
+scripts/
+└── copy_old_db.py       # One-time migration: copy data from old DB to new DB
 ```
 
 ## Deployment
