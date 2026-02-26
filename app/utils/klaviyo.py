@@ -80,6 +80,30 @@ class Klaviyo:
                 res.status_code, payload.get("email"), res.text, payload,
             )
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(min=1, max=10),
+        retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+    async def check_profile(self, email):
+        """Check if an email exists as a Klaviyo profile."""
+        async with httpx.AsyncClient(timeout=10) as client:
+            res = await client.get(
+                f"{self.url}/profile/check",
+                headers=self.headers,
+                params={"email": email},
+            )
+
+        if res.status_code != 200:
+            logger.error(
+                "Klaviyo profile check failed (%d) for %s: %s",
+                res.status_code, email, res.text,
+            )
+            return {"exists": False, "profile_id": None}
+
+        return res.json()
+
 
 def _normalize_phone(phone):
     """Normalize an Australian phone number to E.164 format (+61...)."""
@@ -121,3 +145,19 @@ async def notify_klaviyo(service_category, data):
             await k.post_bond_data(data)
     except Exception as e:
         logger.error("Klaviyo notification failed for %s: %s", data.get("email"), e)
+
+
+async def check_klaviyo_profile(email):
+    """Check if an email exists as a Klaviyo profile.
+
+    Returns {"exists": bool, "profile_id": str | None}.
+    """
+    settings = get_settings()
+    if not settings.KLAVIYO_ENABLED:
+        return {"exists": False, "profile_id": None}
+
+    try:
+        return await Klaviyo().check_profile(email)
+    except Exception as e:
+        logger.error("Klaviyo profile check failed for %s: %s", email, e)
+        return {"exists": False, "profile_id": None}
