@@ -11,6 +11,10 @@ from config import get_settings
 engine = create_engine(
     get_settings().SQLALCHEMY_DATABASE_URI,
     pool_pre_ping=True,
+    pool_size=3,
+    max_overflow=2,
+    pool_timeout=10,
+    pool_recycle=1800,
 )
 
 
