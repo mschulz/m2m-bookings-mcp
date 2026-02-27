@@ -241,9 +241,13 @@ async def process_with_klaviyo(data, route: WebhookRoute):
             res = await check_klaviyo_profile(email)
             if res.get("exists"):
                 return
-            # Create the profile then
             k = Klaviyo()
             await k.create_klaviyo_profile(data)
+    elif route == WebhookRoute.CUSTOMER_UPDATED:
+        email = data.get("email")
+        if email:
+            k = Klaviyo()
+            await k.update_klaviyo_profile(data)
 
 
 async def check_klaviyo_profile(email):
