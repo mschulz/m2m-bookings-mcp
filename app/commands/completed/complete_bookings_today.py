@@ -49,7 +49,7 @@ async def main():
                 return res
 
         results = await asyncio.gather(
-            *(complete_one(i) for i in booking_list["id_list"])
+            *(complete_one(i) for i in booking_list["booking_ids"])
         )
         completed_count = sum(results)
 
