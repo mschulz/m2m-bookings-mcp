@@ -24,11 +24,11 @@ class Booking:
         wait=wait_exponential(min=1, max=10),
         retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
     )
-    def get_all_in_tz(self, today_date_string, tz_name):
+    async def get_all_in_tz(self, today_date_string, tz_name):
         url = f"{self.proxy_url}/v1/staff/bookings/tocomplete/{today_date_string}"
         params = {"tz_name": tz_name}
-        with httpx.Client(timeout=30) as client:
-            r = client.get(url, headers=self.headers, params=params)
+        async with httpx.AsyncClient(timeout=30) as client:
+            r = await client.get(url, headers=self.headers, params=params)
             r.raise_for_status()
         return r.json()
 
@@ -37,12 +37,12 @@ class Booking:
         wait=wait_exponential(min=1, max=10),
         retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
     )
-    def complete(self, booking_id):
+    async def complete(self, booking_id):
         settings = get_settings()
         if settings.testing:
             return 0
         url = f"{self.proxy_url}/v1/staff/bookings/{booking_id}/complete"
-        with httpx.Client(timeout=30) as client:
-            r = client.post(url, headers=self.headers)
+        async with httpx.AsyncClient(timeout=30) as client:
+            r = await client.post(url, headers=self.headers)
             r.raise_for_status()
         return r.json().get("res", 0)

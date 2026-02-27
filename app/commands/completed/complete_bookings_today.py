@@ -1,5 +1,6 @@
 # app/commands/completed/complete_bookings_today.py
 
+import asyncio
 import sys
 import datetime
 import logging
@@ -13,8 +14,10 @@ from app.commands.completed.booking import Booking
 
 logger = logging.getLogger(__name__)
 
+MAX_CONCURRENCY = 3
 
-def main():
+
+async def main():
     if len(sys.argv) != 2:
         print("Missing argument for timezone name: AEST,ACST,AWST")
         sys.exit(1)
@@ -28,18 +31,27 @@ def main():
     tz = pytz.timezone(settings.TZ_LOCALTIME)
     today_date_string = datetime.datetime.now(tz).date().strftime("%Y-%m-%d")
 
-    completed_count = tz_count = 0
     b = Booking()
-    booking_list = b.get_all_in_tz(today_date_string, tz_name)
+    booking_list = await b.get_all_in_tz(today_date_string, tz_name)
 
     logger.info("get_all_booking_ids: %s", booking_list)
 
     tz_count = booking_list["count"]
+    completed_count = 0
+
     if tz_count > 0:
-        for i in booking_list["id_list"]:
-            res = b.complete(i)
-            completed_count += res
-            logger.info("completed: %s used: %s", i, res)
+        semaphore = asyncio.Semaphore(MAX_CONCURRENCY)
+
+        async def complete_one(booking_id):
+            async with semaphore:
+                res = await b.complete(booking_id)
+                logger.info("completed: %s used: %s", booking_id, res)
+                return res
+
+        results = await asyncio.gather(
+            *(complete_one(i) for i in booking_list["id_list"])
+        )
+        completed_count = sum(results)
 
     msg = (
         f"complete_bookings_today:: {completed_count} bookings marked as "
@@ -48,8 +60,10 @@ def main():
     logger.info(msg)
 
     toaddr = settings.OVERRIDE_ADDR
-    send_completed_bookings_email(toaddr, completed_count, tz_count, tz_name)
+    await asyncio.to_thread(
+        send_completed_bookings_email, toaddr, completed_count, tz_count, tz_name
+    )
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
