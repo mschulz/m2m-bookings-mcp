@@ -110,6 +110,29 @@ class Klaviyo:
         retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
+    async def update_klaviyo_profile(self, data):
+        """Update an existing Klaviyo profile."""
+        async with httpx.AsyncClient(timeout=10) as client:
+            res = await client.patch(
+                f"{self.url}/profile/update",
+                headers=self.headers,
+                json=data,
+            )
+
+        if res.status_code != 200:
+            logger.error(
+                "Klaviyo profile update failed (%d) for %s: %s",
+                res.status_code, data.get("email"), res.text,
+            )
+
+        return res.json()
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(min=1, max=10),
+        retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
     async def check_profile(self, email):
         """Check if an email exists as a Klaviyo profile."""
         async with httpx.AsyncClient(timeout=10) as client:
