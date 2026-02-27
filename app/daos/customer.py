@@ -34,6 +34,13 @@ class CustomerDAO:
         try:
             await db.commit()
             logger.info("Committed new Customer data")
+        except exc.IntegrityError:
+            # Race condition: another request inserted the same customer_id
+            await db.rollback()
+            logger.info("Customer already exists (race condition), falling back to update")
+            existing = await self.get_by_customer_id(db, safe_int(data["id"]))
+            if existing:
+                await self.update_customer(db, existing, data)
         except exc.DataError as e:
             await db.rollback()
             raise HTTPException(
