@@ -42,8 +42,7 @@ Production uses Uvicorn: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 ### SQLModel (unified ORM + Pydantic)
 Models use **SQLModel** — one class defines both the DB table and Pydantic validation. This replaces the previous separate SQLAlchemy models + Pydantic schemas.
 
-- `BookingBase(SQLModel)` in `app/models/base.py` defines all shared columns
-- `Booking` inherits from `BookingBase` with `table=True` (single table for all booking types)
+- `BookingBase(SQLModel)` and `Booking(BookingBase, table=True)` are both in `app/models/booking.py` (single file, single table for all booking types)
 - DB column names with underscore prefixes (`_created_at`, `_final_price`) are mapped using `sa_column_kwargs={"name": "_created_at"}` so Python uses clean names (`created_at`, `final_price`)
 - `model_dump(mode="json")` replaces the old `to_json()` method
 - Webhook data import uses `from_webhook()` / `update_from_webhook()` classmethods with explicit coercion via standalone parsing functions
@@ -52,7 +51,7 @@ Models use **SQLModel** — one class defines both the DB table and Pydantic val
 - **Prices** stored as integers (cents). `dollar_string_to_int()` in `app/utils/validation.py` strips `$` and `.` from strings like `"$67.64"` → `6764`.
 - **Dates** stored as UTC in DB. `app/utils/local_date_time.py` handles conversion. Multiple inbound date formats handled by `parse_datetime()` and `parse_date()` in `app/utils/validation.py`.
 - **Column name mapping**: DB columns like `_created_at` are accessed as `created_at` in Python via `sa_column_kwargs={"name": "..."}`. API responses use clean names.
-- **Custom fields** mapped via config keys (`CUSTOM_SOURCE`, `CUSTOM_BOOKED_BY`, etc.) and processed in `app/models/base.py:process_custom_fields()`.
+- **Custom fields** mapped via config keys (`CUSTOM_SOURCE`, `CUSTOM_BOOKED_BY`, etc.) and processed in `app/models/booking.py:process_custom_fields()`.
 - **Team assignment** parsing: `team_details` arrives as a stringified list of dicts, parsed via `parse_team_list()` in `app/utils/validation.py`.
 - **String truncation**: `truncate_field()` in `app/utils/validation.py` truncates and logs warnings on overflow, applied in webhook import methods.
 - **Retries**: All external HTTP calls use `tenacity` `@retry` with exponential backoff.
@@ -79,10 +78,8 @@ app/
 │   ├── local_date_time.py # Timezone utilities
 │   └── locations.py     # Location lookup (async httpx, TTLCache + tenacity)
 ├── models/
-│   ├── base.py          # BookingBase(SQLModel) with all columns + from_webhook/update_from_webhook
-│   ├── booking.py       # Booking model (single table for all booking types)
-│   ├── customer.py      # Customer(SQLModel, table=True)
-│   └── cancellation.py  # apply_cancellation_data helper
+│   ├── booking.py       # BookingBase + Booking(table=True), webhook import logic, custom fields
+│   └── customer.py      # Customer(SQLModel, table=True)
 ├── schemas/booking.py   # Pydantic response models: BookingResponse, BookingSearchResult
 ├── daos/
 │   ├── base.py          # BaseDAO with create_update_booking(), _resolve_location()

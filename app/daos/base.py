@@ -7,7 +7,6 @@ from sqlalchemy import exc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from app.models.cancellation import apply_cancellation_data
 from app.utils.locations import get_location
 from app.utils.validation import truncate_field, safe_int
 
@@ -83,7 +82,7 @@ class BaseDAO:
         b = result.scalars().first()
         logger.info("have seen this booking - UPDATING database")
 
-        apply_cancellation_data(b, new_data)
+        b.update_from_cancellation(new_data)
         await _resolve_location(b, new_data, id_field="booking_id")
 
         logger.info(

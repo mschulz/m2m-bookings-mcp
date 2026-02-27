@@ -123,7 +123,7 @@ Models use **SQLModel** — one class defines both the DB table and Pydantic val
 
 ### Booking model
 
-All bookings (regular, NDIS, sales) are stored in a single `bookings` table. The `Booking` model inherits from `BookingBase` in `app/models/base.py`, which defines all shared columns and webhook import logic.
+All bookings (regular, NDIS, sales) are stored in a single `bookings` table. `BookingBase` and `Booking(BookingBase, table=True)` are both in `app/models/booking.py`, which defines all columns, webhook import logic, and custom field processing.
 
 ### Project structure
 
@@ -143,10 +143,8 @@ app/
 │   ├── local_date_time.py # Timezone utilities
 │   └── locations.py     # Location lookup with caching
 ├── models/
-│   ├── base.py          # BookingBase(SQLModel) with columns + webhook methods
-│   ├── booking.py       # Booking model (single table for all booking types)
-│   ├── customer.py      # Customer model
-│   └── cancellation.py  # Cancellation data helper
+│   ├── booking.py       # BookingBase + Booking(table=True), webhook import logic, custom fields
+│   └── customer.py      # Customer model
 ├── schemas/booking.py   # Pydantic response models
 ├── daos/
 │   ├── base.py          # BaseDAO (upsert, cancel, mark converted)
