@@ -59,8 +59,9 @@ Models use **SQLModel** — one class defines both the DB table and Pydantic val
 - **HTTP client**: `httpx.AsyncClient` for all external HTTP calls (consistent with m2m-proxy).
 - **Location resolution**: Models (`from_webhook`/`update_from_webhook`) only set `location` if provided in webhook data. The DAO layer resolves missing locations via async `_resolve_location()` → `get_location()` after applying webhook data.
 - **Centralised Klaviyo integration**: All POST routes schedule `process_with_klaviyo(data, route)` via `BackgroundTasks`. A `WebhookRoute(StrEnum)` identifies the route. Only `BOOKING_NEW`/`BOOKING_UPDATED` trigger new-customer notifications (Bond/House Clean). `CUSTOMER_NEW` creates profiles, `CUSTOMER_UPDATED` patches them. All other routes return early (future-proofed for extension). The downstream service is `m2m-klaviyo-addresses`.
-- **Sync Google API**: `email_service.py` and `gmail_handler.py` remain sync; called via `run_in_threadpool()` from the async exception handler.
+- **Sync Google API**: `email_service.py` and `gmail_handler.py` remain sync; called via `run_in_threadpool()` (routes) or `asyncio.to_thread()` (scripts) from async code.
 - **Customer upsert race condition guard**: `CustomerDAO.create_customer()` catches `IntegrityError` (unique violation on `customer_id`) and falls back to update. This handles concurrent webhooks for the same customer where both SELECT finds no row and both attempt INSERT.
+- **Scheduled commands are async**: `app/commands/completed/` uses `asyncio.run()` with `httpx.AsyncClient`. Completions run concurrently via `asyncio.gather()` gated by `asyncio.Semaphore(3)`. m2m-proxy handles Launch27 rate limiting; the semaphore limits concurrency on our side. Proxy response uses `booking_ids` key (not `id_list`). `ENVIRONMENT=testing` skips actual completion POST calls.
 
 ### File Structure
 ```
@@ -93,7 +94,10 @@ app/
 │   ├── bookings.py      # /booking/* endpoints (thin routes)
 │   ├── customers.py     # /customer/* endpoints (thin routes)
 │   └── health.py        # GET / health check
-├── commands/            # Scheduled command scripts
+├── commands/
+│   └── completed/       # Scheduled: mark today's bookings as completed
+│       ├── booking.py           # Async Booking client (get_all_in_tz, complete)
+│       └── complete_bookings_today.py  # Entry point: asyncio.run(), semaphore-gated gather
 └── templates/           # HTML email templates
 scripts/
 └── copy_old_db.py       # One-time migration: copy data from old DB to new DB
