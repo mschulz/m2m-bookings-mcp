@@ -89,6 +89,9 @@ class Klaviyo:
     )
     async def create_klaviyo_profile(self, data):
         """Create a new Klaviyo profile."""
+        if not get_settings().KLAVIYO_ENABLED:
+            logger.debug("Klaviyo disabled — skipping profile creation for %s", data.get("email"))
+            return None
         async with httpx.AsyncClient(timeout=10) as client:
             res = await client.post(
                 f"{self.url}/profile/new",
@@ -112,6 +115,9 @@ class Klaviyo:
     )
     async def update_klaviyo_profile(self, data):
         """Update an existing Klaviyo profile."""
+        if not get_settings().KLAVIYO_ENABLED:
+            logger.debug("Klaviyo disabled — skipping profile update for %s", data.get("email"))
+            return None
         async with httpx.AsyncClient(timeout=10) as client:
             res = await client.patch(
                 f"{self.url}/profile/update",
@@ -195,6 +201,9 @@ class WebhookRoute(StrEnum):
 
 async def notify_klaviyo(service_category, data):
     """Dispatch a new-customer notification to the appropriate Klaviyo list."""
+    if not get_settings().KLAVIYO_ENABLED:
+        logger.debug("Klaviyo disabled — skipping notification for %s", data.get("email"))
+        return
     try:
         k = Klaviyo()
         if service_category == "House Clean":
@@ -212,8 +221,6 @@ async def process_with_klaviyo(data, route: WebhookRoute):
     and only when the booking is from a new customer in a qualifying category.
     """
     if not isinstance(data, dict):
-        return
-    if not get_settings().KLAVIYO_ENABLED:
         return
     if route in (
             WebhookRoute.BOOKING_NEW,
