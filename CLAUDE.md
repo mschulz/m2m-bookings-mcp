@@ -22,7 +22,7 @@ Production uses Uvicorn: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 - `testing=True` suppresses email sending
 - API authentication via Bearer token in Authorization header, validated against `API_KEY`
 - Proxy config: `PROXY_URL`, `PROXY_API_KEY`
-- `KLAVIYO_ENABLED` (default `true`): set `false` to disable Klaviyo new-customer notifications
+- `KLAVIYO_ENABLED` (default `true`): set `false` to disable all Klaviyo integration (notifications, profile create/update)
 - Settings singleton via `@lru_cache` on `get_settings()`
 
 ## Architecture
@@ -37,7 +37,7 @@ Production uses Uvicorn: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 3. FastAPI exception handlers catch DB connection drops (503) and data errors (422)
 4. Route parses JSON body, calls `await update_table()` which calls the booking DAO
 5. DAO's `create_update_booking()` does upsert via `Model.from_webhook(data)` (create) or `instance.update_from_webhook(data)` (update), then resolves location via async `_resolve_location()`
-6. Customer data synced, Klaviyo notified for new customers
+6. Customer data synced, `process_with_klaviyo()` scheduled via `BackgroundTasks`
 
 ### SQLModel (unified ORM + Pydantic)
 Models use **SQLModel** — one class defines both the DB table and Pydantic validation. This replaces the previous separate SQLAlchemy models + Pydantic schemas.
@@ -59,6 +59,7 @@ Models use **SQLModel** — one class defines both the DB table and Pydantic val
 - **Caching**: Location lookups use `cachetools.TTLCache(maxsize=1000, ttl=3600)`.
 - **HTTP client**: `httpx.AsyncClient` for all external HTTP calls (consistent with m2m-proxy).
 - **Location resolution**: Models (`from_webhook`/`update_from_webhook`) only set `location` if provided in webhook data. The DAO layer resolves missing locations via async `_resolve_location()` → `get_location()` after applying webhook data.
+- **Centralised Klaviyo integration**: All POST routes schedule `process_with_klaviyo(data, route)` via `BackgroundTasks`. A `WebhookRoute(StrEnum)` identifies the route. Only `BOOKING_NEW`/`BOOKING_UPDATED` trigger new-customer notifications (Bond/House Clean). `CUSTOMER_NEW` creates profiles, `CUSTOMER_UPDATED` patches them. All other routes return early (future-proofed for extension). The downstream service is `m2m-klaviyo-addresses`.
 - **Sync Google API**: `email_service.py` and `gmail_handler.py` remain sync; called via `run_in_threadpool()` from the async exception handler.
 
 ### File Structure
@@ -74,7 +75,7 @@ app/
 │   ├── validation.py    # Parsing (parse_datetime, parse_date, parse_team_list, etc.) + truncation + coercion
 │   ├── email_service.py # Gmail API email sending (consolidated)
 │   ├── gmail_handler.py # GmailOAuth2Handler for error emails
-│   ├── klaviyo.py       # Klaviyo CRM integration (async httpx + tenacity)
+│   ├── klaviyo.py       # Klaviyo CRM integration: WebhookRoute enum, process_with_klaviyo(), Klaviyo HTTP client
 │   ├── local_date_time.py # Timezone utilities
 │   └── locations.py     # Location lookup (async httpx, TTLCache + tenacity)
 ├── models/
@@ -88,8 +89,8 @@ app/
 │   ├── booking.py       # BookingDAO (search, date range queries)
 │   └── customer.py      # CustomerDAO
 ├── services/
-│   ├── bookings.py      # Booking business logic (update_table, search helpers)
-│   └── customers.py     # Customer business logic (create_or_update_customer)
+│   ├── bookings.py      # Booking business logic (update_table, reject_booking, search helpers)
+│   └── customers.py     # Customer business logic (create_or_update_customer validation)
 ├── routers/
 │   ├── bookings.py      # /booking/* endpoints (thin routes)
 │   ├── customers.py     # /customer/* endpoints (thin routes)
