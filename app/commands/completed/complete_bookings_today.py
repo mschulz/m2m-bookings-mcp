@@ -59,7 +59,7 @@ async def main():
     )
     logger.info(msg)
 
-    toaddr = settings.OVERRIDE_ADDR
+    toaddr = settings.SUPPORT_EMAIL
     await asyncio.to_thread(
         send_completed_bookings_email, toaddr, completed_count, tz_count, tz_name
     )

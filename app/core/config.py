@@ -50,8 +50,6 @@ class Settings(BaseSettings):
     FROM_NAME: str = ""
     FROM_ADDRESS: str = ""
     SUPPORT_EMAIL: str = ""
-    OVERRIDE_EMAIL: bool = True
-    OVERRIDE_ADDR: str = ""
 
     # Gmail OAuth service account credentials (JSON string)
     SERVICE_ACCOUNT_CREDENTIALS: str = ""
