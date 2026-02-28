@@ -7,7 +7,7 @@ from sqlalchemy import exc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from app.daos.base import _resolve_location
+from app.daos.base import _resolve_location, safe_commit
 from app.models.customer import Customer
 from app.utils.validation import safe_int
 
@@ -59,17 +59,8 @@ class CustomerDAO:
         if stored_update_time == customer.updated_at:
             logger.info("No change to customer data")
             return
-        try:
-            await db.commit()
+        if await safe_commit(db, "Customer error in model data"):
             logger.info("Updated Customer data")
-        except exc.DataError as e:
-            await db.rollback()
-            raise HTTPException(
-                status_code=422, detail=f"Customer error in model data: {e}"
-            ) from e
-        except exc.OperationalError:
-            await db.rollback()
-            logger.info("SSL connection has been closed unexpectedly")
 
     async def create_or_update_customer(self, db: AsyncSession, data):
         """Upsert a customer record."""

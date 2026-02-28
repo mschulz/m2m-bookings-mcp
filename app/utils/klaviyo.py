@@ -45,116 +45,51 @@ class Klaviyo:
         retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
+    async def _request(self, method, path, *, json=None, params=None, expected_status=200):
+        """Send an HTTP request with retry and standardised error logging."""
+        async with httpx.AsyncClient(timeout=10) as client:
+            res = await getattr(client, method)(
+                f"{self.url}{path}", headers=self.headers, json=json, params=params,
+            )
+        if res.status_code != expected_status:
+            logger.error(
+                "Klaviyo %s %s failed (%d): %s",
+                method.upper(), path, res.status_code, res.text,
+            )
+        return res
+
     async def post_home_data(self, data):
         """Send a new house-clean customer to Klaviyo."""
-        url = f"{self.url}/house/new"
         payload = self._get_payload(data)
-        logger.debug("Klaviyo house POST: url=%s payload=%s", url, payload)
+        logger.debug("Klaviyo house POST: payload=%s", payload)
+        await self._request("post", "/house/new", json=payload, expected_status=201)
 
-        async with httpx.AsyncClient(timeout=10) as client:
-            res = await client.post(url, headers=self.headers, json=payload)
-
-        if res.status_code != 201:
-            logger.error(
-                "Failed (%d) to update house customer list for %s: %s | payload=%s",
-                res.status_code, payload.get("email"), res.text, payload,
-            )
-
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(min=1, max=10),
-        retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
     async def post_bond_data(self, data):
         """Send a new bond-clean customer to Klaviyo."""
         payload = self._get_payload(data)
+        await self._request("post", "/bond/new", json=payload, expected_status=201)
 
-        async with httpx.AsyncClient(timeout=10) as client:
-            res = await client.post(
-                f"{self.url}/bond/new", headers=self.headers, json=payload,
-            )
-
-        if res.status_code != 201:
-            logger.error(
-                "Failed (%d) to update bond customer list for %s: %s | payload=%s",
-                res.status_code, payload.get("email"), res.text, payload,
-            )
-
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(min=1, max=10),
-        retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
     async def create_klaviyo_profile(self, data):
         """Create a new Klaviyo profile."""
         if not get_settings().KLAVIYO_ENABLED:
             logger.debug("Klaviyo disabled — skipping profile creation for %s", data.get("email"))
             return None
-        async with httpx.AsyncClient(timeout=10) as client:
-            res = await client.post(
-                f"{self.url}/profile/new",
-                headers=self.headers,
-                json=data,
-            )
-
-        if res.status_code != 201:
-            logger.error(
-                "Klaviyo profile creation failed (%d) for %s: %s",
-                res.status_code, data.get("email"), res.text,
-            )
-
+        res = await self._request("post", "/profile/new", json=data, expected_status=201)
         return res.json()
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(min=1, max=10),
-        retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
     async def update_klaviyo_profile(self, data):
         """Update an existing Klaviyo profile."""
         if not get_settings().KLAVIYO_ENABLED:
             logger.debug("Klaviyo disabled — skipping profile update for %s", data.get("email"))
             return None
-        async with httpx.AsyncClient(timeout=10) as client:
-            res = await client.patch(
-                f"{self.url}/profile/update",
-                headers=self.headers,
-                json=data,
-            )
-
-        if res.status_code != 200:
-            logger.error(
-                "Klaviyo profile update failed (%d) for %s: %s",
-                res.status_code, data.get("email"), res.text,
-            )
-
+        res = await self._request("patch", "/profile/update", json=data)
         return res.json()
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(min=1, max=10),
-        retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
     async def check_profile(self, email):
         """Check if an email exists as a Klaviyo profile."""
-        async with httpx.AsyncClient(timeout=10) as client:
-            res = await client.get(
-                f"{self.url}/profile/check",
-                headers=self.headers,
-                params={"email": email},
-            )
-
+        res = await self._request("get", "/profile/check", params={"email": email})
         if res.status_code != 200:
-            logger.error(
-                "Klaviyo profile check failed (%d) for %s: %s",
-                res.status_code, email, res.text,
-            )
             return {"exists": False, "profile_id": None}
-
         return res.json()
 
 

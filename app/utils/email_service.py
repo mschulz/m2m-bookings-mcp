@@ -50,17 +50,22 @@ def send_email(subject: str, sender: tuple | str, recipients: list[str], html_bo
         logger.error("Failed to send email to %s: %s", recipients, e)
 
 
-def send_error_email(toaddr, error_msg):
-    """Send developer email when an error has occurred."""
+def _send_notification(subject: str, body: str, toaddr):
+    """Send a notification email with standardised sender and recipient handling."""
     settings = get_settings()
-    body = f"<h1>{settings.APP_NAME}: Error</h1><p>{error_msg}</p>"
-
     send_email(
-        subject=f"{settings.APP_NAME}: Error has occurred",
+        subject=subject,
         sender=(settings.FROM_NAME, settings.FROM_ADDRESS),
         recipients=toaddr if isinstance(toaddr, list) else [toaddr],
         html_body=body,
     )
+
+
+def send_error_email(toaddr, error_msg):
+    """Send developer email when an error has occurred."""
+    settings = get_settings()
+    body = f"<h1>{settings.APP_NAME}: Error</h1><p>{error_msg}</p>"
+    _send_notification(f"{settings.APP_NAME}: Error has occurred", body, toaddr)
 
 
 def send_missing_location_email(toaddr, error_msg, locations, postcodes):
@@ -71,12 +76,8 @@ def send_missing_location_email(toaddr, error_msg, locations, postcodes):
         f"<p>{error_msg}</p>"
         f"<p>Locations: {locations}, Postcodes: {postcodes}</p>"
     )
-
-    send_email(
-        subject=f"{settings.COMPANY_NAME}: Missing Location information!!",
-        sender=(settings.FROM_NAME, settings.FROM_ADDRESS),
-        recipients=toaddr if isinstance(toaddr, list) else [toaddr],
-        html_body=body,
+    _send_notification(
+        f"{settings.COMPANY_NAME}: Missing Location information!!", body, toaddr,
     )
 
 
@@ -88,12 +89,8 @@ def send_updated_locations_email(toaddr, number_locations, updated, missing, pos
         f"<p>Total: {number_locations}, Updated: {updated}, "
         f"Missing: {missing}, Postcodes: {postcodes}</p>"
     )
-
-    send_email(
-        subject=f"{settings.APP_NAME}: Updated booking locations information!!",
-        sender=(settings.FROM_NAME, settings.FROM_ADDRESS),
-        recipients=toaddr if isinstance(toaddr, list) else [toaddr],
-        html_body=body,
+    _send_notification(
+        f"{settings.APP_NAME}: Updated booking locations information!!", body, toaddr,
     )
 
 
@@ -105,10 +102,6 @@ def send_completed_bookings_email(toaddr, bookings_count, n_active, tz_name):
         f"<p>{bookings_count} bookings marked completed. "
         f"Active: {n_active}. Timezone: {tz_name}</p>"
     )
-
-    send_email(
-        subject=f"{settings.APP_NAME}: {bookings_count} bookings marked completed",
-        sender=(settings.FROM_NAME, settings.FROM_ADDRESS),
-        recipients=[toaddr],
-        html_body=body,
+    _send_notification(
+        f"{settings.APP_NAME}: {bookings_count} bookings marked completed", body, toaddr,
     )

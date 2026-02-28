@@ -22,6 +22,37 @@ async def _resolve_location(instance, data: dict, id_field: str = "id"):
             instance.location = truncate_field(location, 64, "location", bid)
 
 
+async def safe_commit(
+    db: AsyncSession,
+    error_detail: str,
+    integrity_msg: str | None = None,
+) -> bool:
+    """Commit with standardised error handling. Returns True on success.
+
+    - DataError → rollback + raise HTTPException(422)
+    - IntegrityError → rollback + log integrity_msg (if provided; otherwise re-raises)
+    - OperationalError → rollback + log
+    """
+    try:
+        await db.commit()
+        return True
+    except exc.DataError as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=422, detail=f"Data error: {error_detail}"
+        ) from e
+    except exc.IntegrityError:
+        await db.rollback()
+        if integrity_msg:
+            logger.info(integrity_msg)
+        else:
+            raise
+    except exc.OperationalError:
+        await db.rollback()
+        logger.info("SSL connection has been closed unexpectedly")
+    return False
+
+
 class BaseDAO:
     def __init__(self, model):
         self.model = model
@@ -59,19 +90,10 @@ class BaseDAO:
                 b.name, b.teams_assigned, b.booking_id,
             )
 
-        try:
-            await db.commit()
-        except exc.DataError as e:
-            await db.rollback()
-            raise HTTPException(
-                status_code=422, detail=f"Data error for booking: {b.model_dump()}"
-            ) from e
-        except exc.IntegrityError:
-            await db.rollback()
-            logger.info("Data already loaded into database: %s", b.model_dump())
-        except exc.OperationalError:
-            await db.rollback()
-            logger.info("SSL connection has been closed unexpectedly")
+        await safe_commit(
+            db, str(b.model_dump()),
+            f"Data already loaded into database: {b.model_dump()}",
+        )
 
     async def update_booking(self, db: AsyncSession, new_data):
         """Apply cancellation-specific updates to an existing booking."""
@@ -90,19 +112,10 @@ class BaseDAO:
             b.name, b.teams_assigned, b.booking_id,
         )
 
-        try:
-            await db.commit()
-        except exc.DataError as e:
-            await db.rollback()
-            raise HTTPException(
-                status_code=422, detail=f"Data error for booking: {b.model_dump()}"
-            ) from e
-        except exc.IntegrityError:
-            await db.rollback()
-            logger.info("Data already loaded into database: %s", b.model_dump())
-        except exc.OperationalError:
-            await db.rollback()
-            logger.info("SSL connection has been closed unexpectedly")
+        await safe_commit(
+            db, str(b.model_dump()),
+            f"Data already loaded into database: {b.model_dump()}",
+        )
 
     async def cancel_booking(self, db: AsyncSession, new_data):
         """Delete a booking record by its external booking_id."""
@@ -115,17 +128,5 @@ class BaseDAO:
         row = result.scalars().first()
         if row:
             await db.delete(row)
-        try:
-            await db.commit()
+        if await safe_commit(db, str(new_data), f"Integrity error: {new_data}"):
             logger.info("Booking deleted from table: %s", booking_id)
-        except exc.DataError as e:
-            await db.rollback()
-            raise HTTPException(
-                status_code=422, detail=f"Data error: {new_data}"
-            ) from e
-        except exc.IntegrityError:
-            await db.rollback()
-            logger.info("Integrity error: %s", new_data)
-        except exc.OperationalError:
-            await db.rollback()
-            logger.info("SSL connection has been closed unexpectedly")
