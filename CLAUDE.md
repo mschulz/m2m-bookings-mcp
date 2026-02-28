@@ -60,6 +60,9 @@ Models use **SQLModel** — one class defines both the DB table and Pydantic val
 - **Location resolution**: Models (`from_webhook`/`update_from_webhook`) only set `location` if provided in webhook data. The DAO layer resolves missing locations via async `_resolve_location()` → `get_location()` after applying webhook data.
 - **Centralised Klaviyo integration**: All POST routes schedule `process_with_klaviyo(data, route)` via `BackgroundTasks`. A `WebhookRoute(StrEnum)` identifies the route. Only `BOOKING_NEW`/`BOOKING_UPDATED` trigger new-customer notifications (Bond/House Clean). `CUSTOMER_NEW` creates profiles, `CUSTOMER_UPDATED` patches them. All other routes return early (future-proofed for extension). The downstream service is `m2m-klaviyo-addresses`.
 - **Sync Google API**: `email_service.py` and `gmail_handler.py` remain sync; called via `run_in_threadpool()` (routes) or `asyncio.to_thread()` (scripts) from async code.
+- **DAO `safe_commit()`**: `app/daos/base.py` provides `safe_commit(db, error_detail, integrity_msg=None)` — standardised commit with `DataError` → 422, `IntegrityError` → log (or re-raise if no message), `OperationalError` → log. Returns `True` on success. Used by `BaseDAO` and `CustomerDAO`; `CustomerDAO.create_customer()` still uses manual handling (async fallback on IntegrityError).
+- **Klaviyo `_request()`**: Single `@retry`-decorated method on `Klaviyo` class handles `httpx.AsyncClient` boilerplate and error logging. Public methods (`post_home_data`, `post_bond_data`, `create_klaviyo_profile`, `update_klaviyo_profile`, `check_profile`) are thin wrappers.
+- **Email `_send_notification()`**: `app/utils/email_service.py` helper standardises sender tuple and `isinstance` recipient check. All `send_*_email` functions delegate to it.
 - **Customer upsert race condition guard**: `CustomerDAO.create_customer()` catches `IntegrityError` (unique violation on `customer_id`) and falls back to update. This handles concurrent webhooks for the same customer where both SELECT finds no row and both attempt INSERT.
 - **Scheduled commands are async**: `app/commands/completed/` uses `asyncio.run()` with `httpx.AsyncClient`. Completions run concurrently via `asyncio.gather()` gated by `asyncio.Semaphore(3)`. m2m-proxy handles Launch27 rate limiting; the semaphore limits concurrency on our side. Proxy response uses `booking_ids` key (not `id_list`). `ENVIRONMENT=testing` skips actual completion POST calls.
 
@@ -84,7 +87,7 @@ app/
 │   └── customer.py      # Customer(SQLModel, table=True)
 ├── schemas/booking.py   # Pydantic response models: BookingResponse, BookingSearchResult
 ├── daos/
-│   ├── base.py          # BaseDAO with create_update_booking(), _resolve_location()
+│   ├── base.py          # BaseDAO with create_update_booking(), _resolve_location(), safe_commit()
 │   ├── booking.py       # BookingDAO (search, date range queries)
 │   └── customer.py      # CustomerDAO
 ├── services/
