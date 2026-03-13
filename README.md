@@ -17,8 +17,10 @@ Includes MCP (Model Context Protocol) support so AI assistants like Claude Deskt
 
 ```bash
 pyenv virtualenv 3.12.0 venv-bookings-mcp
-pyenv local venv-bookings-mcp
+pyenv activate venv-bookings-mcp
 ```
+
+> **Note:** `.python-version` contains `3.12` (a version number, not the virtualenv name). Heroku requires a plain version like `3.12` in this file. Locally, activate the virtualenv manually with `pyenv activate venv-bookings-mcp`.
 
 ### Install dependencies
 

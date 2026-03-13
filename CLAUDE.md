@@ -64,7 +64,7 @@ Models use **SQLModel** — one class defines both the DB table and Pydantic val
 - **Klaviyo `_request()`**: Single `@retry`-decorated method on `Klaviyo` class handles `httpx.AsyncClient` boilerplate and error logging. Public methods (`post_home_data`, `post_bond_data`, `create_klaviyo_profile`, `update_klaviyo_profile`, `check_profile`) are thin wrappers.
 - **Email `_send_notification()`**: `app/utils/email_service.py` helper standardises sender tuple and `isinstance` recipient check. All `send_*_email` functions delegate to it.
 - **Customer upsert race condition guard**: `CustomerDAO.create_customer()` catches `IntegrityError` (unique violation on `customer_id`) and falls back to update. This handles concurrent webhooks for the same customer where both SELECT finds no row and both attempt INSERT.
-- **Scheduled commands are async**: `app/commands/completed/` uses `asyncio.run()` with `httpx.AsyncClient`. Completions run concurrently via `asyncio.gather()` gated by `asyncio.Semaphore(3)`. m2m-proxy handles Launch27 rate limiting; the semaphore limits concurrency on our side. Proxy response uses `booking_ids` key (not `id_list`). `ENVIRONMENT=testing` skips actual completion POST calls.
+- **Scheduled commands are async**: `app/commands/completed/` uses `asyncio.run()` with `httpx.AsyncClient`. Completions run concurrently via `asyncio.gather()` gated by `asyncio.Semaphore(3)`. m2m-proxy handles Launch27 rate limiting; the semaphore limits concurrency on our side. Proxy `/tocomplete/{date}` response: `{"count": int, "booking_ids": []}` — `booking_ids` are filtered by timezone using `booking["address"]["zip"]` from the L27 booking list (not top-level `zip`, not `address["postcode"]`). Proxy complete endpoint returns `{"success": bool, ...}`; `Booking.complete()` returns `1` if `success` else `0` for the completion tally. `ENVIRONMENT=testing` skips actual completion POST calls.
 - **Database scripts**: `app/database/` contains standalone async scripts that open their own `async_session()` directly (not via `Depends(get_db)`). `missing_locations.py` queries bookings with NULL location, deduplicates postcodes, and emails a summary to `SUPPORT_EMAIL` via `asyncio.to_thread()`. `create_db.py` creates all tables.
 
 ### File Structure
@@ -153,3 +153,5 @@ Python 3.12, FastAPI, Uvicorn, SQLModel 0.0.22+, Pydantic 2.9+, SQLAlchemy 2.0+,
 ## Deployment
 
 Heroku-based. `Procfile` runs `web: uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Database via `DATABASE_URL` env var (auto-corrects `postgres://` to `postgresql://` prefix, then to `postgresql+asyncpg://` at engine creation).
+
+**`.python-version`** must contain a plain version number (e.g. `3.12`) — Heroku rejects virtualenv names like `venv-bookings-mcp`. Activate the local virtualenv manually with `pyenv activate venv-bookings-mcp`.
