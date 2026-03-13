@@ -45,4 +45,4 @@ class Booking:
         async with httpx.AsyncClient(timeout=30) as client:
             r = await client.post(url, headers=self.headers)
             r.raise_for_status()
-        return r.json().get("res", 0)
+        return 1 if r.json().get("success", False) else 0
