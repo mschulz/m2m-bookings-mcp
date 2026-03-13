@@ -11,6 +11,14 @@ Includes MCP (Model Context Protocol) support so AI assistants like Claude Deskt
 - Python 3.12+
 - PostgreSQL database
 - A `.env` file with configuration (see below)
+- [pyenv](https://github.com/pyenv/pyenv) (recommended for virtualenv management)
+
+### Create and activate the virtualenv
+
+```bash
+pyenv virtualenv 3.12.0 venv-bookings-mcp
+pyenv local venv-bookings-mcp
+```
 
 ### Install dependencies
 
@@ -158,9 +166,47 @@ app/
 │   ├── customers.py     # /customer/* endpoints
 │   └── health.py        # Health check
 ├── commands/            # Scheduled command scripts
+│   └── completed/       # Mark today's bookings as completed (run via cron/Heroku Scheduler)
+├── database/
+│   ├── create_db.py             # One-time table creation
+│   └── missing_locations.py     # Report bookings with NULL location; emails SUPPORT_EMAIL
 └── templates/           # HTML email templates
 scripts/
 └── copy_old_db.py       # One-time migration: copy data from old DB to new DB
+tests/
+└── test_missing_locations.py    # pytest-asyncio tests for missing_locations script
+```
+
+## Database scripts
+
+Standalone async scripts that open their own DB session (no HTTP request needed).
+
+### Report bookings with missing locations
+
+```bash
+python -m app.database.missing_locations
+```
+
+Queries all bookings with a NULL `location`, deduplicates the affected postcodes, and emails a summary to `SUPPORT_EMAIL`. Safe to run anytime; email is suppressed in `testing` mode.
+
+### Create database tables (first-time setup only)
+
+```bash
+python -m app.database.create_db
+```
+
+## Testing
+
+```bash
+pytest
+```
+
+Tests live in `tests/`. They use `pytest-asyncio` and mock all external dependencies (database, email), so no live connections are required.
+
+To run a specific test file:
+
+```bash
+pytest tests/test_missing_locations.py -v
 ```
 
 ## Deployment

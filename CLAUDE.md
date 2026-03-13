@@ -65,6 +65,7 @@ Models use **SQLModel** — one class defines both the DB table and Pydantic val
 - **Email `_send_notification()`**: `app/utils/email_service.py` helper standardises sender tuple and `isinstance` recipient check. All `send_*_email` functions delegate to it.
 - **Customer upsert race condition guard**: `CustomerDAO.create_customer()` catches `IntegrityError` (unique violation on `customer_id`) and falls back to update. This handles concurrent webhooks for the same customer where both SELECT finds no row and both attempt INSERT.
 - **Scheduled commands are async**: `app/commands/completed/` uses `asyncio.run()` with `httpx.AsyncClient`. Completions run concurrently via `asyncio.gather()` gated by `asyncio.Semaphore(3)`. m2m-proxy handles Launch27 rate limiting; the semaphore limits concurrency on our side. Proxy response uses `booking_ids` key (not `id_list`). `ENVIRONMENT=testing` skips actual completion POST calls.
+- **Database scripts**: `app/database/` contains standalone async scripts that open their own `async_session()` directly (not via `Depends(get_db)`). `missing_locations.py` queries bookings with NULL location, deduplicates postcodes, and emails a summary to `SUPPORT_EMAIL` via `asyncio.to_thread()`. `create_db.py` creates all tables.
 
 ### File Structure
 ```
@@ -101,9 +102,14 @@ app/
 │   └── completed/       # Scheduled: mark today's bookings as completed
 │       ├── booking.py           # Async Booking client (get_all_in_tz, complete)
 │       └── complete_bookings_today.py  # Entry point: asyncio.run(), semaphore-gated gather
+├── database/
+│   ├── create_db.py             # One-time table creation via async engine
+│   └── missing_locations.py     # Report bookings with NULL location; emails SUPPORT_EMAIL
 └── templates/           # HTML email templates
 scripts/
 └── copy_old_db.py       # One-time migration: copy data from old DB to new DB
+tests/
+└── test_missing_locations.py    # pytest-asyncio tests for missing_locations script
 ```
 
 ### Routers
