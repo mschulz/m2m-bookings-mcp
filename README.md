@@ -174,7 +174,24 @@ app/
 scripts/
 └── copy_old_db.py       # One-time migration: copy data from old DB to new DB
 tests/
-└── test_missing_locations.py    # pytest-asyncio tests for missing_locations script
+├── conftest.py                  # Shared fixtures: mock DB session, test client, sample payloads
+├── pytest.ini                   # asyncio_mode = auto
+├── test_auth.py                 # verify_api_key — valid/invalid/empty token
+├── test_validation.py           # All 8 validation helpers (36 tests)
+├── test_local_date_time.py      # local_to_utc, UTC_now
+├── test_models_booking.py       # Booking.from_webhook, update_from_webhook, cancellation, custom fields
+├── test_models_customer.py      # Customer.from_webhook, update_from_webhook
+├── test_klaviyo.py              # Phone normalisation, price cleaning, process_with_klaviyo routing
+├── test_locations.py            # get_location — cache hit/miss, API 404, exception handling
+├── test_email_service.py        # All send_* functions — testing suppression, body/subject content
+├── test_daos_base.py            # safe_commit (5 cases), _resolve_location, BaseDAO CRUD
+├── test_daos_customer.py        # CustomerDAO — upsert, race condition IntegrityError fallback
+├── test_services_bookings.py    # reject_booking, update_table, all search helpers
+├── test_services_customers.py   # create_or_update_customer validation
+├── test_routers_health.py       # GET /
+├── test_routers_bookings.py     # All 11 booking endpoints
+├── test_routers_customers.py    # POST /customer/new and /customer/updated
+└── test_missing_locations.py    # find_missing_locations, main() email gating
 ```
 
 ## Database scripts
@@ -201,13 +218,38 @@ python -m app.database.create_db
 pytest
 ```
 
-Tests live in `tests/`. They use `pytest-asyncio` and mock all external dependencies (database, email), so no live connections are required.
+247 tests across 16 files. All external dependencies (database, Gmail, Klaviyo, zip2location API) are mocked — no live connections required. `asyncio_mode = auto` is set in `pytest.ini` so all async tests run without extra decorators.
 
-To run a specific test file:
+| Area | File | Tests |
+|---|---|---|
+| Auth | `test_auth.py` | 3 |
+| Validation helpers | `test_validation.py` | 36 |
+| Timezone utilities | `test_local_date_time.py` | 5 |
+| Booking model | `test_models_booking.py` | 22 |
+| Customer model | `test_models_customer.py` | 16 |
+| Klaviyo integration | `test_klaviyo.py` | 20 |
+| Location lookup | `test_locations.py` | 7 |
+| Email service | `test_email_service.py` | 11 |
+| BaseDAO + safe_commit | `test_daos_base.py` | 18 |
+| CustomerDAO | `test_daos_customer.py` | 8 |
+| Booking services | `test_services_bookings.py` | 17 |
+| Customer services | `test_services_customers.py` | 3 |
+| Health router | `test_routers_health.py` | 3 |
+| Booking routers | `test_routers_bookings.py` | 19 |
+| Customer routers | `test_routers_customers.py` | 4 |
+| Missing locations script | `test_missing_locations.py` | 7 |
+
+Run a specific file:
 
 ```bash
-pytest tests/test_missing_locations.py -v
+pytest tests/test_routers_bookings.py -v
 ```
+
+### Test design notes
+
+- **Router tests** use Starlette `TestClient` with `get_db` and `verify_api_key` overridden. The engine's `begin()` and `dispose()` are patched so the lifespan table-creation step is a no-op.
+- **Service/DAO tests** use `AsyncMock` for the database session; SQLAlchemy exceptions are raised directly to test error-handling paths.
+- **`KLAVIYO_ENABLED`** is read from `.env` at test time — tests that exercise Klaviyo calls patch `get_settings` directly to control this flag.
 
 ## Deployment
 

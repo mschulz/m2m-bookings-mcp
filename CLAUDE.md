@@ -109,13 +109,42 @@ app/
 scripts/
 └── copy_old_db.py       # One-time migration: copy data from old DB to new DB
 tests/
-└── test_missing_locations.py    # pytest-asyncio tests for missing_locations script
+├── conftest.py                  # Shared fixtures: mock DB session, test client (engine patched), sample payloads
+├── test_auth.py                 # verify_api_key — valid/invalid/empty token
+├── test_validation.py           # All 8 validation helpers
+├── test_local_date_time.py      # local_to_utc, UTC_now
+├── test_models_booking.py       # Booking.from_webhook, update_from_webhook, cancellation, custom fields
+├── test_models_customer.py      # Customer.from_webhook, update_from_webhook
+├── test_klaviyo.py              # _normalize_phone, _clean_price, process_with_klaviyo routing
+├── test_locations.py            # get_location — cache hit/miss, API errors
+├── test_email_service.py        # All send_* functions — testing suppression, body/subject content
+├── test_daos_base.py            # safe_commit (5 error cases), _resolve_location, BaseDAO CRUD
+├── test_daos_customer.py        # CustomerDAO — upsert, IntegrityError race condition fallback
+├── test_services_bookings.py    # reject_booking, update_table, all search helpers
+├── test_services_customers.py   # create_or_update_customer validation
+├── test_routers_health.py       # GET /
+├── test_routers_bookings.py     # All 11 booking endpoints
+├── test_routers_customers.py    # POST /customer/new and /customer/updated
+└── test_missing_locations.py    # find_missing_locations, main() email gating
+pytest.ini                       # asyncio_mode = auto
 ```
 
 ### Routers
 - `app/routers/bookings.py` — Booking CRUD, search, and webhook endpoints
 - `app/routers/customers.py` — Customer webhook endpoints
 - `app/routers/health.py` — Health check
+
+## Testing
+
+Run the full suite: `pytest` (247 tests, all passing, ~1s).
+
+### Key test conventions
+- `pytest.ini` sets `asyncio_mode = auto` — no `@pytest.mark.asyncio` needed.
+- `tests/conftest.py` provides `client` (Starlette `TestClient`), `mock_db_session` (`AsyncMock`), `auth_headers`, and sample `booking_data`/`customer_data` fixtures.
+- **Router tests**: `get_db` and `verify_api_key` are overridden via `app.dependency_overrides`. The engine used in the lifespan is patched (`patch("app.main.engine")`) so table creation is a no-op. Service functions are patched at the router level to isolate routing logic.
+- **Service/DAO tests**: Pure async unit tests using `AsyncMock` for the DB session. SQLAlchemy exceptions (`DataError`, `IntegrityError`, `OperationalError`) are raised directly from `mock.commit.side_effect` to exercise error handling paths.
+- **`KLAVIYO_ENABLED`** defaults to `False` in `.env`. Tests that exercise live Klaviyo calls must patch `get_settings` to return `KLAVIYO_ENABLED=True`.
+- **`parse_datetime` AM/PM branch**: The condition `"am" in val` is case-sensitive — test inputs must use lowercase `"am"`/`"pm"` to trigger that branch.
 
 ## Dependencies
 
