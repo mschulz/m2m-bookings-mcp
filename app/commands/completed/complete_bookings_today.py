@@ -36,7 +36,7 @@ async def main():
 
     logger.info("get_all_booking_ids: %s", booking_list)
 
-    tz_count = booking_list["count"]
+    tz_count = len(booking_list["booking_ids"])
     completed_count = 0
 
     if tz_count > 0:
