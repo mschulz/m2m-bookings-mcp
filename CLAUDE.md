@@ -64,7 +64,7 @@ Models use **SQLModel** — one class defines both the DB table and Pydantic val
 - **Klaviyo `_request()`**: Single `@retry`-decorated method on `Klaviyo` class handles `httpx.AsyncClient` boilerplate and error logging. Public methods (`post_home_data`, `post_bond_data`, `create_klaviyo_profile`, `update_klaviyo_profile`, `check_profile`) are thin wrappers.
 - **Email `_send_notification()`**: `app/utils/email_service.py` helper standardises sender tuple and `isinstance` recipient check. All `send_*_email` functions delegate to it.
 - **Customer upsert race condition guard**: `CustomerDAO.create_customer()` catches `IntegrityError` (unique violation on `customer_id`) and falls back to update. This handles concurrent webhooks for the same customer where both SELECT finds no row and both attempt INSERT.
-- **Scheduled commands are async**: `app/commands/completed/` uses `asyncio.run()` with `httpx.AsyncClient`. Completions run concurrently via `asyncio.gather()` gated by `asyncio.Semaphore(3)`. m2m-proxy handles Launch27 rate limiting; the semaphore limits concurrency on our side. Proxy `/tocomplete/{date}` response: `{"count": int, "booking_ids": []}` — `booking_ids` are filtered by timezone using `booking["address"]["zip"]` from the L27 booking list (not top-level `zip`, not `address["postcode"]`). Proxy complete endpoint returns `{"success": bool, ...}`; `Booking.complete()` returns `1` if `success` else `0` for the completion tally. `ENVIRONMENT=testing` skips actual completion POST calls.
+- **Scheduled commands are async**: `app/commands/completed/` uses `asyncio.run()` with `httpx.AsyncClient`. Completions run concurrently via `asyncio.gather()` gated by `asyncio.Semaphore(3)`. m2m-proxy handles Launch27 rate limiting; the semaphore limits concurrency on our side. Proxy `/tocomplete/{date}` response: `{"count": int, "booking_ids": []}` — `count` is the total across ALL timezones for that date; `booking_ids` are filtered by timezone using `booking["address"]["zip"]` from the L27 booking list (not top-level `zip`, not `address["postcode"]`). **`tz_count` is derived from `len(booking_ids)`, NOT from `count`** — the email denominator must reflect the timezone-filtered count. Proxy complete endpoint returns `{"success": bool, ...}`; `Booking.complete()` returns `1` if `success` else `0` for the completion tally. `ENVIRONMENT=testing` skips actual completion POST calls.
 - **Database scripts**: `app/database/` contains standalone async scripts that open their own `async_session()` directly (not via `Depends(get_db)`). `missing_locations.py` queries bookings with NULL location, deduplicates postcodes, and emails a summary to `SUPPORT_EMAIL` via `asyncio.to_thread()`. `create_db.py` creates all tables.
 
 ### File Structure
@@ -125,7 +125,8 @@ tests/
 ├── test_routers_health.py       # GET /
 ├── test_routers_bookings.py     # All 11 booking endpoints
 ├── test_routers_customers.py    # POST /customer/new and /customer/updated
-└── test_missing_locations.py    # find_missing_locations, main() email gating
+├── test_missing_locations.py    # find_missing_locations, main() email gating
+└── test_commands_completed.py   # Booking client, complete() modes, main() orchestration
 pytest.ini                       # asyncio_mode = auto
 ```
 
@@ -136,7 +137,7 @@ pytest.ini                       # asyncio_mode = auto
 
 ## Testing
 
-Run the full suite: `pytest` (247 tests, all passing, ~1s).
+Run the full suite: `pytest` (260 tests, all passing, ~1s).
 
 ### Key test conventions
 - `pytest.ini` sets `asyncio_mode = auto` — no `@pytest.mark.asyncio` needed.
@@ -145,6 +146,7 @@ Run the full suite: `pytest` (247 tests, all passing, ~1s).
 - **Service/DAO tests**: Pure async unit tests using `AsyncMock` for the DB session. SQLAlchemy exceptions (`DataError`, `IntegrityError`, `OperationalError`) are raised directly from `mock.commit.side_effect` to exercise error handling paths.
 - **`KLAVIYO_ENABLED`** defaults to `False` in `.env`. Tests that exercise live Klaviyo calls must patch `get_settings` to return `KLAVIYO_ENABLED=True`.
 - **`parse_datetime` AM/PM branch**: The condition `"am" in val` is case-sensitive — test inputs must use lowercase `"am"`/`"pm"` to trigger that branch.
+- **Command tests** (`test_commands_completed.py`): `Booking` class is mocked entirely at the module level. `httpx.AsyncClient` is mocked as an async context manager via `__aenter__`/`__aexit__`. `get_settings` is patched on the `booking` module to control `testing` flag for `complete()` path tests.
 
 ## Dependencies
 

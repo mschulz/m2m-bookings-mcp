@@ -167,8 +167,10 @@ app/
 │   ├── bookings.py      # /booking/* endpoints
 │   ├── customers.py     # /customer/* endpoints
 │   └── health.py        # Health check
-├── commands/            # Scheduled command scripts
-│   └── completed/       # Mark today's bookings as completed (run via cron/Heroku Scheduler)
+├── commands/
+│   └── completed/       # Mark today's bookings as completed (run via Heroku Scheduler)
+│       ├── booking.py           # Async Booking client (get_all_in_tz, complete)
+│       └── complete_bookings_today.py  # Entry point: asyncio.run(), semaphore-gated gather
 ├── database/
 │   ├── create_db.py             # One-time table creation
 │   └── missing_locations.py     # Report bookings with NULL location; emails SUPPORT_EMAIL
@@ -193,7 +195,8 @@ tests/
 ├── test_routers_health.py       # GET /
 ├── test_routers_bookings.py     # All 11 booking endpoints
 ├── test_routers_customers.py    # POST /customer/new and /customer/updated
-└── test_missing_locations.py    # find_missing_locations, main() email gating
+├── test_missing_locations.py    # find_missing_locations, main() email gating
+└── test_commands_completed.py   # Booking client, complete() modes, main() orchestration
 ```
 
 ## Database scripts
@@ -220,7 +223,7 @@ python -m app.database.create_db
 pytest
 ```
 
-247 tests across 16 files. All external dependencies (database, Gmail, Klaviyo, zip2location API) are mocked — no live connections required. `asyncio_mode = auto` is set in `pytest.ini` so all async tests run without extra decorators.
+260 tests across 17 files. All external dependencies (database, Gmail, Klaviyo, zip2location API, m2m-proxy) are mocked — no live connections required. `asyncio_mode = auto` is set in `pytest.ini` so all async tests run without extra decorators.
 
 | Area | File | Tests |
 |---|---|---|
@@ -240,6 +243,7 @@ pytest
 | Booking routers | `test_routers_bookings.py` | 19 |
 | Customer routers | `test_routers_customers.py` | 4 |
 | Missing locations script | `test_missing_locations.py` | 7 |
+| Completion command | `test_commands_completed.py` | 13 |
 
 Run a specific file:
 
